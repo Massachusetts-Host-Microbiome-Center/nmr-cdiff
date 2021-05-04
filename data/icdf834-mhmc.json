@@ -7162,19 +7162,6 @@
 "gene_reaction_rule":"(CD630_13870)"
 },
 {
-"id":"ID_295",
-"name":"putrescine aminotransferase",
-"metabolites":{
-"4abald_c":1.0,
-"alaL_c":1.0,
-"ptrc_c":-1.0,
-"pyr_c":-1.0
-},
-"lower_bound":0.0,
-"upper_bound":1000.0,
-"gene_reaction_rule":""
-},
-{
 "id":"ID_748",
 "name":"acetylornithine transaminase",
 "metabolites":{

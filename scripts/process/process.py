@@ -7,6 +7,21 @@ Created on Thu Apr  8 12:00:24 2021
  - Process raw Bruker NMR files into Excel spreadsheet for downstream analysis
  - Use python 3.8+ for best results
  - See /nmr-cdiff/venv/requirements.txt for dependencies
+ 
+Copyright 2021 Massachusetts Host-Microbiome Center
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ 
 """
 
 import os, subprocess, datetime, time
@@ -50,7 +65,7 @@ def calibrate_process2(loc, item, acq1):
     
     ## CONVERT and LOAD SPECTRUM ##
     subprocess.run(
-        ["csh", SCDIR + "/fid_bruk_13C_calib.com", item],
+        ["csh", SCDIR + "/calib.com", item],
         stdout=subprocess.DEVNULL, 
         stderr=subprocess.DEVNULL)
     
@@ -60,7 +75,7 @@ def calibrate_process2(loc, item, acq1):
     ## LINE BROADENING, FT, BASELINE CORRECTION ##
     os.chdir(f"{loc}/{item}")
     time.sleep(1.)
-    subprocess.run(["csh", SCDIR + "/fid_aph_13C_ft.com", item + "_calibr"])
+    subprocess.run(["csh", SCDIR + "/ft_proc.com", item + "_calibr"])
     time.sleep(1.)
     os.chdir(loc)
     
@@ -72,7 +87,7 @@ def calibrate_process2(loc, item, acq1):
     ## BASELINE CORRECTION ##
     os.chdir(f"{loc}/{item}")
     time.sleep(1.)
-    subprocess.run(["csh", SCDIR + "/fid_aph_13C_bl.com", item + "_calibr"])
+    subprocess.run(["csh", SCDIR + "/bl_proc.com", item + "_calibr"])
     time.sleep(1.)
     os.chdir(loc)
     
@@ -126,14 +141,14 @@ def process_trace2(loc, item, cf, phases):
     tim = time0 + (time1 - time0)/2
     
     ## CONVERT BRUK to PIPE ##
-    subprocess.run(["csh", SCDIR + "/fid_bruk_13C.com", item],        
+    subprocess.run(["csh", SCDIR + "/bruker.com", item],        
                    stdout=subprocess.DEVNULL, 
                    stderr=subprocess.DEVNULL)
     
     ## LINE BROADENING, FT, BASELINE CORRECTION ##
     os.chdir(f"{loc}/{item}")
     time.sleep(1.)
-    subprocess.run(["csh", SCDIR + "/fid_aph_13C_ft.com", item])
+    subprocess.run(["csh", SCDIR + "/ft_proc.com", item])
     time.sleep(1.)
     os.chdir(loc)
     
@@ -145,7 +160,7 @@ def process_trace2(loc, item, cf, phases):
     ## BASELINE CORRECTION ##
     os.chdir(f"{loc}/{item}")
     time.sleep(1.)
-    subprocess.run(["csh", SCDIR + "/fid_aph_13C_bl.com", item])
+    subprocess.run(["csh", SCDIR + "/bl_proc.com", item])
     time.sleep(1.)
     os.chdir(loc)
     
