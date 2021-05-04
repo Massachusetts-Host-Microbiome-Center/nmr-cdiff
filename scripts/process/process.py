@@ -26,6 +26,7 @@ Copyright 2021 Massachusetts Host-Microbiome Center
 
 import os, subprocess, datetime, time
 import nmrglue
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -92,29 +93,17 @@ def calibrate_process2(loc, item, acq1):
     os.chdir(loc)
     
     ## CALIBRATE PPM SHIFT ##
-    ref = []
-    if os.path.exists(loc + '/cfg.txt'):
-        with open(loc + '/cfg.txt', 'r') as rf:
-            for line in rf:
-                l = line.strip('\n').split('\t')
-                ref.append(float(l[0]))
-    else:
-        ref_str = input("Please enter reference ppm for calibration peak: ")
-        ref.append(float(ref_str))
     dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_calibr_1D.ft.ps.bl")
     # peaks = nmrglue.analysis.peakpick.pick(data, 1000.0)
     uc = nmrglue.pipe.make_uc(dic, data, dim=0)
-    plt.ion()
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(uc.ppm_scale(), data.real, lw=0.5)
-    for pk in ref:
-        ax.axvline(x=pk, label=pk, ls=':')
-    # plt.legend()
+    print("Find the ppm shift of the peak you wish to calibrate.")
+    print("Note the x-coordinate, then close the window.")
     plt.show()
     calib = input("Type the ppm shift of the peak you wish to calibrate: ")
     refpk = input("Type the reference ppm shift for the peak: ")
-    plt.close('all')
     cf = float(refpk) - float(calib)
     
     return cf, time0, [p0s, p1s]
