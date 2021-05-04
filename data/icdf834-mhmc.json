@@ -15072,13 +15072,13 @@
 },
 {
 "id":"ID_563",
-"name":"pyruvate, water dikinase",
+"name":"pyruvate, phosphate dikinase",
 "metabolites":{
 "amp_c":1.0,
 "atp_c":-1.0,
-"h2o_c":-1.0,
 "pepyr_c":1.0,
-"pi_c":1.0,
+"pi_c":-1.0,
+"ppi_c":1,
 "pyr_c":-1.0
 },
 "lower_bound":0.0,
