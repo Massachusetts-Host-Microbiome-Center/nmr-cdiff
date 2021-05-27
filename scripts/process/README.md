@@ -3,8 +3,10 @@
 See [README.md](../README.md) in the base directory for dependencies before attempting to run this script.
 ## Usage
 1. Navigate to the directory containing the raw NMR files from bruker using `cd`.
-2. Run this script using `python /path/to/process.py`.
-3. The script will prompt you for several fields. Simply follow the instructions.
+2. Run this script using `python /path/to/process.py [isotope] [init]`.
+    - `[isotope]`: the isotope label (13C, 1H, or 31P). Default=13C.
+    - `[init]`: the ID of the initial spectrum, used as the time anchor. Default=11.
+4. The script will prompt you for several fields. Simply follow the instructions.
 
 Prior to running the script, it is recommended to place a text file `cfg.txt` in the raw NMR file directory, 
 containing the reference ppm shifts and names of the expected chemicals, one per line, tab-separated. For example:
