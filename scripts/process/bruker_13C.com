@@ -1,6 +1,10 @@
 #!/bin/csh
 
-set name = "$1_1D.fid"
+if ($# == 1) then
+  set name = "$1_1D.fid"
+else
+  set name = "$1_$2_1D.fid"
+endif
 
 bruk2pipe -verb -in ./$1/fid \
   -bad 0.0 -ext -aswap -AMX -decim 552 -dspfvs 20 -grpdly 68.0126800537109  \

@@ -24,33 +24,15 @@ Copyright 2021 Massachusetts Host-Microbiome Center
  
 """
 
-import os, subprocess, datetime, time
+import os, subprocess, datetime, time, glob, sys
 import nmrglue
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 SCDIR = os.path.dirname(__file__)   # location of script
 
-def find_extreme_pks(locs):
-    # find lower peak
-    locs = locs[::-1]
-    subpks_l = [locs[0]]
-    for i in range(1, len(locs)):
-        if locs[i] - locs[i - 1] < 0.5:
-            subpks_l.append(locs[i])
-        else:
-            break
-    subpks_h = [locs[-1]]
-    for i in range(1, len(locs)):
-        if locs[-1*i] - locs[-1*i - 1] < 0.5:
-            subpks_h.append(locs[-1*i - 1])
-        else:
-            break
-    return [sum(subpks_l)/len(subpks_l), sum(subpks_h)/len(subpks_h)]
-
-def calibrate_process2(loc, item, acq1):
+def calibrate_process(loc, item, acq1, isotope):
     """Get process parameters using nmrglue and write NMRpipe script
     
     Arguments:
@@ -66,12 +48,21 @@ def calibrate_process2(loc, item, acq1):
     
     ## CONVERT and LOAD SPECTRUM ##
     subprocess.run(
-        ["csh", SCDIR + "/calib.com", item],
+        ["csh", SCDIR + "/bruker_" + isotope + ".com", item, "calibr"],
         stdout=subprocess.DEVNULL, 
         stderr=subprocess.DEVNULL)
     
-    p0s = 91.0
-    p1s = 68.0
+    p0s = 0.0
+    p1s = 0.0
+    if isotope == '13C':
+        p0s = 91.0
+        p1s = 68.0
+    elif isotope == '1H':
+        p0s = -15.0 #-90.0
+        p1s = 32.0 #6.0
+    elif isotope == '31P':
+        p0s = 15.0
+        p1s = -117.0
     
     ## LINE BROADENING, FT, BASELINE CORRECTION ##
     os.chdir(f"{loc}/{item}")
@@ -82,6 +73,23 @@ def calibrate_process2(loc, item, acq1):
     
     ## PHASE SHIFT ##
     dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_calibr_1D.ft")
+    
+    #INSERT LOOP#
+    # p0t = p0s
+    # p1t = p1s
+    # for i in range(8):
+    #     for j in range(8):
+            # p0t = 10.0 + 2.0*i
+            # p1t = -125.0 + 2.0*j
+    #         print(p0t, p1t)
+    #         dic1, data1 = nmrglue.process.pipe_proc.ps(dic, data, p0=p0t, p1=p1t)
+    #         uc = nmrglue.pipe.make_uc(dic1, data1, dim=0)
+    #         fig = plt.figure()
+    #         ax = fig.add_subplot(111)
+    #         ax.plot(uc.ppm_scale(), data1.real, lw=0.5)
+    #         plt.show()
+    #END INSERT#
+    
     dic, data = nmrglue.process.pipe_proc.ps(dic, data, p0=p0s, p1=p1s)
     nmrglue.pipe.write(f"{loc}/{item}/{item}_calibr_1D.ft.ps", dic, data, overwrite=True)
     
@@ -108,7 +116,7 @@ def calibrate_process2(loc, item, acq1):
     
     return cf, time0, [p0s, p1s]
 
-def process_trace2(loc, item, cf, phases):
+def process_trace(loc, item, cf, phases, isotope):
     """Process a single 1D 13C-NMR trace.
     
     Arguments:
@@ -130,7 +138,7 @@ def process_trace2(loc, item, cf, phases):
     tim = time0 + (time1 - time0)/2
     
     ## CONVERT BRUK to PIPE ##
-    subprocess.run(["csh", SCDIR + "/bruker.com", item],        
+    subprocess.run(["csh", SCDIR + "/bruker_" + isotope + ".com", item],        
                    stdout=subprocess.DEVNULL, 
                    stderr=subprocess.DEVNULL)
     
@@ -158,13 +166,14 @@ def process_trace2(loc, item, cf, phases):
     uc = nmrglue.pipe.make_uc(dic, data, dim=0)
     total_ppm = [i + cf for i in uc.ppm_scale()]
     
-    ## TRIM DATA ##
+    ## CLEAN UP DATA ##
     ppm = []
     trace = []
     for i, signal in enumerate(data.real):
-        if total_ppm[i] >= 0.0 and total_ppm[i] < 201.0:
-            ppm.append(total_ppm[i])
-            trace.append(signal)
+        ## SKIP TRIM: can trim further in MATLAB ##
+        # if total_ppm[i] >= 0.0 and total_ppm[i] < 201.0:
+        ppm.append(total_ppm[i])
+        trace.append(signal)
     
     return ppm, trace, tim
  
@@ -173,7 +182,7 @@ def message(message, verbose):
     if verbose:
         print(message)
 
-def process_stack(loc, ids, initial=None, verbose=True):
+def process_stack(loc, ids, initial=None, isotope='13C', verbose=True):
     """Process entire NMR stack and write to xlsx file.
     
     Arguments:
@@ -193,13 +202,13 @@ def process_stack(loc, ids, initial=None, verbose=True):
     
     ## calibrate and get correction factor ##
     message("Calibrate autophase and PPM shift...", verbose)
-    cf, time0, phases = calibrate_process2(loc, ids[0], initial)
+    cf, time0, phases = calibrate_process(loc, ids[0], initial, isotope)
     
     ## process all traces ##
-    message("Begin processing 13C traces.", verbose)
+    message("Begin processing " + isotope + " traces.", verbose)
     for i, item in enumerate(ids):
         message(f"Processing file {item}...", verbose)
-        ppm, trace, timestamp = process_trace2(loc, item, cf, phases)
+        ppm, trace, timestamp = process_trace(loc, item, cf, phases, isotope)
         delta_t = (timestamp - time0).total_seconds()/3600.
         if i == 0:
             stack.append(ppm)
@@ -215,7 +224,7 @@ def process_stack(loc, ids, initial=None, verbose=True):
     message("Writing full stack to Excel file.", verbose)
     stack_array = np.array(stack)
     df = pd.DataFrame(stack_array[1:], columns=stack_array[0], index=header[1])
-    writer = pd.ExcelWriter(loc + '/StackSpec.xlsx', engine='xlsxwriter')
+    writer = pd.ExcelWriter(loc + '/StackSpec_' + isotope + '.xlsx', engine='xlsxwriter')
     df = df.T
     df.to_excel(writer, sheet_name='trace', startrow=1)
     wb = writer.book
@@ -236,61 +245,66 @@ def process_stack(loc, ids, initial=None, verbose=True):
     else:
         message("Config file not found.", verbose)
     writer.save()
-    message(f"Completed successfully. Output: {loc}/StackSpec.xlsx", verbose)
-    
-def main():
-    """Handle user input and call stack processing function."""
+    message(f"Completed successfully. Output: {loc}/StackSpec_{isotope}.xlsx", verbose)
+
+def detect_spectra(isotope='13C', init=11):
+    """Returns a list of spectra IDs for the given isotope."""
+    iso_spectra = []
+    dirs = glob.glob('*/')
+    st = [str(y) for y in sorted([int(x[:-1]) for x in dirs])]
+    for fn in st:
+        if int(fn) >= int(init):
+            try:
+                dic, data = nmrglue.bruker.read(fn)
+            except OSError:
+                break
+            udic = nmrglue.bruker.guess_udic(dic, data)
+            if udic[0]['label'] == isotope and udic[0]['encoding'] == 'direct':
+                iso_spectra.append(fn)
+    return iso_spectra
+
+def main(iso, init):
+    """Call stack processing function."""
     print("Welcome to NMR processing pipeline.\n")
-    correct = False
-    while not correct:
-        print("Please give the filepath of the experiment directory.")
-        print("If the script was run from the experiment directory, " +
-              "just press the [return] key")
-        loc = input("")
-        if loc == "":
-            loc = os.getcwd()
-        print("\nThe experiment directory is: " + loc)
-        userinput = input("Is this correct? (y/n): ")
-        if userinput == "y":
-            correct = True
-    correct = False
-    while not correct:
-        print("Please give the sequence of IDs for all " +
-              "13C spectra to be processed.")
-        print("For example: 12-52 even, 56, 61-67 odd, 70-73 all")
-        userinput = input("")
-        indices = []
-        series = userinput.split(',')
-        for serie in series:
-            s = serie.strip()
-            tokens = s.split(' ')
-            if len(tokens) == 1:
-                indices.append(tokens[0])
-            else:
-                bounds = tokens[0].split('-')
-                if tokens[1] == 'all':
-                    indices.extend(
-                        [str(i) for i in range(int(bounds[0]), int(bounds[1]) + 1)])
-                else:
-                    indices.extend(
-                        [str(i) for i in range(int(bounds[0]), int(bounds[1]) + 1, 2)])
-        print("\nThe spectra to be processed are: " + ', '.join(indices))
-        userinput = input("Is this correct? (y/n): ")
-        if userinput == "y":
-            correct = True
-    init = input("\nPlease give the ID of the initial spectrum, " +
-                 "to calibrate the timestamps: ")
-    print("\nPlease review the processing parameters:")
-    print("Directory: " + loc)
-    print("13C spectrum IDs: " + ', '.join(indices))
-    print("Initial timepoint reference: " + init)
-    response = ""
-    while response not in ['y', 'yes', 'no', 'n']:
-        response = input("Are these parameters correct? (y/n): ")
-    if response in ['y', 'yes']:
-        process_stack(loc, indices, initial=init, verbose=True)
+    if iso not in ("1H", "13C", "31P"):
+        print("Isotope not recognized.")
         return
-    print("Please run the python script again and re-enter the parameters.")
+    loc = os.getcwd()
+    indices = detect_spectra(isotope=iso, init=init)
+    print("Beginning calibration with following parameters:")
+    print("\t- Directory: " + loc)
+    print(f"\t- {iso} spectrum IDs: " + ', '.join(indices))
+    print("\t- Initial timepoint reference: " + init)
+    process_stack(loc, indices, initial=init, isotope=iso, verbose=True)
     
-if __name__ == "__main__":
-    main()
+def handle_args(args):    
+    if len(args) < 1:
+        iso = '13C'
+    elif args[0] in ['-h', '--help']:
+        print("Spectral processing script.")
+        print("===========================")
+        print("Command line args:")
+        print("\t1. Isotope. Supported: 1H, 13C (default), 31P.")
+        print("\t2. Initial spectrum. Timestamp used as t0. Default=11.")
+    elif args[0] in ['13C', '1H', '31P']:
+        iso = args[0]
+    else:
+        try:
+            init = str(int(args[0]))
+        except ValueError:
+            print("Invalid arguments.")
+            return None
+    if len(args) > 1:
+        try:
+            init = str(int(args[1]))
+        except ValueError:
+            print("Invalid arguments.")
+            return None
+    else:
+        init = '11'
+    if len(args) > 2:
+        print("Ignoring excess arguments: " + " ".join(args[2:]))
+    return iso, init
+
+if __name__ == "__main__":   
+    main(*handle_args(sys.argv[1:]))
