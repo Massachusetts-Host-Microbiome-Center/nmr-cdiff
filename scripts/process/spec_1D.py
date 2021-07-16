@@ -4,7 +4,7 @@
 Created on Thu Apr  8 12:00:24 2021
 
 @author: Aidan Pavao for Massachusetts Host-Microbiome Center
- - Process raw Bruker NMR files into Excel spreadsheet for downstream analysis
+ - Process raw Bruker FID file into fourier transformed signal vector
  - Use python 3.8+ for best results
  - See /nmr-cdiff/venv/requirements.txt for dependencies
  
@@ -29,10 +29,12 @@ import nmrglue
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scipy.integrate as integrate
+from scipy.interpolate import UnivariateSpline
 
 SCDIR = os.path.dirname(__file__)   # location of script
 
-def calibrate_process(loc, item, acq1, isotope):
+def process_spec(loc, item, isotope):
     """Get process parameters using nmrglue and write NMRpipe script
     
     Arguments:
@@ -42,13 +44,10 @@ def calibrate_process(loc, item, acq1, isotope):
     
     Returns: ppm correction to calibrate the x axis
     """
-    ## GET INITIAL TIMESTAMP ##
-    time0 = datetime.datetime.fromtimestamp(
-        os.path.getmtime(f"{loc}/{acq1}/pulseprogram"))
-    
+
     ## CONVERT and LOAD SPECTRUM ##
     subprocess.run(
-        ["csh", SCDIR + "/bruker_" + isotope + "_2.com", item, "calibr"],
+        ["csh", SCDIR + "/bruker_" + isotope + ".com", item, "f"],
         stdout=subprocess.DEVNULL, 
         stderr=subprocess.DEVNULL)
     
@@ -67,46 +66,59 @@ def calibrate_process(loc, item, acq1, isotope):
     ## LINE BROADENING, FT, BASELINE CORRECTION ##
     os.chdir(f"{loc}/{item}")
     time.sleep(1.)
-    subprocess.run(["csh", SCDIR + "/ft_proc.com", item + "_calibr"])
+    subprocess.run(["csh", SCDIR + "/ft_proc.com", item + "_f"])
     time.sleep(1.)
     os.chdir(loc)
     
     ## PHASE SHIFT ##
-    dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_calibr_1D.ft")
+    dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_f_1D.ft")
     
     #INSERT LOOP#
-    # p0t = p0s
-    # p1t = p1s
-    # for i in range(8):
-    #     for j in range(8):
-    #         p0t = 75.0 + 2.0*i
-    #         p1t = 70.0 + 2.0*j
-    #         print(p0t, p1t)
-    #         dic1, data1 = nmrglue.process.pipe_proc.ps(dic, data, p0=p0t, p1=p1t)
-    #         uc = nmrglue.pipe.make_uc(dic1, data1, dim=0)
-    #         fig = plt.figure()
-    #         ax = fig.add_subplot(111)
-    #         ax.plot(uc.ppm_scale(), data1.real, lw=0.5)
-    #         plt.show()
+    p0t = p0s
+    p1t = p1s
+    while True:
+        print(p0t, p1t)
+        dic1, data1 = nmrglue.process.pipe_proc.ps(dic, data, p0=p0t, p1=p1t)
+        uc = nmrglue.pipe.make_uc(dic1, data1, dim=0)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(uc.ppm_scale(), data1.real, lw=0.5)
+        ax.set_xlim(200.0, 0.0)
+        plt.show()
+        text = input("")
+        if text in ['done', 'exit', 'quit', 'q', '']:
+            break
+        vals = text.split()
+        try:
+            pa = float(vals[0])
+            pb = float(vals[1])
+            p0t = pa
+            p1t = pb
+        except ValueError:
+            print("Invalid shift string.")
     #END INSERT#
     
+    p0s = p0t
+    p1s = p1t
+    
     dic, data = nmrglue.process.pipe_proc.ps(dic, data, p0=p0s, p1=p1s)
-    nmrglue.pipe.write(f"{loc}/{item}/{item}_calibr_1D.ft.ps", dic, data, overwrite=True)
+    nmrglue.pipe.write(f"{loc}/{item}/{item}_f_1D.ft.ps", dic, data, overwrite=True)
     
     ## BASELINE CORRECTION ##
     os.chdir(f"{loc}/{item}")
     time.sleep(1.)
-    subprocess.run(["csh", SCDIR + "/bl_proc.com", item + "_calibr"])
+    subprocess.run(["csh", SCDIR + "/bl_proc.com", item + "_f"])
     time.sleep(1.)
     os.chdir(loc)
     
     ## CALIBRATE PPM SHIFT ##
-    dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_calibr_1D.ft.ps.bl")
+    dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_f_1D.ft.ps.bl")
     # peaks = nmrglue.analysis.peakpick.pick(data, 1000.0)
     uc = nmrglue.pipe.make_uc(dic, data, dim=0)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(uc.ppm_scale(), data.real, lw=0.5)
+    ax.set_xlim(200.0, 0.0)
     print("Find the ppm shift of the peak you wish to calibrate.")
     print("Note the x-coordinate, then close the window.")
     plt.show()
@@ -114,55 +126,8 @@ def calibrate_process(loc, item, acq1, isotope):
     refpk = input("Type the reference ppm shift for the peak: ")
     cf = float(refpk) - float(calib)
     
-    return cf, time0, [p0s, p1s]
-
-def process_trace(loc, item, cf, phases, isotope):
-    """Process a single 1D 13C-NMR trace.
-    
-    Arguments:
-    loc -- path to folder containing traces
-    item -- ID of trace to process
-    cf -- correction factor for ppm shift
-    
-    Returns:
-    ppm --  list of ppm values
-    trace -- list of signal intensities
-    tim --  timestamp of trace, calculated from acquisition data
-    phases -- P0, P1 phase shift
-    """
-    ## GET TIMESTAMP ##
-    time0 = datetime.datetime.fromtimestamp(
-        os.path.getmtime(f"{loc}/{item}/pulseprogram"))
-    time1 = datetime.datetime.fromtimestamp(
-        os.path.getmtime(f"{loc}/{item}/acqus"))
-    tim = time0 + (time1 - time0)/2
-    
-    ## CONVERT BRUK to PIPE ##
-    subprocess.run(["csh", SCDIR + "/bruker_" + isotope + "_2.com", item],        
-                   stdout=subprocess.DEVNULL, 
-                   stderr=subprocess.DEVNULL)
-    
-    ## LINE BROADENING, FT, BASELINE CORRECTION ##
-    os.chdir(f"{loc}/{item}")
-    time.sleep(1.)
-    subprocess.run(["csh", SCDIR + "/ft_proc.com", item])
-    time.sleep(1.)
-    os.chdir(loc)
-    
-    ## PHASE SHIFT ##
-    dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_1D.ft")
-    dic, data = nmrglue.process.pipe_proc.ps(dic, data, p0=phases[0], p1=phases[1])
-    nmrglue.pipe.write(f"{loc}/{item}/{item}_1D.ft.ps", dic, data, overwrite=True)
-    
-    ## BASELINE CORRECTION ##
-    os.chdir(f"{loc}/{item}")
-    time.sleep(1.)
-    subprocess.run(["csh", SCDIR + "/bl_proc.com", item])
-    time.sleep(1.)
-    os.chdir(loc)
-    
     ## SHIFT DATA ##
-    dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_1D.ft.ps.bl")
+    dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_f_1D.ft.ps.bl")
     uc = nmrglue.pipe.make_uc(dic, data, dim=0)
     total_ppm = [i + cf for i in uc.ppm_scale()]
     
@@ -175,14 +140,100 @@ def process_trace(loc, item, cf, phases, isotope):
         ppm.append(total_ppm[i])
         trace.append(signal)
     
-    return ppm, trace, tim
+    return ppm, trace
  
 def message(message, verbose):
     """If in verbose mode, print status message"""
     if verbose:
         print(message)
 
-def process_stack(loc, ids, initial=None, isotope='13C', verbose=True):
+def subtract(loc, item, isotope):
+    ## GET experimental spec
+    ppm, trace = process_spec(loc, item, isotope)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(ppm, trace, lw=0.5)
+    ax.set_xlim(54.5, 52.5)
+    plt.show()
+    
+    ## GET 13C-Ala spec
+    refdir = "/Users/apavao/Desktop/NMR runs/May252021_C13_HRMAS_Cells"
+    os.chdir(refdir)
+    subprocess.run(
+        ["csh", SCDIR + "/bruker_" + isotope + "_2.com", "13", "f"],
+        stdout=subprocess.DEVNULL, 
+        stderr=subprocess.DEVNULL)
+    os.chdir(refdir + "/13")
+    time.sleep(1.)
+    subprocess.run(["csh", SCDIR + "/ft_proc_2.com", "13_f"])
+    time.sleep(1.)
+    os.chdir(refdir)
+    dic, data = nmrglue.pipe.read(refdir + "/13/13_f_1D.ft")
+    dic, data = nmrglue.process.pipe_proc.ps(dic, data, p0=81.0, p1=84.0)
+    nmrglue.pipe.write(refdir + "/13/13_f_1D.ft.ps", dic, data, overwrite=True)
+    os.chdir(refdir + "/13")
+    time.sleep(1.)
+    subprocess.run(["csh", SCDIR + "/bl_proc.com", "13_f"])
+    time.sleep(1.)
+    os.chdir(refdir)
+    dic, data = nmrglue.pipe.read(refdir + "/13/13_f_1D.ft.ps.bl")
+    uc = nmrglue.pipe.make_uc(dic, data, dim=0)
+    refppm = [i + 2.299 for i in uc.ppm_scale()]
+    reftrace = [i for i in data.real]
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(refppm, reftrace, lw=0.5)
+    ax.set_xlim(54.5, 52.5)
+    plt.show()
+    
+    refpp2 = [i + 53.643 - 53.7 for i in refppm]
+    ## GET regions for normalization
+    def getscale(exppm, extrc, rfppm, rftrc, lb, ub):
+        exp_ppm_norm = []
+        exp_trc_norm = []
+        ref_ppm_norm = []
+        ref_trc_norm = []
+        for i, shf in enumerate(exppm):
+            if shf > lb and shf < ub:
+                exp_ppm_norm.append(shf)
+                exp_trc_norm.append(extrc[i])
+        for i, shf in enumerate(rfppm):
+            if shf > lb and shf < ub:
+                ref_ppm_norm.append(shf)
+                ref_trc_norm.append(rftrc[i])
+        exp_area = integrate.trapezoid(exp_trc_norm, exp_ppm_norm)
+        ref_area = integrate.trapezoid(ref_trc_norm, ref_ppm_norm)
+        return exp_area/ref_area
+    
+    ref_scal = getscale(ppm, trace, refppm, reftrace, 53.7, 53.75)
+    xexp = []
+    yexp = []
+    xref = []
+    yref = []
+    for i, shf in enumerate(ppm):
+        if shf > 50 and shf < 56:
+            xexp.append(shf)
+            yexp.append(trace[i])
+    for i, shf in enumerate(refppm):
+        if shf > 50 and shf < 56:
+            xref.append(shf)
+            yref.append(reftrace[i])
+    for l in [xexp, yexp, xref, yref]:
+        l.reverse()
+    expfit = UnivariateSpline(xexp, yexp)
+    reffit = UnivariateSpline(xref, yref)
+    x = np.linspace(50, 56, 5000)
+    y = expfit(x) - ref_scal*reffit(x)
+    ref_sca2 = getscale(x, y, x, reffit(x - 53.643 + 53.7), 53.626, 53.665)
+    y2 = y - 1.8*ref_sca2*reffit(x - 53.643 + 53.7)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(x, y2, lw=0.5)
+    ax.set_xlim(54.5, 52.5)
+    plt.show()
+
+def main(loc, fid, isotope='13C', verbose=True):
     """Process entire NMR stack and write to xlsx file.
     
     Arguments:
@@ -193,32 +244,23 @@ def process_stack(loc, ids, initial=None, isotope='13C', verbose=True):
     verbose -- if True, print status messages
     """
     message("Begin NMR stack process.", verbose)
-    ids = [str(item) for item in ids]
-    if initial == None:
-        initial = ids[0]
-    
-    header = [[], []]
-    stack = []
-    
+
     ## calibrate and get correction factor ##
     message("Calibrate autophase and PPM shift...", verbose)
-    cf, time0, phases = calibrate_process(loc, ids[0], initial, isotope)
     
-    ## process all traces ##
-    message("Begin processing " + isotope + " traces.", verbose)
-    for i, item in enumerate(ids):
-        message(f"Processing file {item}...", verbose)
-        ppm, trace, timestamp = process_trace(loc, item, cf, phases, isotope)
-        delta_t = (timestamp - time0).total_seconds()/3600.
-        if i == 0:
-            stack.append(ppm)
-        if ppm != stack[0]:
-            print("PPM mismatch. Abort.")
-            return
-        header[0].append(item)
-        header[1].append(delta_t)
-        stack.append(trace)
+    subtract(loc, fid, isotope)
     
+    return
+    
+    ppm, trace = process_spec(loc, fid, isotope)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(ppm, trace, lw=0.5)
+    ax.set_xlim(200, 0)
+    plt.show()
+    
+    return
     ## write excel file ##
     message("Trace processing complete.", verbose)
     message("Writing full stack to Excel file.", verbose)
@@ -246,36 +288,6 @@ def process_stack(loc, ids, initial=None, isotope='13C', verbose=True):
         message("Config file not found.", verbose)
     writer.save()
     message(f"Completed successfully. Output: {loc}/StackSpec_{isotope}.xlsx", verbose)
-
-def detect_spectra(isotope='13C', init=11):
-    """Returns a list of spectra IDs for the given isotope."""
-    iso_spectra = []
-    dirs = glob.glob('*/')
-    st = [str(y) for y in sorted([int(x[:-1]) for x in dirs])]
-    for fn in st:
-        if int(fn) >= int(init):
-            try:
-                dic, data = nmrglue.bruker.read(fn)
-            except OSError:
-                break
-            udic = nmrglue.bruker.guess_udic(dic, data)
-            if udic[0]['label'] == isotope and udic[0]['encoding'] == 'direct':
-                iso_spectra.append(fn)
-    return iso_spectra
-
-def main(iso, init):
-    """Call stack processing function."""
-    print("Welcome to NMR processing pipeline.\n")
-    if iso not in ("1H", "13C", "31P"):
-        print("Isotope not recognized.")
-        return
-    loc = os.getcwd()
-    indices = detect_spectra(isotope=iso, init=init)
-    print("Beginning calibration with following parameters:")
-    print("\t- Directory: " + loc)
-    print(f"\t- {iso} spectrum IDs: " + ', '.join(indices))
-    print("\t- Initial timepoint reference: " + init)
-    process_stack(loc, indices, initial=init, isotope=iso, verbose=True)
     
 def handle_args(args):    
     if len(args) < 1:
@@ -285,27 +297,28 @@ def handle_args(args):
         print("===========================")
         print("Command line args:")
         print("\t1. Isotope. Supported: 1H, 13C (default), 31P.")
-        print("\t2. Initial spectrum. Timestamp used as t0. Default=11.")
+        print("\t2. Spectrum ID. Default=11.")
         return '13C', '11'
     elif args[0] in ['13C', '1H', '31P']:
         iso = args[0]
     else:
         try:
-            init = str(int(args[0]))
+            fid = str(int(args[0]))
         except ValueError:
             print("Invalid arguments.")
             return None
     if len(args) > 1:
         try:
-            init = str(int(args[1]))
+            fid = str(int(args[1]))
         except ValueError:
             print("Invalid arguments.")
             return None
     else:
-        init = '11'
+        fid = '11'
     if len(args) > 2:
         print("Ignoring excess arguments: " + " ".join(args[2:]))
-    return iso, init
+    loc = os.getcwd()
+    return loc, fid, iso
 
 if __name__ == "__main__":   
     main(*handle_args(sys.argv[1:]))
