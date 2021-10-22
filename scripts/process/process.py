@@ -32,7 +32,9 @@ import pandas as pd
 
 SCDIR = os.path.dirname(__file__)   # location of script
 
-def calibrate_process(loc, item, acq1, isotope):
+ver = '' # '_2'  # use '' or '_2'
+
+def calibrate_process(loc, item, acq1, isotope, verbose=True):
     """Get process parameters using nmrglue and write NMRpipe script
     
     Arguments:
@@ -42,24 +44,63 @@ def calibrate_process(loc, item, acq1, isotope):
     
     Returns: ppm correction to calibrate the x axis
     """
+    runf = loc.split('/')[-1]
     ## GET INITIAL TIMESTAMP ##
     time0 = datetime.datetime.fromtimestamp(
         os.path.getmtime(f"{loc}/{acq1}/pulseprogram"))
+    message("Loaded initial timestamp.", verbose)
     
     ## CONVERT and LOAD SPECTRUM ##
     subprocess.run(
-        ["csh", SCDIR + "/bruker_" + isotope + "_2.com", item, "calibr"],
+        ["csh", f"{SCDIR}/bruker_{isotope}{ver}.com", item, "calibr"],
         stdout=subprocess.DEVNULL, 
         stderr=subprocess.DEVNULL)
-    
-    p0s = 0.0
-    p1s = 0.0
+    message(f"Converted initial {isotope} spectrum for calibration.", verbose)
+    calib = -1
+    p0s = 999.0
+    p1s = 999.0
     if isotope == '13C':
-        p0s = 81.0#76.0 #91.0 # 95
-        p1s = 84.0#84.0 # 68.0  #66
+        ppm_max = 200.
+        ppm_min = 0.
+        if '13CGlc' in runf:
+            refpk = 72.405
+        elif '13CThr' in runf:
+            refpk = 22.169
+        if runf.startswith('20210519'):
+            p0s = 84.
+            p1s = 81.
+            calib = 69.950
+        elif runf.startswith('20210525'):
+            p0s = 81.
+            p1s = 84.
+            calib = 69.950
+        elif runf.startswith('20210404'):
+            p0s = 84.
+            p1s = 81.
+            calib = 69.355
+        elif runf.startswith('20210723'):
+            p0s = 15.
+            p1s = 100.
+            calib = 69.884
+        elif runf.startswith('20210324'):
+            p0s = 84.
+            p1s = 81.
+            calib = 19.079
+        elif runf.startswith('20210731'):
+            p0s = 84.
+            p1s = 81.
+            calib = 38.788
+            refpk = 42.279
+        # p0s = 81.0#76.0 #91.0 # 95
+        # p1s = 84.0#84.0 # 68.0  #66
     elif isotope == '1H':
-        p0s = 168.0#-15.0 #-90.0
-        p1s = 35.0#32,0 #6.0
+        if runf.startswith('20210324'):
+            p0s = -135.
+            p1s = 90.
+            calib = 5.226
+        refpk = 5.223
+        ppm_max = 12.
+        ppm_min = 0.
     elif isotope == '31P':
         p0s = 15.0
         p1s = -117.0
@@ -70,28 +111,40 @@ def calibrate_process(loc, item, acq1, isotope):
     subprocess.run(["csh", SCDIR + "/ft_proc.com", item + "_calibr"])
     time.sleep(1.)
     os.chdir(loc)
+    dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_calibr_1D.ft")
+    message("Completed LB, FT, BL transformations.", verbose)    
+
+    ## CALIBRATE PHASE CORRECTION IF NECESSARY ##
+    if p0s == 999.0 and p1s == 999.0:
+        p0t = p0s
+        p1t = p1s
+        while True:
+            print(p0t, p1t)
+            dic1, data1 = nmrglue.process.pipe_proc.ps(dic, data, p0=p0t, p1=p1t)
+            uc = nmrglue.pipe.make_uc(dic1, data1, dim=0)
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.plot(uc.ppm_scale(), data1.real, lw=0.5)
+            ax.set_xlim(ppm_max, ppm_min)
+            plt.show()
+            text = input("")
+            if text in ['done', 'exit', 'quit', 'q', '']:
+                break
+            vals = text.split()
+            try:
+                pa = float(vals[0])
+                pb = float(vals[1])
+                p0t = pa
+                p1t = pb
+            except ValueError:
+                print("Invalid shift string.")
+        p0s = p0t
+        p1s = p1t
     
     ## PHASE SHIFT ##
-    dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_calibr_1D.ft")
-    
-    #INSERT LOOP#
-    # p0t = p0s
-    # p1t = p1s
-    # for i in range(8):
-    #     for j in range(8):
-    #         p0t = 75.0 + 2.0*i
-    #         p1t = 70.0 + 2.0*j
-    #         print(p0t, p1t)
-    #         dic1, data1 = nmrglue.process.pipe_proc.ps(dic, data, p0=p0t, p1=p1t)
-    #         uc = nmrglue.pipe.make_uc(dic1, data1, dim=0)
-    #         fig = plt.figure()
-    #         ax = fig.add_subplot(111)
-    #         ax.plot(uc.ppm_scale(), data1.real, lw=0.5)
-    #         plt.show()
-    #END INSERT#
-    
     dic, data = nmrglue.process.pipe_proc.ps(dic, data, p0=p0s, p1=p1s)
     nmrglue.pipe.write(f"{loc}/{item}/{item}_calibr_1D.ft.ps", dic, data, overwrite=True)
+    message("Completed phase correction.", verbose)    
     
     ## BASELINE CORRECTION ##
     os.chdir(f"{loc}/{item}")
@@ -99,20 +152,23 @@ def calibrate_process(loc, item, acq1, isotope):
     subprocess.run(["csh", SCDIR + "/bl_proc.com", item + "_calibr"])
     time.sleep(1.)
     os.chdir(loc)
-    
-    ## CALIBRATE PPM SHIFT ##
     dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_calibr_1D.ft.ps.bl")
-    # peaks = nmrglue.analysis.peakpick.pick(data, 1000.0)
-    uc = nmrglue.pipe.make_uc(dic, data, dim=0)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(uc.ppm_scale(), data.real, lw=0.5)
-    print("Find the ppm shift of the peak you wish to calibrate.")
-    print("Note the x-coordinate, then close the window.")
-    plt.show()
-    calib = input("Type the ppm shift of the peak you wish to calibrate: ")
-    refpk = input("Type the reference ppm shift for the peak: ")
+    message("Completed baseline correction.", verbose)    
+
+    ## CALIBRATE PPM SHIFT IF NECESSARY ##
+    if calib < 0:
+        uc = nmrglue.pipe.make_uc(dic, data, dim=0)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(uc.ppm_scale(), data.real, lw=0.5)
+        ax.set_xlim(ppm_max, ppm_min)
+        print("Find the actual ppm shift of the glucose peak with reference shift 72.405.")
+        print("Note the x-coordinate, then close the window.")
+        plt.show()
+        calib = input("Type the ppm shift of the peak you wish to calibrate: ")
+
     cf = float(refpk) - float(calib)
+    message("Corrected PPM shift.", verbose)    
     
     return cf, time0, [p0s, p1s]
 
@@ -138,7 +194,7 @@ def process_trace(loc, item, cf, phases, isotope):
     tim = time0 + (time1 - time0)/2
     
     ## CONVERT BRUK to PIPE ##
-    subprocess.run(["csh", SCDIR + "/bruker_" + isotope + "_2.com", item],        
+    subprocess.run(["csh", f"{SCDIR}/bruker_{isotope}{ver}.com", item],        
                    stdout=subprocess.DEVNULL, 
                    stderr=subprocess.DEVNULL)
     
@@ -202,7 +258,7 @@ def process_stack(loc, ids, initial=None, isotope='13C', verbose=True):
     
     ## calibrate and get correction factor ##
     message("Calibrate autophase and PPM shift...", verbose)
-    cf, time0, phases = calibrate_process(loc, ids[0], initial, isotope)
+    cf, time0, phases = calibrate_process(loc, ids[0], initial, isotope, verbose)
     
     ## process all traces ##
     message("Begin processing " + isotope + " traces.", verbose)
@@ -219,13 +275,18 @@ def process_stack(loc, ids, initial=None, isotope='13C', verbose=True):
         header[1].append(delta_t)
         stack.append(trace)
     
+    stem = loc.split('/')[-1]
+    
     ## write excel file ##
     message("Trace processing complete.", verbose)
     message("Writing full stack to Excel file.", verbose)
     stack_array = np.array(stack)
     df = pd.DataFrame(stack_array[1:], columns=stack_array[0], index=header[1])
-    writer = pd.ExcelWriter(loc + '/StackSpec_' + isotope + '.xlsx', engine='xlsxwriter')
+    writer = pd.ExcelWriter(f"{loc}/{stem}_{isotope}.xlsx", engine='xlsxwriter')
     df = df.T
+    # df['mean'] = df.mean(axis=1)
+    # header[0].append('mean')
+    # header[1].append('mean')
     df.to_excel(writer, sheet_name='trace', startrow=1)
     wb = writer.book
     ws = writer.sheets['trace']
@@ -245,7 +306,7 @@ def process_stack(loc, ids, initial=None, isotope='13C', verbose=True):
     else:
         message("Config file not found.", verbose)
     writer.save()
-    message(f"Completed successfully. Output: {loc}/StackSpec_{isotope}.xlsx", verbose)
+    message(f"Completed successfully. Output: {loc}/{stem}_{isotope}.xlsx", verbose)
 
 def detect_spectra(isotope='13C', init=11):
     """Returns a list of spectra IDs for the given isotope."""
@@ -256,11 +317,11 @@ def detect_spectra(isotope='13C', init=11):
         if int(fn) >= int(init):
             try:
                 dic, data = nmrglue.bruker.read(fn)
+                udic = nmrglue.bruker.guess_udic(dic, data)
+                if udic[0]['label'] == isotope and udic[0]['encoding'] == 'direct':
+                    iso_spectra.append(fn)
             except OSError:
-                break
-            udic = nmrglue.bruker.guess_udic(dic, data)
-            if udic[0]['label'] == isotope and udic[0]['encoding'] == 'direct':
-                iso_spectra.append(fn)
+                pass
     return iso_spectra
 
 def main(iso, init):
