@@ -17,6 +17,20 @@ function plotAlaTraces (fn, sns, cmap, outf)
 %   MATLAB Central File Exchange.
 %   https://www.mathworks.com/matlabcentral/fileexchange/1892-dashline
 %
+% Copyright 2021 Massachusetts Host-Microbiome Center
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+%
 
 % Set up figure with tiled plot and axes labels
 % set figure resolution
@@ -42,7 +56,7 @@ for i = 1:numel(sns)
     ax.XDir = 'reverse';
     ax.LineWidth = 0.5;
     ax.FontSize = 5;
-    ax.YAxis.Visible = 'off'; 
+    ax.YAxis.Visible = 'off';
     yticks([]);
     ymin = min(Zl, [], 'all');
     ymax = max(Zu, [], 'all');
@@ -65,7 +79,7 @@ for i = 1:numel(sns)
     % plot trace
     plot(P, M, 'Color', 'k', 'LineWidth', 1);
 
-    %% PLOT SPLITS %%
+    % PLOT SPLITS %
     basis = 53.7031;
     c1 = -0.3588; % split distance from 13C-C1
     c3 = -0.2306; % split distance from 13C-C3

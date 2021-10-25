@@ -1,5 +1,5 @@
 function getScaledCoeffs (cMap, cfg_pk, cfg_nm, outpath, stem)
-% Calculate the time-scaled logistic coefficients to be used dFBA analyses. 
+% Calculate the time-scaled logistic coefficients to be used dFBA analyses.
 % The time axis is normalized to the metabolic onset and rate of cfg_pk.
 %
 % Parameters:
@@ -16,11 +16,25 @@ function getScaledCoeffs (cMap, cfg_pk, cfg_nm, outpath, stem)
 %  - <stem + "_pks_scl.xlsx"> is an excel spreadsheet with logistic coefficients
 %    and their 95% confidence interval given by the fit function
 %
+% Copyright 2021 Massachusetts Host-Microbiome Center
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+%
 
 r = 1;  % deviations for minimum peak prominence
 tolerance = 0.45; % range around reference ppm
 
-%% Scale time axis by glucose metabolic bounds. %%
+% Scale time axis by glucose metabolic bounds. %
 % these reference numbers are the output from getTimescale run on the glucose dataset,
 % using isocaproate (ppm=0.747) as the reference peak
 y1 = 4.6548; % cfg_pk metabolism start time
@@ -125,7 +139,7 @@ for i = 1:size(unq_nms, 1)
         else
             g = fittype( @(L, k, x0, x) L./(1 + exp(-1*k*(x - x0))));
             % if input metabolite, seed with k < 1
-            if (i == 1)  
+            if (i == 1)
                 fit_fcn = fit(times(incl), plot_pks, g, 'start', [12 -0.2 12]);
                 ymax = 1.1*max(peaks, [], 'all');
             else
@@ -135,7 +149,7 @@ for i = 1:size(unq_nms, 1)
         end
         plot(range, fit_fcn(range), '--', 'Color', basecolor + (k-1)*factor, 'linewidth', 2);
 
-        %% Assemble fit coefficients and confidence interval for output %%
+        % Assemble fit coefficients and confidence interval for output %
         coeffs = coeffvalues(fit_fcn);
 	cfi = confint(fit_fcn);
         M(count, 1) = unq_ppm(k);
@@ -176,7 +190,7 @@ title(t, "5/19 ¹³C-Glc, time-normalized", 'FontSize', 20, 'FontWeight', 'bold'
 ylabel(t,"¹³C integrated signal", 'FontSize', 20, 'FontWeight', 'bold');
 xlabel(t,"time (h)", 'FontSize', 20, 'FontWeight', 'bold');
 
-%% Assemble and write output tables %%
+% Assemble and write output tables %
 Tb = array2table(M, 'VariableNames', {'Shift','L','k','x0','c'});
 Tblb = array2table(Q, 'VariableNames', {'Shift','L','k','x0','c'});
 Tbub = array2table(R, 'VariableNames', {'Shift','L','k','x0','c'});

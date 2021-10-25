@@ -14,6 +14,20 @@ function plotCombinedPanel (stem, cfg_pk, cmap, outf)
 % Output:
 %  - <outf> is the panel
 %
+% Copyright 2021 Massachusetts Host-Microbiome Center
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+%
 
 r = 4;  % number of RMSE for minimum peak prominence = 3
 t_max = 36; % timecourse length
@@ -41,7 +55,7 @@ T = T(T <= 36 & T >= 0);
 meanDev = zeros(size(Z, 1), 1);
 for i = 1:size(Z, 1)
     col = Z(i, :);
-    %meanDev(i, 1) = sqrt(mean((col(5538:8477) - mean(col(5538:8477))).^2)); % sqrt(mean((col - mean(col)).^2)); 
+    %meanDev(i, 1) = sqrt(mean((col(5538:8477) - mean(col(5538:8477))).^2)); % sqrt(mean((col - mean(col)).^2));
     meanDev(i, 1) = mean(abs(col - mean(col))); % MAE
 end
 %Znorm = Z ./ meanDev;
@@ -85,7 +99,7 @@ for i = 1:size(Znorm,1)
             incl(j) = 1;
         end
     end
-    
+
     incl = logical(incl);
     pks_prop = pks ./ sum(pks);
     all_ppm = [all_ppm; cfg_pks(incl)];  % vector of ppm values for all peaks
@@ -93,7 +107,7 @@ for i = 1:size(Znorm,1)
     all_int = [all_int; ints(incl)];
     all_tim = [all_tim; ones(sum(incl), 1)*T(i)];
     all_ind = [all_ind; cfg_ids(incl)];   % compound id for each peak
-    
+
     for j = 1:size(rel_conc, 1)
         rel_conc(j, i) = sum(pks_prop(cfg_ids == j));
         abs_conc(j, i) = sum(ints(cfg_ids == j));    % ints or pks
@@ -106,7 +120,7 @@ else
     ordr = 1:size(unq_nms, 1);
 end
 
-%% PLOT %%
+% PLOT %
 % set figure resolution
 wi = 1.5;     % width in inches
 hi = 0.95;     % height in inches

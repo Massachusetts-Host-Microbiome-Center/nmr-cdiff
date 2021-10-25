@@ -1,5 +1,5 @@
 function plotGroupedRxns (fn, sn, lbn, ubn, cmap, outf)
-% Plot line plot with error regions, for select dFBA results. 
+% Plot line plot with error regions, for select dFBA results.
 % This function is not flexible. You must edit the code below to
 %    add, remove, or recategorize reactions from tracking. All ordering
 %    and assignment is done by the column indices in the input file.
@@ -15,14 +15,28 @@ function plotGroupedRxns (fn, sn, lbn, ubn, cmap, outf)
 % Output:
 %  - <outf> is the plot of flux trajectories
 %
+% Copyright 2021 Massachusetts Host-Microbiome Center
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+%
 
-%% LOAD DATA VALUES %%
+% LOAD DATA VALUES %
 % load time scale (T), condition labels (L), z values (Z)
 T = readmatrix(fn, 'Sheet', sn, 'range', 'A:A');
 L = readmatrix(fn, 'Sheet', sn, 'range', '1:1', 'OutputType', 'string')';
 Z = readmatrix(fn, 'Sheet', sn, 'range', 'B2')';
 
-%% LOAD STDEV VALUES %%
+% LOAD STDEV VALUES %
 % load time scale (Tl), condition labels (Ll), z values (Zl)
 Tl = readmatrix(fn, 'Sheet', lbn, 'range', 'A:A');
 Ll = readmatrix(fn, 'Sheet', lbn, 'range', '1:1', 'OutputType', 'string')';
@@ -93,13 +107,13 @@ for i = 1:size(L, 1)
     yticks([0 ymaxs(vid)]);
 
     color = cmap(mod(i - 1, size(cmap, 1)) + 1, :);
-    %% PLOT ERROR REGIONS %%
+    % PLOT ERROR REGIONS %
     fill([T(1:end-1),T(1:end-1),T(2:end),T(2:end)]',...
          [Zl(i,1:end-1)',Zu(i,1:end-1)',Zu(i,2:end)',Zl(i,2:end)']',...
          (color + [1 1 1])/2,...
          'FaceAlpha', 0.5,...
          'LineStyle', 'none');
-    %% PLOT RIDGES %%
+    % PLOT RIDGES %
     plot(T, Z(i, :),...
          'Color', color,...
          'LineWidth', 1.25,...

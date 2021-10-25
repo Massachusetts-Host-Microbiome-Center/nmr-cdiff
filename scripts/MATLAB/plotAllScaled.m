@@ -1,5 +1,5 @@
 function plotAllScaled (cMap, cfg_pk, cfg_nm, outpath, stem)
-% Plot 13C stacks with colored peaks. 
+% Plot 13C stacks with colored peaks.
 % The time axis is normalized to the metabolic onset of cfg_pk.
 % SEE Fig. 1A,C; Fig. S1
 %
@@ -17,6 +17,20 @@ function plotAllScaled (cMap, cfg_pk, cfg_nm, outpath, stem)
 %  - <stem + "_13Cn.png"> is the surface plot of the timecourse
 %  - <stem + "_13Cspecs.svg"> is the final 1D spectrum with color-coded peaks
 %
+% Copyright 2021 Massachusetts Host-Microbiome Center
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+%
 
 r = 4;  % number of deviations for minimum peak prominence
 tolerance = 0.5; % range around reference ppm
@@ -25,7 +39,7 @@ ppm_max = 200.0; % maximum chemical shift
 t_min = 0;       % minimum time
 t_max = 36;      % maximum time
 
-%% Scale time axis by glucose metabolic bounds. %%
+% Scale time axis by glucose metabolic bounds. %
 % these references numbers are the output from getTimescale run on the glucose dataset,
 % using isocaproate (ppm=0.747) as the reference peak
 y1 = 4.6548; % metabolism start time
@@ -99,7 +113,7 @@ for i = 1:size(Znorm,1)
             incl(j) = 1;
         end
     end
-    
+
     incl = logical(incl);
     all_ppm = [all_ppm; cfg_pks(incl)];  % vector of ppm values for all peaks
     all_pks = [all_pks; sigs(incl)];     % vector of heights for all peaks
@@ -108,7 +122,7 @@ for i = 1:size(Znorm,1)
     all_ind = [all_ind; cfg_ids(incl)];   % compound id for each peak
 end
 
-%% PLOT STACK %%
+% PLOT STACK %
 disp("Plotting...");
 % 1. PLOT SURFACES %
 % set figure resolution

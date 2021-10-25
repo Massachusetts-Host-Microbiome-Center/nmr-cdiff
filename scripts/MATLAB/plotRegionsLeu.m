@@ -1,5 +1,5 @@
 function plotRegionsLeu (fn, ppm_min, ppm_max, t_min, t_max, yaw, pitch, cmap, outf)
-% Plot 13C stacks with colored peaks. 
+% Plot 13C stacks with colored peaks.
 % The time axis is normalized to the metabolic onset of cfg_pk.
 % With special considerations for plotting leucine due to peak overlap.
 % SEE Fig. 1E
@@ -16,6 +16,20 @@ function plotRegionsLeu (fn, ppm_min, ppm_max, t_min, t_max, yaw, pitch, cmap, o
 %
 % Output:
 %  - <outf> is the surface plot of the timecourse
+%
+% Copyright 2021 Massachusetts Host-Microbiome Center
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
 %
 
 r = 4;  % number of RMSE for minimum peak prominence = 3
@@ -105,7 +119,7 @@ for i = 1:size(Znorm,1)
     end
     % colors = zeros(size(pks, 1), 3);
     % indices = zeros(size(pks, 1), 1);
-    
+
     incl = logical(incl);
     pks_prop = pks ./ sum(pks);
     all_ppm = [all_ppm; cfg_pks(incl)];  % vector of ppm values for all peaks
@@ -114,7 +128,7 @@ for i = 1:size(Znorm,1)
 %    all_pks_prop = [all_pks_prop; pks_prop(incl)];
     all_tim = [all_tim; ones(sum(incl), 1)*T(i)];
     all_ind = [all_ind; cfg_ids(incl)];   % compound id for each peak
-    
+
     for j = 1:size(rel_conc, 1)
         rel_conc(j, i) = sum(pks_prop(cfg_ids == j));
         abs_conc(j, i) = sum(ints(cfg_ids == j));
@@ -134,16 +148,16 @@ for j = 1:size(cfg_pks,1)
     if j < size(cfg_pks,1)
         p = surf(P(rng), T, Zarea, C(:, rng) + cfg_ids(j) - 0.01, 'EdgeColor', 'None');
         p.FaceAlpha = 0.1;
-        p.HandleVisibility = 'off';    
+        p.HandleVisibility = 'off';
     else
         p1 = surf(P(rng), T(T < 6), Zarea(T < 6, :), C(T < 6, rng) + 1 - 0.01, 'EdgeColor', 'None');
         p2 = surf(P(rng), T(T >= 6), Zarea(T >= 6, :), C(T >= 6, rng) + cfg_ids(j) - 0.01, 'EdgeColor', 'None');
         p1.FaceAlpha = 0.1;
-        p1.HandleVisibility = 'off';    
+        p1.HandleVisibility = 'off';
         p2.FaceAlpha = 0.1;
-        p3.HandleVisibility = 'off';    
+        p3.HandleVisibility = 'off';
     end
-end    
+end
 p = surf(P, T, Zsurf, C, 'EdgeColor', 'none');
 colormap(nc); % gray
 caxis([0 size(unq_nms, 1)+1]);

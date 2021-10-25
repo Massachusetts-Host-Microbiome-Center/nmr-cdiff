@@ -1,5 +1,5 @@
 function plotRegionsAla (fn, ppm_min, ppm_max, t_min, t_max, yaw, pitch, cmap, outf)
-% Plot 13C waterfall with colored peaks at Ala-a13C. 
+% Plot 13C waterfall with colored peaks at Ala-a13C.
 % SEE Fig. 4B,D
 %
 % Parameters:
@@ -12,6 +12,20 @@ function plotRegionsAla (fn, ppm_min, ppm_max, t_min, t_max, yaw, pitch, cmap, o
 %
 % Output:
 %  - <outf> is the waterfall plot of the timecourse
+%
+% Copyright 2021 Massachusetts Host-Microbiome Center
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
 %
 
 r = 0.4; %4;  % number of RMSE for minimum peak prominence = 3
@@ -97,7 +111,7 @@ for i = 1:size(Znorm,1)
     end
     % colors = zeros(size(pks, 1), 3);
     % indices = zeros(size(pks, 1), 1);
-    
+
     incl = logical(incl);
     pks_prop = pks ./ sum(pks);
     all_ppm = [all_ppm; cfg_pks(incl)];  % vector of ppm values for all peaks
@@ -106,7 +120,7 @@ for i = 1:size(Znorm,1)
 %    all_pks_prop = [all_pks_prop; pks_prop(incl)];
     all_tim = [all_tim; ones(sum(incl), 1)*T(i)];
     all_ind = [all_ind; cfg_ids(incl)];   % compound id for each peak
-    
+
     for j = 1:size(rel_conc, 1)
         rel_conc(j, i) = sum(pks_prop(cfg_ids == j));
         abs_conc(j, i) = sum(ints(cfg_ids == j));
@@ -129,7 +143,7 @@ for j = 1:size(cfg_pks,1)
     end
     rng = find(P > cfg_pks(j) - tolerance & P < cfg_pks(j) + tol2);
     C2(:, rng) = 0.5 + cfg_ids(j);
-end    
+end
 p = waterfall(P, T, Zsurf, C2); %'EdgeColor', 'none'
 Z2 = Znorm(T >= t_min & T <= t_max, P >= ppm_min & P <= ppm_max);
 plot3([53.8; 53.8].*ones(2, numel(T)), [T T]', [-5*ones(numel(T), 1) Z2(:, 1)]', 'Marker', 'none', 'LineWidth', 0.5, 'Color', "#C2C2C2");
