@@ -55,6 +55,7 @@ def process_spec(loc, item, isotope):
     if isotope == '13C':
         ppm_max = 200.
         ppm_min = 0.
+        refpk = 72.405
         if '13CGlc' in runf:
             refpk = 72.405 # glc
         elif '13CThr' in runf:
@@ -94,6 +95,19 @@ def process_spec(loc, item, isotope):
             p0s = 84.
             p1s = 81.
             calib = 19.639
+        elif runf.startswith('20220211'):
+            p0s = 60.
+            p1s = 90.
+            calib = 69.846
+        elif runf.startswith('20220213'):
+            p0s = 45.
+            p1s = 112.
+            refpk = 26.09
+            calib = 23.52
+        elif runf.startswith('20220220'):
+            p0s = 45.
+            p1s = 112.
+            calib = 69.85
         # p0s = 81.0#76.0 #91.0 # 95
         # p1s = 84.0#84.0 # 68.0  #66
 
