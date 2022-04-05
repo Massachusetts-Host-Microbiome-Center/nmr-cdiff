@@ -108,6 +108,10 @@ def process_spec(loc, item, isotope):
             p0s = 45.
             p1s = 112.
             calib = 69.85
+        # elif runf.startswith('20220321'):
+        #     p0s = 84.
+        #     p1s = 81.
+        #     calib = 69.788
         # p0s = 81.0#76.0 #91.0 # 95
         # p1s = 84.0#84.0 # 68.0  #66
 
@@ -132,6 +136,10 @@ def process_spec(loc, item, isotope):
     elif isotope == '31P':
         p0s = 15.0
         p1s = -117.0
+
+    ## GET BRUKER PARAMS (NS) ##
+    bruker_dic, _ = nmrglue.bruker.read(f"{loc}/{item}")
+    n_scans = bruker_dic['acqus']['NS']
 
     ## CONVERT and LOAD SPECTRUM ##
     subprocess.run(
@@ -159,7 +167,7 @@ def process_spec(loc, item, isotope):
             uc = nmrglue.pipe.make_uc(dic1, data1, dim=0)
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            ax.plot(uc.ppm_scale(), data1.real, lw=0.5)
+            ax.plot(uc.ppm_scale(), data1.real/n_scans**0.5, lw=0.5)
             ax.set_xlim(ppm_max, ppm_min)
             plt.show()
             text = input("")
@@ -194,7 +202,7 @@ def process_spec(loc, item, isotope):
         uc = nmrglue.pipe.make_uc(dic, data, dim=0)
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.plot(uc.ppm_scale(), data.real, lw=0.5)
+        ax.plot(uc.ppm_scale(), data.real/n_scans**0.5, lw=0.5)
         ax.set_xlim(ppm_max, ppm_min)
         print("Find the ppm shift of the peak you wish to calibrate.")
         print("Note the x-coordinate, then close the window.")
@@ -206,16 +214,8 @@ def process_spec(loc, item, isotope):
     ## SHIFT DATA ##
     dic, data = nmrglue.pipe.read(f"{loc}/{item}/{item}_f_1D.ft.ps.bl")
     uc = nmrglue.pipe.make_uc(dic, data, dim=0)
-    total_ppm = [i + cf for i in uc.ppm_scale()]
-
-    ## CLEAN UP DATA ##
-    ppm = []
-    trace = []
-    for i, signal in enumerate(data.real):
-        ## SKIP TRIM: can trim further in MATLAB ##
-        # if total_ppm[i] >= 0.0 and total_ppm[i] < 201.0:
-        ppm.append(total_ppm[i])
-        trace.append(signal)
+    ppm = uc.ppm_scale() + cf
+    trace = data.real/n_scans**0.5
 
     return ppm, trace
 
