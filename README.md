@@ -5,8 +5,8 @@ Supporting scripts and data for the analysis of real-time metabolism using <sup>
 > [data](data) - datasets, including the updated `icdf843` metbolic model and the dFBA parameters  
 > [etc](etc) - contains requirements.txt for a virtual environment to run the python code
 > [scripts](scripts) - all scripts used in analysis 
-> > [plot](scripts/plot) - MATLAB scripts for visualizing the NMR spectra and dFBA analyses 
-> > [process](scripts/process) - a python script and supporting csh scripts to process the raw NMR files  
+> > [MATLAB](scripts/MATLAB) - MATLAB scripts for visualizing the NMR spectra and dFBA analyses 
+> > [process](scripts/process) - a python script and supporting csh scripts to process the raw NMR files and run the dFBA analyses
  
 ## Installation
 Clone this repository with `git clone https://github.com/Massachusetts-Host-Microbiome-Center/nmr-cdiff.git`
