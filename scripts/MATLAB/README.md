@@ -1,9 +1,13 @@
 # Plot NMR data using MATLAB
 ## Functions
-1. plotCombinedPanel – plot average integrated signal for all compounds, using assembled xlsx file as input. See Figure 1B.
-2. plotCompare - plot average integrated signal, comparing two conditions. See Figure 2C.
-3. plotFluxArea - plot fluxes of competing reactions, stacked. Takes output from dFBA (`pyr_prop`). See Figure 3C.
-4. plotRegions - plot NMR stack as a surface plot with color-labeled ridges. See Figures 1A, 2A, and 2B.
+1. getColor - retreive colors for visualizations
+2. getTimescale - normalize timescale of experiment using 1H spectrum, analogous to synchrnoizers.py
+3. load13CData - load Excel output from process.py for plotting
+4. plotAlaTraces - plot the splitting patterns of alanine, as in Fig. 5
+5. plotFluxBidirectional - plot fluxes of competing reactions, stacked. Takes output from dfba.py (`fluxes.xlsx`). See Figure 3b.
+6. plotGroupedRxns - plot fluxes of key reactions, as in Fig. 3a,c-i
+7. plotRegionAla - plot NMR stack of alanine time series with color-coded peaks
+8. plotStacks - plot NMR stack as a surface plot with color-labeled ridges. See Figure 2a,c,e.
 
 ## Usage
-Some of these functions, especially plotRegions, use a large amount of memory. For best results, call the functions in batch mode from the command line.
+Some of these functions, especially plotStacks, use a large amount of memory. For best results, call the functions in batch mode from the command line.
