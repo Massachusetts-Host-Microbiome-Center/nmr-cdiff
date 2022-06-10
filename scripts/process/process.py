@@ -35,12 +35,14 @@ import subprocess
 import sys
 import time
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import nmrglue as ng
 import numpy as np
 import pandas as pd
 
 SCDIR = os.path.dirname(__file__)   # location of script
+CURVE_FIT_RESOLUTION = 2**19
 
 ver = '_2' # '_2'  # use '' or '_2'
 
@@ -52,38 +54,18 @@ def plot_datasets(xx, yys, ppm_bounds=(200., 0.)):
     ax.set_xlim(*ppm_bounds)
     plt.show()
 
-def plot_with_labels(xx, yy, labeli, labels, ppm_bounds=(200., 0.)):
+def plot_with_labels(xx, yy, labeli, labels, ppm_bounds=(200., 0.), yopt=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(xx, yy, lw=0.5)
-    ax.plot(xx[labeli], yy[labeli], ls='', marker='*')
-    for ci, xi, yi in zip(labels, xx[labeli], yy[labeli]):
+    if yopt is None:
+        yopt = yy[labeli]
+    ax.plot(xx[labeli], yopt, ls='', marker='*')
+    for ci, xi, yi in zip(labels, xx[labeli], yopt):
         ax.annotate(ci, (xi,yi), textcoords='offset points', xytext=(0,10),
             ha='center')
     ax.set_xlim(*ppm_bounds)
     plt.show()
-
-def find_ps(dic, data, ppm_bounds=(200., 0.)):
-    ## CALIBRATE PHASE CORRECTION IF NECESSARY ##
-    p0 = 0.
-    p1 = 0.
-    while True:
-        print(f"Current phase correction: p0={p0}, p1={p1}")
-        dic1, data1 = ng.process.pipe_proc.ps(dic, data, p0=p0, p1=p1)
-        uc = ng.pipe.make_uc(dic1, data1, dim=0)
-        plot_datasets(uc.ppm_scale(), [data1], ppm_bounds=ppm_bounds)
-        text = input("Enter new p0 and p1 separated by whitespace, or 'done': ")
-        if text in ['done', 'exit', 'quit', 'q', '', "'done'"]:
-            break
-        vals = text.split()
-        try:
-            p0_try = float(vals[0])
-            p1_try = float(vals[1])
-            p0 = p0_try
-            p1 = p1_try
-        except ValueError:
-            print("Invalid shift string.")
-    return p0, p1
 
 def to_stream(dic, data):
     """Prepare data for NMRpipe.
@@ -132,7 +114,7 @@ def calibrate_process(loc, item, acq1, isotope, verbose=True):
 
     ## CONVERT, PROCESS, and LOAD SPECTRUM ##
     pipe_output = subprocess.run(
-        ["csh", f"{SCDIR}/proc_{isotope}a.com", item],
+        ["csh", f"{SCDIR}/proc_{isotope}.com", item],
         stdout=subprocess.PIPE)
     dic, data = ng.fileio.pipe.read(pipe_output.stdout)
 
@@ -143,7 +125,7 @@ def calibrate_process(loc, item, acq1, isotope, verbose=True):
                                     & (calibrations["isotope"] == isotope)]
     run_calibrated = calibr_entry.shape[0] >= 1
     if not run_calibrated:
-        p0, p1 = find_ps(dic, data, ppm_bounds=ppm_bounds)
+        p0, p1 = ng.process.proc_autophase.manual_ps(data, notebook=False)
     else:
         if calibr_entry.shape[0] > 1:
             print("More than one calibration entry matches this run; " \
@@ -155,7 +137,13 @@ def calibrate_process(loc, item, acq1, isotope, verbose=True):
         p1 = float(calibr_entry.at[entry_index, 'p1'])
     dic, data = ng.process.pipe_proc.ps(dic, data, p0=p0, p1=p1)
     dic, data = ng.process.pipe_proc.mult(dic, data, r=n_scans, inv=True)
-    data = ng.process.proc_bl.baseline_corrector(data, wd=20)
+    pipe_output = subprocess.run(
+        ["csh", f"{SCDIR}/bl.com"],
+        input=to_stream(dic, data),
+        stdout=subprocess.PIPE)
+    dic, data = ng.fileio.pipe.read(pipe_output.stdout)
+    if dic['FDF2LABEL'] == "1H":
+        data = ng.process.proc_bl.baseline_corrector(data, wd=25)
 
     ## CALIBRATE PPM SHIFT IF NECESSARY ##
     if not run_calibrated:
@@ -188,11 +176,10 @@ class DeconvolutionHandler:
     def add_pattern(self, reference_shifts, assignments):
         """Construct and a new deconvolution pattern or return an existing one.
 
-        Parameters
-        ----------
-        reference_shifts: set of reference ppm shifts corresponding to the
+        Parameters:
+        reference_shifts -- set of reference ppm shifts corresponding to the
             overlapping peaks
-        assignments : dict mapping compounds to assigned subpeak indices
+        assignments -- dict mapping compounds to assigned subpeak indices
 
         Returns: the constructed pattern.
         """
@@ -248,44 +235,139 @@ def rmse(vector):
     """Calculate the Root Mean Squared Error (RMSE) of a 1D-array."""
     return np.sqrt(((vector - vector.mean()) ** 2).mean())
 
-def peak_fit(dic, data, history, plot=False, vb=False):
+def shift_params(s, *args):
+    """Shift parameters by a factor s.
+    Only acts on first element, which is usually the ppm shift.
+    """
+    for params in args:
+        for param in params:
+            param[0] -= s
+    return args
+
+def peak_fit(dic, data, history, r=6, plot=True, vb=False):
     """Peak-pick NMR spectrum.
-    Includes peak-picking, peak assignment, and integration functionality.
+    Includes peak-picking, peak assignment, and integration functionality. The
+    reference peaks to be fit should be specified in cfg_{isotope}.txt and
+    provided in the directory of the run to be processed.
 
     Parameters:
     ppm -- chemical shift axis of the data, in ppm
     data -- signal axis of the data
     history -- history of peak assignments in deconvolutions
-    plot -- True (default) to plot fit peaks with cluster labels over
-        the data.
+    r -- RMSE noise threshold for peak detection (default: 6)
+    plot -- True (default) to plot fit peaks with cluster labels over the data.
     vb -- True for verbose mode.
+
+    Returns a dictionary mapping compounds to their peak areas, and a curve
+    summing all of the fit peaks.
     """
-    # Utilities
+    # ---------------------------- Utilities ----------------------------
     uc = ng.pipe.make_uc(dic, data, dim=0)
     ppm = uc.ppm_scale()
     data = data.real
-    def p2i_interval(xx): return int(abs(uc.f(0, unit='ppm') - uc.f(xx, unit='ppm'))) # convert PPM scale to index
-    def p2i(xx): return uc.i(xx, unit='ppm')
+    isotope = dic["FDF2LABEL"]
+
+    def p2f_interval(xx): return abs(uc.f(0, unit='ppm') - uc.f(xx, unit='ppm')) # convert PPM scale to index
+    def p2i_interval(xx): return int(p2f_interval(xx)) # convert PPM scale to index # convert PPM scale to index
+    def p2i(xx): return uc.f(xx, unit='ppm')
     def i2p(yy): return uc.ppm(yy) # convert index to PPM shift
-    def message(message):
-        if vb:
-            print(message)
-    # pthres = 2*max(data[(ppm <= 160) & (ppm >= 130)])
-    pthres = 10*rmse(data[(ppm <= 160) & (ppm >= 130)])
+
+    def message(label, *args):
+        """Messages to print in verbose mode."""
+        if not vb:
+            return
+        if label == 'closest_peak_message':
+            text = "No reference peaks found within range of {0} ppm. The " \
+                   "closest peak will be assigned:\n{1}"
+        elif label == 'collision_message':
+            text = "Attempted to assign the following reference peaks to " \
+                   "cluster {0}, but a collision was detected.\n{1}"
+        elif label == 'collision_reassign_message':
+            text = "Cluster {0} is assigned to more than one peak, so its " \
+                   "assignment at shift {1} will be overwritten by new " \
+                   "cluster {2}."
+        elif label == 'collision_abort_message':
+            text = "Cluster {0} will be orphaned if the assignment for shift " \
+                   "{1} is overwritten, so it will not be reassigned to " \
+                   "cluster {2}."
+        elif label == 'orphaned_message':
+            text = "Cluster {0} is orphaned."
+        print(text.format(*args))
+
+    # ---------------------------- PEAK-PICKING -----------------------------
+    pthres = r*rmse(data[(ppm <= 160) & (ppm >= 130)])
     shifts, cIDs, params, amps = ng.analysis.peakpick.pick( # Find peaks
-        data, pthres=pthres, msep=(p2i_interval(0.08),), algorithm='thres',
+        data, pthres=pthres, msep=(p2i_interval(0.005),), algorithm='thres',
         est_params=True, lineshapes=['g'], cluster=True,
         c_ndil=p2i_interval(0.3), table=False)
-    shifts = np.array([sh[0] for sh in shifts])
-    cIDs = np.array(cIDs, dtype='l')
-    amps = np.array([max(data[(ppm < i2p(s) + 0.45) & (ppm > i2p(s) - 0.45)]) \
-                     for s in shifts])
+    amps = np.array([data.real[a] for a in shifts])
+    shifts = np.array(shifts)
+
+    # -------------------- Filter noise artifacts on peaks -------------------
+    def prominent(subpeaks, subamps, sep=0.1, r=0.25):
+        """Finds peaks likely generated by noise distortions.
+        These artifacts appear on some strong NMR signals around the base. This
+        method subclusters close peaks separated by less than <sep> and filters
+        out those less than <r> times the maximum subcluster amplitude.
+
+        Parameters:
+        subpeaks -- array of chemical shifts of peaks to be examined
+        subamps -- array of amplitudes of peaks to be examined
+        sep -- max distance for subclustering in ppm (default: 0.1)
+        r -- threshold of peak height ratio for exclusion (default: 0.25)
+
+        Returns a list of booleans representing "prominent" peaks to include
+        from the cluster.
+        """
+        sub_cIDs = []
+        k = 0
+        p = subpeaks[0]
+        for q in subpeaks:
+            if abs(p - q) > p2i_interval(sep):
+                k += 1
+            sub_cIDs.append(k)
+            p = q
+        include = []
+        sub_cIDs = np.array(sub_cIDs)
+        for i in set(sub_cIDs):
+            ampset = subamps[sub_cIDs == i]
+            include.extend(ampset >= r*ampset.max(axis=0))
+        return include
+    mask = []
+    for cid in np.unique(cIDs):
+        include = cIDs == cid
+        mask.extend(prominent(shifts[include], amps[include]))
+    mask = np.array(mask)
+    shifts = np.array(shifts)[mask]
+    cIDs = np.array(cIDs)[mask]
+    params = np.array(params)[mask]
+    amps = np.array(amps)[mask]
+
+    # Fit Voigt curves at found peaks
+    amp_bounds = [(0.8*data.real[a], 1.2*data.real[a]) for a in shifts]
+    vf_params = [((a[0], 0.5*b[0], 0.5*b[0]),) for a, b in zip(shifts, params)]
+    vf_bounds = [(((par[0][0]-5, par[0][0]+5), (0.01, p2i_interval(0.5)),
+        (0.01, p2i_interval(0.5))),) for par in vf_params]
+    params, amps, p_err, a_err, found = ng.analysis.linesh.fit_spectrum(
+        data, ['v'], vf_params, amps, vf_bounds, amp_bounds, shifts, cIDs,
+        p2i_interval(0.5), True, verb=False)
+    mask = ~(np.isnan(amps) \
+             | np.array([any(np.isnan(pset[0])) for pset in params]) \
+             | (np.array([sh[0] for sh in shifts]) <= p2i(170)))
+    shifts_tup = np.array(shifts)[mask]
+    amp_bounds = np.array(amp_bounds)[mask]
+    vf_params = np.array(vf_params)[mask]
+    vf_bounds = np.array(vf_bounds)[mask]
+    shifts = np.array([sh[0] for sh in shifts])[mask]
+    params = np.array(params)[mask]
+    cIDs = np.array(cIDs, dtype='l')[mask]
+    amps = np.array(amps)[mask]
     if plot:
         """Plot found peaks."""
         plot_with_labels(ppm, data.real, shifts, cIDs)
 
-    # Assign peaks
-    refsh = pd.read_csv("cfg.txt", sep='\t', names=['Shift', 'Compound']) # Shift | Compound
+    # ---------------- Assign clusters to reference peaks --------------------
+    refsh = pd.read_csv(f"cfg_{isotope}.txt", sep='\t', names=['Shift', 'Compound']) # Shift | Compound
     refsh['Assigned'] = np.nan # Create series for assigned clusters
 
     for cid in np.unique(cIDs):
@@ -295,68 +377,61 @@ def peak_fit(dic, data, history, plot=False, vb=False):
                 & (refsh['Shift'] < max(subpeaks) + 0.45)
         refpks = refsh.loc[mask, 'Shift'].tolist()
 
-        # If no refpks w/in range, assign the nearest refpk to this cluster
+        # If no refpks w/in range, assign the nearest refpk w/in 5ppm to this cluster
         if len(refpks) == 0:
-            mask = (refsh['Shift']-i2p(subpeaks.mean())).abs().argsort()[0]
-            refpks = [refsh.iloc[mask, refsh.columns.get_loc('Shift')]]
-            message("No reference peaks found within range of " \
-                    f"{i2p(subpeaks.mean())} ppm.")
-            message("The closest peak will be assigned:")
-            message(refpks)
+            cshift = i2p(subpeaks.mean())
+            mask = (refsh['Shift']-cshift).abs().argsort()[0]
+            nearest = refsh.iloc[mask, refsh.columns.get_loc('Shift')]
+            if abs(nearest - cshift) < 5:
+                refpks = [nearest]
+                message('closest_peak_message', cshift, refpks)
+
         refrows = refsh['Shift'].isin(refpks)
         # Handle collisions:
         if any(~np.isnan(refsh.loc[refrows, 'Assigned'])):
-            message("Attempted to assign the following reference peaks to " \
-                    f"cluster {cid}, but a collision was detected.")
             to_assign = refsh.loc[refrows, :]
-            message(to_assign)
+            message('collision_message', cid, to_assign)
             colliding = to_assign.loc[~np.isnan(to_assign['Assigned']), :]
             for pk, row in colliding.iterrows():
                 cl = colliding.at[pk, 'Assigned']
                 if refsh.loc[refsh['Assigned'] == cl, :].shape[0] > 1:
-                    message(f"Cluster {cl} is assigned to more than one peak," \
-                            f" so its assignment at shift {pk} will be" \
-                            f" overwritten by new cluster {cid}.")
+                    message('collision_reassign_message', cl, pk, cid)
                 else:
-                    message(f"Cluster {cl} will be orphaned if the assignment" \
-                            f" for shift {pk} is overwritten, so it will not" \
-                            f" be reassigned to cluster {cid}.")
+                    message('collision_abort_message', cl, pk, cid)
                     refpks.remove(colliding.at[pk, 'Shift'])
 
         if len(refpks) == 0:
-            message(f"Cluster {cid} is orphaned.")
+            message('orphaned_message', cid)
         else:
             refsh.loc[refsh['Shift'].isin(refpks), 'Assigned'] = cid
 
-    # Correct reference shifts using assigned peaks
-    assignment_map = {}
-    def assign_subpeaks(ref, cpd, subpeaks, map=assignment_map):
-        reference_peak = ref.loc[ref['Compound'] == cpd, 'Shift']
-        refpk_index = map[cpd].index(p2i(reference_peak))
-        map[cpd][refpk_index] = subpeaks.mean()
+    norm_peaks = [98.6607, 94.844, 78.585, 76.9841, 75.5848, 74.1522, 72.4053, 63.4031]
+    norm_subpeaks = []
 
-    for cpd in np.unique(refsh['Compound']):
-        # Populate peak assignment map with reference shifts
-        reference_peaks = refsh.loc[refsh['Compound'] == cpd, 'Shift']
-        assignment_map[cpd] = [p2i(shift) for shift in reference_peaks]
+    # ---------------------- Assign peaks to compounds -----------------------
+    assignments = collections.defaultdict(list)
     for cid in np.unique(cIDs):
         # Assign cluster subpeaks to compounds
-        subpeaks = np.array(shifts[cIDs == cid])
+        include = cIDs == cid
+        subamps = np.array(amps[include])
+        subpeaks = np.array(shifts[include])
         assigned_ref = refsh[refsh['Assigned'] == cid] # reference shifts assigned to cluster
         cpds = np.unique(assigned_ref['Compound'])
+        refpks = set(assigned_ref['Shift'].tolist())
         # Assign all subpeaks to one compound if it owns the cluster
         if cpds.shape[0] == 1:
-            assign_subpeaks(assigned_ref, cpds[0], subpeaks)
-        else:
-            refpks = set(assigned_ref['Shift'].tolist())
+            assignments[cpds[0]].extend(subpeaks)
+            for pk in refpks:
+                if pk in norm_peaks:
+                    norm_subpeaks.extend(subpeaks)
+        elif cpds.shape[0] > 1:
             # Assign using deconvolution history
             if history.has_pattern(refpks, len(subpeaks)):
                 pattern = history.get_pattern(refpks, len(subpeaks))
                 for cpd, pks in pattern.get_assignments():
-                    assign_subpeaks(assigned_ref, cpd, subpeaks[pks])
+                    assignments[cpd].extend(subpeaks[pks])
             else:
-                if len(refpks) > 0:
-                    splitting_assignments = {}
+                splitting_assignments = {}
                 print(f"Cluster {cid} has {cpds.shape[0]} compounds.")
                 print("In the plot, find the contributions from each " \
                       "compound using the reference shifts listed:")
@@ -376,62 +451,151 @@ def peak_fit(dic, data, history, plot=False, vb=False):
                             break
                         except ValueError:
                             print("Invalid assignments.")
-                    assign_subpeaks(assigned_ref, cpd, subpeaks[indices])
+                    splitting_assignments[cpd] = indices
                     if len(indices) > 0:
-                        splitting_assignments[cpd] = indices
+                        assignments[cpd].extend(subpeaks[indices])
                 history.add_pattern(refpks, splitting_assignments)
 
-    all_cpds = np.unique(refsh.loc[~np.isnan(refsh['Assigned']), 'Compound'])
+    all_cpds = np.array([cpd for cpd in assignments])
 
-    # mask = ~np.isnan(refsh['Assigned'])
+    # --------------------- CURVE-FIT PEAKS IN WINDOWS -----------------------
+    def curve_fit(dic, data, shifts, vf_params, vf_bounds, amps, amp_bounds,
+                  cIDs):
+        """Perform nmrglue Voigt curve fit on data with parameters."""
+        params, amps, found = ng.analysis.linesh.fit_spectrum(
+            data, ['v'], vf_params, amps, vf_bounds, amp_bounds, shifts, cIDs,
+            p2i_interval(0.5), False, verb=False)
+        mask = ~(np.isnan(amps) \
+                 | np.array([any(np.isnan(pset[0])) for pset in params]))
+        return params, amps, found
+    # Extract islands with peaks separated by <= 10ppm, including 8ppm buffer
+    curve_params = [shifts_tup, vf_params, vf_bounds, amps, amp_bounds, cIDs]
+    fit_params = []
+    fit_amps = []
+    p = 0
+    q = 0
+    for i, shift in enumerate(shifts):
+        last = len(shifts) - 1
+        if i == last:
+            q = i
+        if (abs(shift - shifts[q]) > p2i_interval(10)) or (i == last):
+            # extract region from p-8 to q+8
+            lb = shifts[p] - p2f_interval(8)
+            ub = shifts[q] + p2f_interval(8)
+            ndic, ndata = ng.process.pipe_proc.ext(dic, data, x1=lb, xn=ub)
+
+            # Shift peak parameters and perform curve fit
+            args = [a[p:q+1] for a in curve_params]
+            args[0] = shift_params(lb, args[0])[0]
+            args[1] = shift_params(lb, *args[1])
+            args[2] = shift_params(lb, *args[2])
+            nparams, namps, found = curve_fit(ndic, ndata, *args)
+            if plot: # plot fit peaks with cluster labels over the data.
+                nppm = ng.pipe.make_uc(ndic, ndata, dim=0).ppm_scale()
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+                ax.plot(nppm, ndata, lw=0.5)
+                sim = ng.analysis.linesh.sim_NDregion( # Simulate spectrum
+                    ndata.shape, ['v'], nparams, namps)
+                ax.plot(nppm, sim, lw=0.5)
+                plt.show()
+            nparams = shift_params(-1*lb, *np.array(nparams))
+            fit_params.extend(nparams)
+            fit_amps.extend(list(namps))
+            p = i
+        q = i
+    fit_params = np.array(fit_params)
+    fit_amps = np.array(fit_amps)
+    resolution = CURVE_FIT_RESOLUTION
+    scale = resolution/data.shape[0]
+    sppm = np.linspace(ppm[0], ppm[-1], num=resolution)
     if plot: # plot fit peaks with cluster labels over the data.
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.plot(ppm, data.real, lw=0.5)
         for cpd in all_cpds:
-            mask = np.full((data.shape[0],), False)
             color = next(ax._get_lines.prop_cycler)['color']
-            idxs = [int(sh) for sh in assignment_map[cpd]]
-            for sh in idxs:
-                mask = mask | (ppm <= i2p(sh) + 0.45) & (ppm >= i2p(sh) - 0.45)
-            ax.plot(ppm[mask], data[mask], lw=1, color=color)
-            hts = np.array([max(data[(ppm < i2p(s) + 0.45) & (ppm>i2p(s)-0.45)]) for s in idxs])
-            ax.plot(ppm[idxs], hts, ls='', marker='*', color=color)
-            for xx, yy in zip(ppm[idxs], hts):
+            include = np.isin(shifts, assignments[cpd])
+            idxs = shifts[include]
+            sim = ng.analysis.linesh.sim_NDregion( # Simulate spectrum
+                (resolution,), ['v'], scale*fit_params[include], fit_amps[include])
+            ax.plot(sppm, sim, lw=0.5, color=color)
+            ax.plot(ppm[idxs], fit_amps[include], ls='', marker='*', color=color)
+            for xx, yy in zip(ppm[idxs], fit_amps[include]):
                 ax.annotate(cpd, (xx,yy), textcoords='offset points',
                     xytext=(0,10), ha='center')
         ax.set_xlim(200, 0)
         plt.show()
-    # Integrate Peaks - for each compound, integrate the simulated signal of
-    # just the peaks belonging to that compound
+
+    # --------------------------- INTEGRATE PEAKS ----------------------------
+    # for each compound, integrate the simulated signal of just the peaks
+    # belonging to that compound
     signals = {}
+    curve = np.zeros((resolution,))
     for cpd in all_cpds:
-        mask = np.full((data.shape[0],), False)
-        idxs = assignment_map[cpd]
-        for sh in idxs:
-            mask = mask | (ppm <= i2p(sh) + 0.45) & (ppm >= i2p(sh) - 0.45)
-        cpdsignal = copy.deepcopy(data)
-        cpdsignal[~mask] = 0.
-        areashape = ng.analysis.integration.integrate(cpdsignal, uc, (0, 200))
-        signals[cpd] = areashape[-1]
+        include = np.isin(shifts, assignments[cpd])
+        sim = ng.analysis.linesh.sim_NDregion( # Simulate spectrum
+            (resolution,), ['v'], scale*fit_params[include], fit_amps[include])
+        areacurve = -1*np.trapz(sim, x=sppm)
+        signals[cpd] = areacurve
+        curve += sim
+
+    return signals, curve
+
+def ridge_trace(dic, data, wr=0.01, plot=True):
+    """Simple function to get the heights of reference peaks in a spectrum.
+    Takes the maximum signal within window of each peak. Does not functionally
+    trace ridge across spectra; cannot handle drifting chemical shifts, eg. due
+    to pH changes. Shift must remain within window of reference throughout time
+    course.
+
+    Parameters:
+    dic -- "universal" dictionary for spectrum
+    data -- data vector for spectrum
+    wr -- window radius, distance from reference shift to include in window
+
+    Returns a dictionary containing the amplitude of each peak.
+    """
+    uc = ng.pipe.make_uc(dic, data, dim=0)
+    isotope = dic["FDF2LABEL"]
+    def p2i(xx): return int(uc.f(xx, unit='ppm'))
+
+    signals = {}
+    shifts = []
+    amps = []
+    with open(f"cfg_{isotope}.txt", 'r') as rf:
+        for line in rf:
+            fields = line.strip().split('\t', 1)
+            shift = float(fields[0])
+            bounds = (p2i(shift-wr), p2i(shift+wr))
+            peak = f"{fields[1]} {shift}"
+            amplitude = max(data[bounds[1]:bounds[0]])
+            signals[peak] = amplitude
+            shifts.append(shift)
+            amps.append(amplitude)
+    if plot:
+        plot_with_labels(uc.ppm_scale(), data, [p2i(s) for s in shifts],
+            [str(s) for s in shifts], ppm_bounds=(12., 0.), yopt=amps)
+
     return signals
 
-def process_trace(loc, item, cf, phases, isotope, history):
+def process_trace(loc, item, cf, ps, history, overwrite=False):
     """Process a single 1D 13C-NMR trace.
 
     Parameters:
     loc -- path to folder containing traces
     item -- ID of trace to process
     cf -- correction factor for ppm shift
-    phases --
-    isotope --
+    ps -- list with the default p0, p1 values for phase correction
     history -- history of peak assignments in deconvolutions
+    overwrite -- whether to process each spectrum. If False, reads the existing
+        "ft" file that has already been processed.
 
     Returns:
     ppm --  list of ppm values
     trace -- list of signal intensities
     tim --  timestamp of trace, calculated from acquisition data
-    phases -- P0, P1 phase shift
+    phases -- p0, p1 phase shift
     """
     ## GET TIMESTAMP ##
     start_time = datetime.datetime.fromtimestamp(
@@ -443,76 +607,103 @@ def process_trace(loc, item, cf, phases, isotope, history):
     ## GET BRUKER PARAMS (NS) ##
     bruker_dic, _ = ng.bruker.read(f"{loc}/{item}")
     n_scans = bruker_dic['acqus']['NS']
+    isotope = bruker_dic['acqus']['NUC1']
 
-    ## CONVERT, PROCESS, and LOAD SPECTRUM ##
-    pipe_output = subprocess.run(
-        ["csh", f"{SCDIR}/proc_{isotope}a.com", item],
-        stdout=subprocess.PIPE)
-    dic, data = ng.fileio.pipe.read(pipe_output.stdout)
+    if os.path.exists(f"{loc}/{item}/ft") and not overwrite:
+        # Load a previously processed spectrum
+        dic, data = ng.fileio.pipe.read(f"{loc}/{item}/ft")
+    else:
+        # Convert, LB, ZF, FT
+        pipe_output = subprocess.run(
+            ["csh", f"{SCDIR}/proc_{isotope}.com", item],
+            stdout=subprocess.PIPE)
+        dic, data = ng.fileio.pipe.read(pipe_output.stdout)
 
-    ## PHASE SHIFT, BASELINE CORRECTION, NORMALIZATION, and CALIBRATION ##
-    dic, data = ng.process.pipe_proc.ps(dic, data, p0=phases[0], p1=phases[1])
-    # data = ng.process.proc_bl.baseline_corrector(data, wd=20)
+        # Coarse PS and manual adjustment
+        dic, data = ng.process.pipe_proc.ps(dic, data, p0=ps[0], p1=ps[1])
+        if sum(data) < 0:
+            dic, data = ng.process.pipe_proc.ps(dic, data, p0=180, p1=0)
+        p0, p1 = ng.process.proc_autophase.manual_ps(data, notebook=False)
+        dic, data = ng.process.pipe_proc.ps(dic, data, p0=p0, p1=p1)
 
-    # data = ng.process.proc_autophase.autops(data, 'peak_minima', p0=phases[0], p1=phases[1], peak_width=150)
-    dic, data = ng.process.pipe_proc.mult(dic, data, r=n_scans, inv=True)
-    pipe_output = subprocess.run(
-        ["csh", f"{SCDIR}/proc_{isotope}b.com"],
-        input=to_stream(dic, data),
-        stdout=subprocess.PIPE)
-    dic, data = ng.fileio.pipe.read(pipe_output.stdout)
-    data = ng.process.proc_bl.baseline_corrector(data, wd=60)
-    ppm = ng.pipe.make_uc(dic, data, dim=0).ppm_scale()
-    shift = cf*data.shape[0]/(max(ppm) - min(ppm))
-    dic, data = ng.process.pipe_proc.ls(dic, data, shift, sw=False)
+        # Normalize by number of scans
+        dic, data = ng.process.pipe_proc.mult(dic, data, r=n_scans, inv=True)
+
+        # Baseline correction
+        pipe_output = subprocess.run(
+            ["csh", f"{SCDIR}/bl.com"],
+            input=to_stream(dic, data),
+            stdout=subprocess.PIPE)
+        dic, data = ng.fileio.pipe.read(pipe_output.stdout)
+
+        if isotope == "1H":
+            data = ng.process.proc_bl.baseline_corrector(data, wd=25)
+            data = np.float32(data)
+
+        # Calibrate PPM shift
+        ppm = ng.pipe.make_uc(dic, data, dim=0).ppm_scale()
+        shift = cf*data.shape[0]/(max(ppm) - min(ppm))
+        dic, data = ng.process.pipe_proc.ls(dic, data, shift, sw=False)
+
+        # Write for future use
+        ng.fileio.pipe.write(f"{loc}/{item}/ft", dic, data, overwrite=True)
 
     # Pick, fit, and integrate peaks
-    signals = peak_fit(dic, data, history, plot=True)
     ppm = ng.pipe.make_uc(dic, data, dim=0).ppm_scale()
+    if isotope == "13C":
+        # signals, curve = peak_fit(dic, data, history, plot=False, vb=True)
+        signals = ridge_trace(dic, data, plot=False)
+        curve = data.real
+    else:
+        signals = ridge_trace(dic, data, plot=False)
+        curve = data.real
 
-    return ppm, data.real, timestamp, signals, n_scans
+    return ppm, data.real, timestamp, signals, n_scans, curve
 
 def message(message, verbose):
     """If in verbose mode, print status message"""
     if verbose:
         print(message)
 
-def process_stack(loc, ids, initial=None, isotope='13C', c_each=False, verbose=True):
+def process_stack(loc, ids, initial=None, iso='13C', vb=True, dry_run=True):
     """Process entire NMR stack and write to xlsx file.
 
     Parameters:
     loc -- path to folder containing traces
     ids -- list of IDs
     initial -- ID of initial acquisition, if different from first ID \
-               (to find initial timepoint)
-    verbose -- if True, print status messages
+        (to find initial timepoint)
+    vb -- if True, print status messages
+    dry_run -- if True, does not write the Excel file
     """
-    message("Begin NMR stack process.", verbose)
-    ids = [str(item) for item in ids]
+    message("Begin NMR stack process.", vb)
+    # ids = [str(item) for item in ids if int(item) < 108]
     if initial == None:
         initial = ids[0]
 
     header = [[], []]
     stack = []
     history = DeconvolutionHandler()
+    curves = []
 
     ## calibrate and get correction factor ##
-    message("Calibrate autophase and PPM shift...", verbose)
-    cf, time0, phases, c_ppm = calibrate_process(loc, ids[0], initial, isotope, verbose)
+    message("Calibrate autophase and PPM shift...", vb)
+    cf, time0, phases, c_ppm = calibrate_process(loc, ids[0], initial, iso, vb)
     c_ppm = c_ppm[(c_ppm <= 200) & (c_ppm >= 0)]
     stack.append(c_ppm)
-    ## process all traces ##
-    message("Begin processing " + isotope + " traces.", verbose)
-    for i, item in enumerate(ids):
-        message(f"Processing file {item}...", verbose)
-        if c_each: # Calibrate spectra individually if -ce flag
-            cf, _, phases, _ = calibrate_process(loc, item, initial, isotope, verbose)
 
+    ## process all traces ##
+    message("Begin processing " + iso + " traces.", vb)
+    for i, item in enumerate(ids):
+        message(f"Processing file {item}...", vb)
         # Process spec and chop signal vector
-        ppm, trace, ts, signals, n_scans = process_trace(loc, item, cf, phases, isotope, history)
+        ppm, trace, ts, signals, n_scans, curve = process_trace(
+            loc, item, cf, phases, history
+        )
         start_index = next(i for i, shift in enumerate(ppm) if shift < 200)
         idx = (start_index, start_index+len(stack[0]))
         vector = trace[idx[0]:idx[1]]
+        curves.append(curve)
 
         # Store data and check for continuity
         stack.append(vector)
@@ -535,39 +726,75 @@ def process_stack(loc, ids, initial=None, isotope='13C', c_each=False, verbose=T
 
     stem = loc.split('/')[-1]
 
-    ## write excel file ##
-    message("Trace processing complete.", verbose)
-    message("Writing full stack to Excel file.", verbose)
-    stack_array = np.array(stack)
-    df = pd.DataFrame(stack_array[1:], columns=stack_array[0], index=header[1])
-    writer = pd.ExcelWriter(f"{loc}/{stem}_{isotope}.xlsx", engine='xlsxwriter')
-    df = df.T
-    # df['mean'] = df.mean(axis=1)
-    # header[0].append('mean')
-    # header[1].append('mean')
-    df.to_excel(writer, sheet_name='trace', startrow=1)
-    wb = writer.book
-    ws = writer.sheets['trace']
-    ws.write(0, 0, 'trace')
-    ws.write(1, 0, 'ppm')
-    for i, item in enumerate(header[0]):
-        ws.write(0, i + 1, item)
-    if os.path.exists(loc + '/cfg.txt'):
-        # Write reference ppm config
-        message("Writing reference peak config.", verbose)
-        cfgsheet = wb.add_worksheet('cfg')
-        with open(loc + '/cfg.txt', 'r') as rf:
-            for i, line in enumerate(rf):
-                l = line.strip('\n').split('\t')
-                cfgsheet.write(i, 0, l[0])
-                cfgsheet.write(i, 1, l[1])
+    fig = plt.figure(figsize=(15,11))
+    ax = plt.axes(projection='3d')
+    ax.grid(False)
+    if iso == "13C":
+        xrange = ppm.shape[0]
+        # xrange = CURVE_FIT_RESOLUTION
+        xmin = 0
+        xmax = 100
+        lcol = 'indigo'
     else:
-        message("Config file not found.", verbose)
-    traj.to_excel(writer, sheet_name='area', index=False)
-    writer.save()
-    message(f"Completed successfully. Output: {loc}/{stem}_{isotope}.xlsx", verbose)
+        xrange = ppm.shape[0]
+        xmin = 0
+        xmax = 12
+        lcol = 'turquoise'
+    pp_array = np.linspace(ppm[0], ppm[-1], num=xrange)
+    plot_ppm = pp_array[(pp_array <= xmax) & (pp_array >= xmin)]
+    verts = []
+    for i in range(len(curves)-1, -1, -1):
+        curve = curves[i][(pp_array <= xmax) & (pp_array >= xmin)]
+        verts.append(list(zip(plot_ppm, curve)))
+    poly = mpl.collections.PolyCollection(verts, edgecolors=lcol, linewidths=0.3)
+    poly.set_alpha(0.7)
+    ax.add_collection3d(poly, zs=header[1][::-1], zdir='y')
+    ax.set_xlabel(f"{iso} chemical shift (ppm)")
+    ax.set_xlim3d(xmax, xmin)
+    ax.set_ylabel("Time (h)")
+    ax.set_ylim3d(0, max(header[1]))
+    ax.set_zlabel("NMR signal (unitless)")
+    ax.set_zlim3d(min([min(cv) for cv in curves]), max([max(cv) for cv in curves]))
+    plt.show()
+    plt.close('all')
 
-def detect_spectra(isotope='13C', init=11):
+    ax = traj.plot(x='Time', y=list(traj.columns)[2:], marker='.')
+    ax.set_xlabel("Time (h)")
+    ax.set_ylabel("NMR signal (unitless)")
+    plt.show()
+    plt.close('all')
+
+    ## write excel file ##
+    message("Trace processing complete.", vb)
+    if not dry_run:
+        message("Writing full stack to Excel file.", vb)
+        stack_array = np.array(stack)
+        df = pd.DataFrame(stack_array[1:], columns=stack_array[0], index=header[1])
+        writer = pd.ExcelWriter(f"{loc}/{stem}_{iso}.xlsx", engine='xlsxwriter')
+        df = df.T
+        df.to_excel(writer, sheet_name='trace', startrow=1)
+        wb = writer.book
+        ws = writer.sheets['trace']
+        ws.write(0, 0, 'trace')
+        ws.write(1, 0, 'ppm')
+        for i, item in enumerate(header[0]):
+            ws.write(0, i + 1, item)
+        if os.path.exists(f'{loc}/cfg_{iso}.txt'):
+            # Write reference ppm config
+            message("Writing reference peak config.", vb)
+            cfgsheet = wb.add_worksheet('cfg')
+            with open(f'{loc}/cfg_{iso}.txt', 'r') as rf:
+                for i, line in enumerate(rf):
+                    l = line.strip('\n').split('\t')
+                    cfgsheet.write(i, 0, l[0])
+                    cfgsheet.write(i, 1, l[1])
+        else:
+            message("Config file not found.", vb)
+        traj.to_excel(writer, sheet_name='area', index=False)
+        writer.save()
+        message(f"Completed successfully. Output: {loc}/{stem}_{iso}.xlsx", vb)
+
+def detect_spectra(iso='13C', init=11):
     """Returns a list of spectra IDs for the given isotope."""
     iso_spectra = []
     dirs = glob.glob('*/')
@@ -577,26 +804,27 @@ def detect_spectra(isotope='13C', init=11):
             try:
                 dic, data = ng.bruker.read(fn)
                 udic = ng.bruker.guess_udic(dic, data)
-                if udic[0]['label'] == isotope and udic[0]['encoding'] == 'direct':
+                if (udic[0]['label'] == iso \
+                        and udic[0]['encoding'] == 'direct' \
+                        and dic['acqus']['PULPROG'] != 'zgpr_llc'):
                     iso_spectra.append(fn)
             except OSError:
                 pass
     return iso_spectra
 
-def main(iso, init, calibrate_each):
+def main(iso, init):
     """Call stack processing function."""
     print("Welcome to NMR processing pipeline.\n")
-    if iso not in ("1H", "13C", "31P"):
+    if iso not in ("1H", "13C"):
         print("Isotope not recognized.")
         return
     loc = os.getcwd()
-    indices = detect_spectra(isotope=iso, init=init)
+    indices = detect_spectra(iso=iso, init=init)
     print("Beginning calibration with following parameters:")
     print("\t- Directory: " + loc)
     print(f"\t- {iso} spectrum IDs: " + ', '.join(indices))
     print("\t- Initial timepoint reference: " + init)
-    process_stack(loc, indices, initial=init, isotope=iso,
-            c_each=calibrate_each, verbose=True)
+    process_stack(loc, indices, initial=init, iso=iso, vb=True)
 
 def handle_args(args):
     if len(args) < 1:
@@ -625,10 +853,8 @@ def handle_args(args):
     else:
         init = '11'
     if len(args) > 2:
-        if args[2] == '-ce':
-            return iso, init, True
         print("Ignoring excess arguments: " + " ".join(args[2:]))
-    return iso, init, False
+    return iso, init
 
 if __name__ == "__main__":
     main(*handle_args(sys.argv[1:]))

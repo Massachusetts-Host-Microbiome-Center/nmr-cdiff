@@ -10,20 +10,6 @@ function plotFluxBidirectional (stem, snin, snout)
 % Output:
 %  - <stem + ".svg"> is the area plot
 %
-% Copyright 2021 Massachusetts Host-Microbiome Center
-%
-% Licensed under the Apache License, Version 2.0 (the "License");
-% you may not use this file except in compliance with the License.
-% You may obtain a copy of the License at
-%
-%     http://www.apache.org/licenses/LICENSE-2.0
-%
-% Unless required by applicable law or agreed to in writing, software
-% distributed under the License is distributed on an "AS IS" BASIS,
-% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-% See the License for the specific language governing permissions and
-% limitations under the License.
-%
 
 fn = stem + ".xlsx";
 
@@ -49,7 +35,7 @@ Vo = -1*abs(Vo);
 %A = V ./ vsum;
 
 cmap = getColor('custom');
-% color order for specific metabolites %
+%% color order for specific metabolites %%
 cmapAla = [ % for alanine
     [74 153 255];  % ALT
     [147 206 255]; % VPT
@@ -67,15 +53,15 @@ cmapPyr = [
     [162 62 0]; % LDH
 ]./255.;
 cmapAtp = [
-    [253 0 80]; % acetate kinase
-    [253 0 80]; % [255 118 116]; % Acexp
     [28 18 195]; % [72 84 248]; %3pgk
-    [28 18 195]; %pep
-    [127 127 127]; % Rnf
+    [28 18 195]; %pyr kinase
+    [253 0 80]; % acetate kinase
+    [200 200 200]; % ATP synthase
     [75 223 46]; % oxleu
+    [0 128 128]; % oxval
     [245 202 61]; % buty
-    [50 50 50]; % propio
-    [147 206 255]; % VPT
+    [50 50 50]; % oxthr
+    [50 50 50]; % oxile
     [53 236 191];  % WLP
     [28 18 195]; %glyco
     [0 128 128]; % leuTSP
@@ -112,8 +98,8 @@ elseif strcmp(stem, "alaflux")
     mtik = [-0.6 0 0.6];
 elseif strcmp(stem, "atpflux")
     cmap = cmapAtp;
-    mlim = [0 8];
-    mtik = [0 8];
+    mlim = [0 10];
+    mtik = [0 2 4 6 8 10];
 elseif strcmp(stem, "nadhflux")
     cmap = cmapNadh;
     mlim = [-6 6];
@@ -122,15 +108,17 @@ end
 
 disp("Plotting...");
 % set figure resolution
-wi = 0.8;     % width in inches
-hi = 0.92;     % height in inches
+wi = 1.4;     % width in inches
+hi = 1.5;     % height in inches
 dpi = 300;  % dpi resolution
 f = figure('PaperUnits', 'inches', 'PaperPosition', [0 0 wi hi]);
 hold on;
-box on;
+box off;
 a1 = area(T, Vi, 'LineStyle', 'none', 'FaceAlpha', 1);
 a2 = area(T, Vo, 'LineStyle', 'none', 'FaceAlpha', 1);
-yline(0, '--', 'LineWidth', 0.5, 'Color', "#8C8C8C");
+if ~strcmp(stem, "atpflux")
+    yline(0, '--', 'LineWidth', 0.5, 'Color', "#8C8C8C");
+end
 xlim([0 36]);
 ylim(mlim);
 yticks(mtik);
@@ -141,11 +129,15 @@ xticks(0:12:36);
 ax = gca;
 ax.LineWidth = 0.5;
 ax.FontSize = 5;
+ax.TickDir = 'out';
+set(ax,'fontname','Arial');
+
 %ax.FontWeight = 'bold';
 colororder(cmap);
 
 %legend(N, 'Location', 'northeast');
+pf = "/mnt/panfs/groups/cctm/apavao/output/dfba/";
 disp("Writing plot...");
-print(f, stem, "-dsvg");
+print(f, pf + stem, "-dsvg");
 disp("Done.");
 end
