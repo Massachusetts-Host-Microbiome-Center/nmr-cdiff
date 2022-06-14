@@ -3,12 +3,11 @@ function plotGroupedRxns (fn, sn, lbn, ubn, cmap, outf)
 % This function is not flexible. You must edit the code below to
 %    add, remove, or recategorize reactions from tracking. All ordering
 %    and assignment is done by the column indices in the input file.
-% SEE Fig. 2A
+% SEE Fig. 3b
 %
 % Parameters:
 %  - fn is the filename of the dFBA data in NMRdata/dfba
 %  - sn, lbn, ubn are the sheet names for the fluxes and FVA lower/upper bounds
-%  - cfg_nm is the name of the chemical used for time axis calibration
 %  - cmap is the colormap for the reaction labels
 %  - outf is the filename of the output file
 %
@@ -51,55 +50,38 @@ if plotErrorRegions
 end
 
 % REORDER TILES IF DESIRED
-%tiles = [1 3 5 7 2 4 6 8];
 tiles = 1:8;
 
 % PLOT FLUXES
 % set figure resolution
 wi = 1.8; %1.1;     % width in inches
-% hi = 3.6; %2.25;     % height in inches
-hi = 1.8;
+hi = 3.6; %2.25;     % height in inches
 dpi = 300;  % dpi resolution
 f = figure('PaperUnits', 'inches', 'PaperPosition', [0 0 wi hi]);
-% t = tiledlayout(8, 1, 'TileSpacing', 'normal', 'Padding', 'none');
-t = tiledlayout(3, 1, 'TileSpacing', 'normal', 'Padding', 'none');
-
-% ax = nexttile(tiles(5));
-% yline(ax, 0, ':', 'LineWidth', 0.25);
+t = tiledlayout(8, 1, 'TileSpacing', 'normal', 'Padding', 'none');
 
 % set y-axis scale for panels
-% ymaxs = [8 4 1 3 2 1 4 2]; % [5 3 2 2 1 1 1 1];
-% ytiks = [8 4 1 3 2 1 4 2];
-% ymins = [0 0 0 0 0 0 0 -0.25];
-ymaxs = [4 2 2];
-ytiks = ymaxs;
-ymins = [0 0 -0.25];
+ymaxs = [8 4 1 3 2 1 4 2];
+ytiks = [8 4 1 3 2 1 4 2];
+ymins = [0 0 0 0 0 0 0 -0.25];
 
 % define reaction groupings
 for i = 1:size(L, 1)
-    % vid = 1;  % ATP synth
-    % if ismember(i, [1 2 3]) % Ox carb
-    %     vid = 2;
-    % elseif ismember(i, [4 12]) % WLP
-    %     vid = 4;
-    % elseif ismember(i, [5 14]) % Rnf
-    %     vid = 7;
-    % elseif ismember(i, [6 15]) % ALT   % 14 for Thr
-    %     vid = 8;
-    % elseif ismember(i, [7]) % Ox stickland   % 17 for Thr
-    %     vid = 3;
-    % elseif ismember(i, [8 9]) % Red stickland  % 15 16 18 for Thr
-    %     vid = 5;
-    % elseif ismember(i, [10 11]) % 13 % Red carb
-    %     vid = 6;
-    % end
-    vid = 0;
-    if ismember(i, [1])
-      vid = 1;
-    elseif ismember(i, [7 8])
-      vid = 2;
-    elseif ismember(i, [6 15])
-      vid = 3;
+    vid = 1;  % ATP synth
+    if ismember(i, [1 2 3]) % Ox carb
+        vid = 2;
+    elseif ismember(i, [4 12]) % WLP
+        vid = 4;
+    elseif ismember(i, [5 14]) % Rnf
+        vid = 7;
+    elseif ismember(i, [6 15]) % ALT   % 14 for Thr
+        vid = 8;
+    elseif ismember(i, [7]) % Ox stickland   % 17 for Thr
+        vid = 3;
+    elseif ismember(i, [8 9]) % Red stickland  % 15 16 18 for Thr
+        vid = 5;
+    elseif ismember(i, [10 11]) % 13 % Red carb
+        vid = 6;
     end
 
     if vid ~= 0

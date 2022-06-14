@@ -3,9 +3,10 @@
 % The time axis is normalized to the metabolic onset of cfg_pk.
 %
 % Parameters:
-%  - stem is the filename stem of the spectra in NMRdata
+%  - stem is the filename stem of the run
 %  - cfg_pk is the 1H chemical shift used for time axis calibration
 %  - cfg_nm is the name of the chemical used for time axis calibration
+%  - outpath is the filepath for the output
 %
 % This script requires 1H and 13C spectra, given by <stem + "_1H.xlsx"> and
 % <stem + "_13C.xlsx">, to be present in the NMRdata folder.

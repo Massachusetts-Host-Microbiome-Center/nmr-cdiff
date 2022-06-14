@@ -136,8 +136,7 @@ set(ax,'fontname','Arial');
 colororder(cmap);
 
 %legend(N, 'Location', 'northeast');
-pf = "/mnt/panfs/groups/cctm/apavao/output/dfba/";
 disp("Writing plot...");
-print(f, pf + stem, "-dsvg");
+print(f, stem, "-dsvg");
 disp("Done.");
 end
