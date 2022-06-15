@@ -45,6 +45,33 @@ from trajectories import call_fit, fit_trajectories
 SCDIR = os.path.dirname(__file__)   # location of script
 BOLD = xl.styles.Font(bold=True)
 
+tracked_reactions = [
+    "ID_391", # Enolase
+    "ID_53",  # PFOR
+    "ID_280", # Ac Kinase
+    "ID_326", # WLP
+    "RNF-Complex", # RNF
+    "ID_336", # ALT
+    "RXN-19534",  # Ox Leu
+    "ICCoA-DHG-EB",  # Red Leu
+    "ID_314",  # Pro Red
+    "ID_383",  # EtOH dehydrogenase
+    "BUK",     # Butyrate kinase
+    "Sec_h2",   # h2 evolution
+    "ATP_sink", # ATP objective
+    "ATPsynth4_1", #ATP synthase
+    "ID_575", #GDH
+    # "Ex_biomass",
+]
+
+tracked_metabolites = [
+    "alaL", #L-alanine
+    "gluL", #L-glutamate
+    "atp",  #ATP
+    "pyr",  #Pyruvate
+    "nh3",  #Ammonia
+]
+
 metmap = {
     'Glucose': 'glc',
     'Acetate': 'ac',
@@ -410,24 +437,7 @@ methods = {
     'pfba': pfba
 }
 
-tracked = [
-    "ID_391", # Enolase
-    "ID_53",  # PFOR
-    "ID_280", # Ac Kinase
-    "ID_326", # WLP
-    "RNF-Complex", # RNF
-    "ID_336", # ALT
-    "RXN-19534",  # Ox Leu
-    "ICCoA-DHG-EB",  # Red Leu
-    "ID_314",  # Pro Red
-    "ID_383",  # EtOH dehydrogenase
-    "BUK",     # Butyrate kinase
-    "Sec_h2",   # h2 evolution
-    "ATP_sink", # ATP objective
-    "ATPsynth4_1", #ATP synthase
-    "ID_575", #GDH
-    # "Ex_biomass",
-]
+tracked = tracked_reactions
 
 dfba_kwargs = {
     'modelfile': f'{SCDIR}/../../data/icdf843.json',
@@ -460,5 +470,5 @@ if __name__ == "__main__":
                     params[j].update(ele)
             dfba_main(
                 params, tracked, fba_method=methods[method], **dfba_kwargs,
-                prop_ids=["alaL", "gluL", "atp", "pyr", "nh3"]
+                prop_ids=tracked_metabolites
             )
