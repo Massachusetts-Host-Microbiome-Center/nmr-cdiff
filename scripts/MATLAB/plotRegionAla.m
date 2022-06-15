@@ -13,6 +13,20 @@ function plotRegionsAla (fn, ppm_min, ppm_max, t_min, t_max, yaw, pitch, cmap, o
 % Output:
 %  - <outf> is the waterfall plot of the timecourse
 %
+% Copyright 2021-2022 Massachusetts Host-Microbiome Center
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+%
 
 r = 0.4; %4;  % number of RMSE for minimum peak prominence = 3
 tolerance = 0.035; %0.45; % 0.5; %0.015 range around reference ppm
