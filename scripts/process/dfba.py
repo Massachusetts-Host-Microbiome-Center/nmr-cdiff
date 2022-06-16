@@ -462,7 +462,7 @@ if __name__ == "__main__":
         else:
             dirs = [fp.rstrip('/') for fp in args]
             params = [{}, {}, {}]
-            for i, tscale in enumerate(synchronizers(dirs, stretch=True, plot=True)):
+            for i, tscale in enumerate(synchronizers(dirs, stretch=True, plot=False)):
                 filepath = dirs[i]
                 basename = os.path.basename(filepath)
                 curves = fit_trajectories(filepath, tscale=tscale, plot=True)

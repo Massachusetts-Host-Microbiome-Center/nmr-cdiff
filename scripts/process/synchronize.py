@@ -35,7 +35,7 @@ import scipy
 from curveshapes import logi_c, inv_logi_c
 from process import main as process
 
-def synchronizers(runs, stretch=True, plot=True):
+def synchronizers(runs, stretch=True, plot=False):
     """Synchronize spectra for downstream analyses.
 
     Parameters:

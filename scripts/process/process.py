@@ -244,7 +244,7 @@ def shift_params(s, *args):
             param[0] -= s
     return args
 
-def peak_fit(dic, data, history, r=6, plot=True, vb=False):
+def peak_fit(dic, data, history, r=6, sep=0.005, plot=True, vb=False):
     """Peak-pick NMR spectrum.
     Includes peak-picking, peak assignment, and integration functionality. The
     reference peaks to be fit should be specified in cfg_{isotope}.txt and
@@ -297,7 +297,7 @@ def peak_fit(dic, data, history, r=6, plot=True, vb=False):
     # ---------------------------- PEAK-PICKING -----------------------------
     pthres = r*rmse(data[(ppm <= 160) & (ppm >= 130)])
     shifts, cIDs, params, amps = ng.analysis.peakpick.pick( # Find peaks
-        data, pthres=pthres, msep=(p2i_interval(0.005),), algorithm='thres',
+        data, pthres=pthres, msep=(p2i_interval(sep),), algorithm='thres',
         est_params=True, lineshapes=['g'], cluster=True,
         c_ndil=p2i_interval(0.3), table=False)
     amps = np.array([data.real[a] for a in shifts])

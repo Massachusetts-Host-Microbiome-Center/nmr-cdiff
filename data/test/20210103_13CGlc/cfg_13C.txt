@@ -1,0 +1,15 @@
+98.6607	Glucose
+94.844	Glucose
+78.585	Glucose
+76.9841	Glucose
+75.5848	Glucose
+74.1522	Glucose
+72.4053	Glucose
+63.4031	Glucose
+60.2145	Ethanol
+19.66	Ethanol
+162.8	Bicarbonate
+25.9762	Acetate
+53.425	Alanine
+18.78	Alanine
+127.3	CO2
