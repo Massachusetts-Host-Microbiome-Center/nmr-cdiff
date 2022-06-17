@@ -123,11 +123,14 @@ def calibrate_process(loc, item, acq1, isotope, verbose=True):
     dic, data = ng.fileio.pipe.read(pipe_output.stdout)
 
     ## LOAD CALIBRATION PARAMETERS AND PHASE SHIFT
-    calibrations = pd.read_csv(f"{SCDIR}/calibrations.txt", sep='\t', dtype='str')
-    rundate = runf.split('_')[0]
-    calibr_entry = calibrations.loc[(calibrations["run"] == rundate) \
-                                    & (calibrations["isotope"] == isotope)]
-    run_calibrated = calibr_entry.shape[0] >= 1
+    if os.path.isfile(f"{SCDIR}/calibrations.txt"):
+        calibrations = pd.read_csv(f"{SCDIR}/calibrations.txt", sep='\t', dtype='str')
+        rundate = runf.split('_')[0]
+        calibr_entry = calibrations.loc[(calibrations["run"] == rundate) \
+                                        & (calibrations["isotope"] == isotope)]
+        run_calibrated = calibr_entry.shape[0] >= 1
+    else:
+        run_calibrated = False
     if not run_calibrated:
         p0, p1 = ng.process.proc_autophase.manual_ps(data, notebook=False)
     else:
