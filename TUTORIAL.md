@@ -9,9 +9,10 @@ This tutorial assumes a working knowledge of the command line. The instructions 
 
 ### Installing the dependencies
 
-Make sure all requirements are satisfied in the "Installation" and "Dependencies" sections of [README.md](README.md): 
+Make sure all requirements are satisfied in the "Installation" and "Dependencies" sections of [README.md](README.md). A c-shell environment (csh/tcsh) must be activated when installing NMRPipe and working with `process.py`: 
 1. Install [NMRPipe](https://www.ibbr.umd.edu/nmrpipe/install.html). On a Mac, the installation process should look something like this:
     ```
+    csh
     cd
     mkdir nmr
     cd nmr
