@@ -104,8 +104,12 @@ def calibrate_process(loc, item, acq1, isotope, verbose=True):
 
     runf = loc.split('/')[-1]
     ## GET INITIAL TIMESTAMP ##
-    time0 = datetime.datetime.fromtimestamp(
-        os.path.getmtime(f"{loc}/{acq1}/pulseprogram"))
+    with open(f"{loc}/{acq1}/acqus", 'r') as rf:
+        for line in rf:
+            if line.startswith("$$ 202"):
+                time0 = datetime.datetime.strptime(line[3:22], "%Y-%m-%d %H:%M:%S")
+    # time0 = datetime.datetime.fromtimestamp(
+    #     os.path.getmtime(f"{loc}/{acq1}/pulseprogram"))
     message("Loaded initial timestamp.", verbose)
 
     ## GET BRUKER PARAMS (Number of Scans) ##
@@ -147,9 +151,12 @@ def calibrate_process(loc, item, acq1, isotope, verbose=True):
 
     ## CALIBRATE PPM SHIFT IF NECESSARY ##
     if not run_calibrated:
-        ref_shift = 72.405
-        print("Find the actual ppm shift of the glucose peak with" \
-            f"reference shift {ref_shift}.")
+        print("Find the experimental ppm shift of a reference peak to " \
+              "calibrate the chemical shift axis.")
+        ref_shift = input("Type the reference ppm shift of the peak to " \
+            "calibrate: ")
+        ref_shift = float(ref_shift)
+        print("Now, find the experimental shift of that peak.")
         print("Note the x-coordinate, then close the window.")
         uc = ng.pipe.make_uc(dic, data, dim=0)
         plot_datasets(uc.ppm_scale(), [data.real], ppm_bounds=ppm_bounds)
@@ -157,6 +164,7 @@ def calibrate_process(loc, item, acq1, isotope, verbose=True):
         actual_shift = float(calib)
 
     calibration_shift = float(ref_shift) - float(actual_shift)
+    print(f"Shifting by {calibration_shift} ppm.")
     uc = ng.pipe.make_uc(dic, data, dim=0)
     ppm = uc.ppm_scale()
     return calibration_shift, time0, [p0, p1], ppm
@@ -362,7 +370,7 @@ def peak_fit(dic, data, history, r=6, sep=0.005, plot=True, vb=False):
     params = np.array(params)[mask]
     cIDs = np.array(cIDs, dtype='l')[mask]
     amps = np.array(amps)[mask]
-    if plot:
+    if False:
         """Plot found peaks."""
         plot_with_labels(ppm, data.real, shifts, cIDs)
 
@@ -490,7 +498,7 @@ def peak_fit(dic, data, history, r=6, sep=0.005, plot=True, vb=False):
             args[1] = shift_params(lb, *args[1])
             args[2] = shift_params(lb, *args[2])
             nparams, namps, found = curve_fit(ndic, ndata, *args)
-            if plot: # plot fit peaks with cluster labels over the data.
+            if False: # plot fit peaks with cluster labels over the data.
                 nppm = ng.pipe.make_uc(ndic, ndata, dim=0).ppm_scale()
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
@@ -579,7 +587,7 @@ def ridge_trace(dic, data, wr=0.01, plot=True):
 
     return signals
 
-def process_trace(loc, item, cf, ps, history, overwrite=False):
+def process_trace(loc, item, cf, ps, history, overwrite=True):
     """Process a single 1D 13C-NMR trace.
 
     Parameters:
@@ -598,11 +606,15 @@ def process_trace(loc, item, cf, ps, history, overwrite=False):
     phases -- p0, p1 phase shift
     """
     ## GET TIMESTAMP ##
-    start_time = datetime.datetime.fromtimestamp(
-        os.path.getmtime(f"{loc}/{item}/pulseprogram"))
-    end_time = datetime.datetime.fromtimestamp(
-        os.path.getmtime(f"{loc}/{item}/acqus"))
-    timestamp = start_time + (end_time - start_time)/2
+    # start_time = datetime.datetime.fromtimestamp(
+    #     os.path.getmtime(f"{loc}/{item}/pulseprogram"))
+    # end_time = datetime.datetime.fromtimestamp(
+    #     os.path.getmtime(f"{loc}/{item}/acqus"))
+    # timestamp = start_time + (end_time - start_time)/2
+    with open(f"{loc}/{item}/acqus", 'r') as rf:
+        for line in rf:
+            if line.startswith("$$ 202"):
+                timestamp = datetime.datetime.strptime(line[3:22], "%Y-%m-%d %H:%M:%S")
 
     ## GET BRUKER PARAMS (NS) ##
     bruker_dic, _ = ng.bruker.read(f"{loc}/{item}")
@@ -642,8 +654,9 @@ def process_trace(loc, item, cf, ps, history, overwrite=False):
 
         # Calibrate PPM shift
         ppm = ng.pipe.make_uc(dic, data, dim=0).ppm_scale()
-        shift = cf*data.shape[0]/(max(ppm) - min(ppm))
-        dic, data = ng.process.pipe_proc.ls(dic, data, shift, sw=False)
+        if cf != 0:
+            shift = cf*data.shape[0]/(max(ppm) - min(ppm))
+            dic, data = ng.process.pipe_proc.ls(dic, data, shift, sw=False)
 
         # Write for future use
         ng.fileio.pipe.write(f"{loc}/{item}/ft", dic, data, overwrite=True)
@@ -651,11 +664,11 @@ def process_trace(loc, item, cf, ps, history, overwrite=False):
     # Pick, fit, and integrate peaks
     ppm = ng.pipe.make_uc(dic, data, dim=0).ppm_scale()
     if isotope == "13C":
-        # signals, curve = peak_fit(dic, data, history, plot=False, vb=True)
-        signals = ridge_trace(dic, data, plot=False)
+        signals, curve = peak_fit(dic, data, history, plot=True, vb=True)
+        # signals = ridge_trace(dic, data, plot=False)
         curve = data.real
     else:
-        signals = ridge_trace(dic, data, plot=False)
+        signals = ridge_trace(dic, data, plot=True)
         curve = data.real
 
     return ppm, data.real, timestamp, signals, n_scans, curve
@@ -665,7 +678,7 @@ def message(message, verbose):
     if verbose:
         print(message)
 
-def process_stack(loc, ids, initial=None, iso='13C', vb=True, dry_run=True):
+def process_stack(loc, ids, initial=None, iso='13C', vb=True, dry_run=False):
     """Process entire NMR stack and write to xlsx file.
 
     Parameters:

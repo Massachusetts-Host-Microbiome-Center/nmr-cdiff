@@ -211,9 +211,9 @@ def dfba_main(all_params, traced, fba_method=lsol, prop_ids=["alaL", "gluL"],
             rxn.upper_bound *= 0.03
     model.reactions.Ex_glc.upper_bound=0
 
-    params = {met: all_params[0][name] for name, met in metmap.items()}
-    par_lb = {met: all_params[1][name] for name, met in metmap.items()}
-    par_ub = {met: all_params[2][name] for name, met in metmap.items()}
+    params = {met: all_params[0][name] for name, met in metmap.items() if name in all_params[0]}
+    par_lb = {met: all_params[1][name] for name, met in metmap.items() if name in all_params[0]}
+    par_ub = {met: all_params[2][name] for name, met in metmap.items() if name in all_params[0]}
 
     timecourse = list(np.linspace(0, t_max, num=t_max*resolution+1))
     mets = [k for k in params]

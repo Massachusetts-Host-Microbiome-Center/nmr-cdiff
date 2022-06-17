@@ -38,7 +38,8 @@ from curveshapes import logi, logi_c, logi_sum, logi_flex
 from synchronize import synchronizers
 from get_color import get_cmap
 
-STANDARDS_FILE = '/Users/aj286/NMR/20220421_13CGlc_Standards'
+SCDIR = os.path.dirname(__file__)   # location of script
+STANDARDS_FILE = SCDIR + '/../../data/test/20220421_13CGlc_Standards'
 
 def find_substrate(basename):
     """Guess name, concentration of substrate from filename."""
@@ -80,7 +81,7 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
 
     # Process stack, will be written to an excel file
     if not os.path.exists(f'{filepath}/{basename}_13C.xlsx'):
-        process('13C', init, False)
+        process('13C', init)
 
     # Load "area" sheet of excel file
     areas = pd.read_excel(

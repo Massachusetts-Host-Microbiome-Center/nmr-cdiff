@@ -56,7 +56,7 @@ def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
         the plot (default: False).
 
     Returns a scale factor for each metabolite, representing the reciprocal of
-    the relative 13C signal enhancement of the metabolite with respect to the 
+    the relative 13C signal enhancement of the metabolite with respect to the
     substrate.
     """
     if filepath is None:
@@ -65,7 +65,7 @@ def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
 
     # Process standard curve spectra, will be written to an excel file
     if not os.path.exists(f'{filepath}/{basename}_13C.xlsx'):
-        process('13C', '1', False)
+        process('13C', '1')
 
     # Load "area" sheet of excel file
     areas = pd.read_excel(

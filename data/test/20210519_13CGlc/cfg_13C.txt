@@ -13,3 +13,6 @@
 53.425	Alanine
 18.78	Alanine
 127.3	CO2
+15.933	Butyrate
+22.0105	Butyrate
+42.2791	Butyrate
