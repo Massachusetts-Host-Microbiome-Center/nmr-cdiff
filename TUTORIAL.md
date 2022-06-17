@@ -48,7 +48,7 @@ Make sure all requirements are satisfied in the "Installation" and "Dependencies
 ### Test data
 
 One short unprocessed NMR run and two processed runs are included in the [test data](data/test) folder:
- - [20210103_13CGlc](data/test/20210103_13CGlc) : a short unprocessed glucose run  
+ - [20210519_13CGlc](data/test/20210519_13CGlc) : a short unprocessed glucose run  
  - [20210322_13CLeu](data/test/20210322_13CLeu) : a short processed leucine run  
  - [20220421_13CGlc_standards](data/test/20220421_13CGlc_standards) : a processed dataset of standard solutions supporting the dFBA analyses
 
@@ -60,20 +60,20 @@ We will begin by processing the NMR datasets using the [process.py](scripts/proc
 ```
 csh
 source nmr-cdiff/etc/env/bin/activate.csh 
-cd nmr-cdiff/data/test/20210103_13CGlc
-python ../../../scripts/process/process.py 13C 11
+cd nmr-cdiff/data/test/20210519_13CGlc
+python ../../../scripts/process/process.py 13C 52
 ```
-The program will identify the 13C scans and use scan 11 as the timestamp anchor.
+The program will identify the 13C scans and use scan 52 as the timestamp anchor.
 
 ### Find the calibration parameters
 Let's first find some calibration parameters to make processing go faster. 
 
-1. You will first be prompted for phase correction. Slide the p0 and p1 bars until the spectrum is well-phased. Press the "Set Phases" button, and close the window. For this spectrum, p0=84 and p1=81 were ideal values.  
+1. You will first be prompted for phase correction. Slide the p0 and p1 bars until the spectrum is well-phased. Press the "Set Phases" button, and close the window. For this spectrum, **p0=70.3** and **p1=99.9** were appropriate values.  
 
 2. Next, you will be prompted to calibrate the reference shift.
     - Find a well-separated peak in the reference 13C spectrum of Glucose. The peak at **72.405 ppm** appears suitable in [this reference spectrum from HMDB](https://hmdb.ca/spectra/nmr_one_d/166522).
     - In the plot that pops up from process.py, find the corresponding peak in the spectrum, which may be slightly shifted from 72.405 ppm. Use the zoom tool to locate the peak and cursor to find the chemical shift at the center of the peak. Write down the chemical shift and close the window.
-    - In the command line, type the chemical shift that you just wrote down. Hit return.
+    - In the command line, type the chemical shift that you just wrote down. Hit return. We found that **69.95 ppm** was the approximate experimental shift for this peak.
 
 These parameters will be stored to aid with processing each remaining spectrum in the run.
 
@@ -85,12 +85,12 @@ Processing will now begin, and should take several minutes. As each spectrum is 
 3. The SciPy routines executing the peak-fitting may occasionally print warnings. These can be ignored.  
 4. After peak picking and fitting is completed for each spectrum, the spectrum will be plotted with the curve-fit and peak assignments overlaid. Advanced users may wish to inspect this spectrum for proper curve-fitting. If curve-fitting is consistently poor, the parameters `r` and `sep` may be adjusted in the calls to `peak_fit` and `prominent` in `process.py`.  
 
-When processing is finished, the spectrum stacks will be plotted and trajectories the peaks in `cfg_13C.txt` will be displayed. Next, the processed output will be written to `20210103_13CGlc_13C.xlsx`.
+When processing is finished, the spectrum stacks will be plotted and trajectories the peaks in `cfg_13C.txt` will be displayed. Next, the processed output will be written to `20210519_13CGlc_13C.xlsx`.
 
 ### Process the 1H spectra
 Now, run the processing script for the 1H spectra.
 ```
-python ../../../scripts/process/process.py 1H 11
+python ../../../scripts/process/process.py 1H 52
 ```
 Follow the prompts as before.
 
@@ -101,8 +101,8 @@ matlab -nodisplay -nodesktop -batch "run('plot_stack.m');exit;"
 ```
 
 ### Additional processed runs
-- The run [`20210322_13CLeu`]('data/test/20210322_13CLeu') has already been processed for convenience.  
-- The run [`20220421_13CGlc_standards`]('data/test/20220421_13CGlc_standards') is a processed dataset of standard solutions supporting concentration estimates in the glucose run. The file `Concentrations.xlsx` in this directory contains the concentration of each compound in the processed spectra.
+- The run [`20210322_13CLeu`](data/test/20210322_13CLeu) has already been processed for convenience.  
+- The run [`20220421_13CGlc_standards`](data/test/20220421_13CGlc_standards) is a processed dataset of standard solutions supporting concentration estimates in the glucose run. The file `Concentrations.xlsx` in this directory contains the concentration of each compound in the processed spectra.
 
 ## Run the dFBA analyses (5 minutes)
 ### Overview of the script
@@ -118,7 +118,7 @@ Now that the runs are processed, we will simulate dFBA. The dFBA script will per
 Run the dFBA script, [`dfba.py`](scripts/process/dfba.py):
 ```
 cd ~/nmr-cdiff
-python scripts/process/dfba.py fba data/test/20210103_13CGlc_13C data/test/2021322_13CLeu_13C
+python scripts/process/dfba.py fba data/test/20210519_13CGlc_13C data/test/20210322_13CLeu_13C
 ```
 The first argument, `fba`, tells the script that we are computing a standard FBA solution at each time point. Next, we specify the directories containing the runs.
 
