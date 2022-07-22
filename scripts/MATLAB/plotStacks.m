@@ -186,7 +186,7 @@ pbaspect([3 2 1]);
 shading(Ax, 'interp');
 
 % 3. PLOT STEMS %
-for i = 1:size(cpd_ids, 1)
+for i = 1:size(unq_nms, 1)
   color = cMap(i, :);
   choice = all_cpd_ids == i;
   p_shift = all_shifts(choice);

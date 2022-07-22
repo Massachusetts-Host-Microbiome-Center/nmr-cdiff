@@ -43,6 +43,8 @@ cmap = {
     "gray": [127, 127, 127], # 17. gray
     "black": [0, 0, 0],       # 18. black
     "white": [255, 255, 255], # 19. white
+    "Acetate13C": [0, 0, 0],
+    "AcetateNA": [100, 100, 100],
 }
 
 def get_cmap():

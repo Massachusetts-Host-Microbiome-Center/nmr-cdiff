@@ -46,8 +46,9 @@ def find_substrate(basename):
     substrate_map = {
         # 13C-Compound: (Name, Concentration in MMM (mM)),
         '13CGlc': ('Glucose', 27.78),
-        '13CPro': ('Proline', 6.96), # 30. # 6.96
+        '13CPro': ('Proline', 6.96),
         '13CLeu': ('Leucine', 7.63),
+        '13CAc': ('Acetate13C', 13.445)
     }
     for k, v in substrate_map.items():
         if k in basename:
@@ -95,30 +96,32 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
     if tscale is not None:
         T = tscale(T)
 
-    if substrate == "foo": # "Proline": # Simple case were only substrate is measured
-        cest = pd.DataFrame()
-    else: # Substrate and products are scaled by standard curves
-        if substrate == "Leucine":
-            sfacts = {
-                "Isocaproate": 0.633,
-                "Isovalerate": 0.367,
-                "Isobutyrate": 0.170,
-            }
-        elif substrate == "Proline":
-            sfacts = {
-                "5-aminovalerate": 1.,
-            }
-        elif substrate == "Glucose":
-            sfacts = compute_standard_curves(filepath=spath)
-        pareas = areas[[c for c in areas.columns if c in sfacts]]
-        cest = pareas.apply(lambda col: col*sfacts[col.name], axis=0)
+    # Substrate and products are scaled by standard curves
+    if substrate == "Leucine":
+        sfacts = {
+            "Isocaproate": 0.633,
+            "Isovalerate": 0.367,
+            "Isobutyrate": 0.170,
+            "2-methylbutyrate": 0.3,
+        }
+    elif substrate == "Proline":
+        sfacts = {
+            "5-aminovalerate": 1.,
+        }
+    elif substrate == "Acetate13C":
+        sfacts = {
+            "AcetateNA": 0.5,
+        }
+    elif substrate == "Glucose":
+        sfacts = compute_standard_curves(filepath=spath)
+    pareas = areas[[c for c in areas.columns if c in sfacts]]
+    cest = pareas.apply(lambda col: col*sfacts[col.name], axis=0)
 
     cest = cest.fillna(0)
 
     # Scale spectra
     curves = dict()
-    curves_lb = dict()
-    curves_ub = dict()
+    curves_err = dict()
 
     if plot:
         fig = plt.figure(figsize=(2.5, 2), constrained_layout=True)
@@ -129,23 +132,29 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
     # Get substrate curve
     mask = (T >= 0) & (T <= 36)
     A = np.array(sareas)[mask]
-    popt, pcov = scipy.optimize.curve_fit(
-        logi_c, np.array(T[mask]), A, p0=[1000, -0.2, 12, 400]
-    )
+    if substrate == "Acetate13C":
+        popt, pcov = scipy.optimize.curve_fit(
+            logi, np.array(T[mask]), A, p0=[500, 0.2, 12]
+        )
+        gscale = (input_cx/popt[0])**np.array([1, 0, 0]) # only scale L and C
+    else:
+        popt, pcov = scipy.optimize.curve_fit(
+            logi_c, np.array(T[mask]), A, p0=[1000, -0.2, 12, 400]
+        )
+        gscale = (input_cx/(popt[0] + popt[3]))**np.array([1, 0, 0, 1]) # only scale L and C
     perr = np.sqrt(np.diagonal(pcov))
     data['popt'].append([substrate] + [f"{ele:.3f}" for ele in popt])
     data['perr'].append([substrate] + [f"{ele:.3f}" for ele in perr])
 
     # Scale signal to concentration using gscale array
-    gscale = (input_cx/(popt[0] + popt[3]))**np.array([1, 0, 0, 1]) # only scale L and C
     popt *= gscale
     perr *= gscale
     data['sopt'].append([substrate] + [f"{ele:.3f}" for ele in popt])
     data['serr'].append([substrate] + [f"{ele:.3f}" for ele in perr])
     curves[substrate] = popt
-    curves_lb[substrate] = popt - 1.96*perr
-    curves_ub[substrate] = popt + 1.96*perr
-    gscale = gscale[:-1] # products do not have C coefficient
+    curves_err[substrate] = perr
+    if substrate != "Acetate13C":
+        gscale = gscale[:-1] # products do not have C coefficient
 
     if plot:
         color = cmap[substrate]
@@ -168,34 +177,31 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
         perr = np.sqrt(np.diagonal(pcov))
         data['popt'].append([c] + [f"{ele:.3f}" for ele in popt])
         data['perr'].append([c] + [f"{ele:.3f}" for ele in perr])
-        if c in ["Isocaproate", "Isovalerate"]:
+        if c in ["Isocaproate", "Isovalerate", "5-aminovalerate"]:
             gscale = (input_cx*sfacts[c]/popt[0])**np.array([1, 0, 0])
         popt *= gscale
         perr *= gscale
         data['sopt'].append([c] + [f"{ele:.3f}" for ele in popt])
         data['serr'].append([c] + [f"{ele:.3f}" for ele in perr])
         curves[c] = popt
-        curves_lb[c] = popt - 1.96*perr
-        curves_ub[c] = popt + 1.96*perr
+        curves_err[c] = perr
+
+        ## Add curves for other oxidative BCAA fermentations
         if c == "Isovalerate":
-            iscale = (sfacts["Isobutyrate"]/sfacts[c])**np.array([1, 0, 0])
-            print(iscale)
-            popt_i = popt*iscale
-            perr_i = perr*iscale
-            data['sopt'].append(["Isobutyrate"] + [f"{e:.3f}" for e in popt_i])
-            data['serr'].append(["Isobutyrate"] + [f"{e:.3f}" for e in perr_i])
-            curves["Isobutyrate"] = popt_i
-            curves_lb["Isobutyrate"] = popt_i - 1.96*perr_i
-            curves_ub["Isobutyrate"] = popt_i + 1.96*perr_i
-            vscale = (-1)**np.array([0, 1, 0])
-            popt_v = popt_i*vscale
-            data['sopt'].append(["Valine"] + [f"{e:.3f}" for e in popt_v])
-            data['serr'].append(["Valine"] + [f"{e:.3f}" for e in perr_i])
-            curves["Valine"] = popt_v
-            curves_lb["Valine"] = popt_v - 1.96*perr_i
-            curves_ub["Valine"] = popt_v + 1.96*perr_i
-            print(popt, popt_i, popt_v)
-            print(perr, perr_i)
+            for subst, prod in [("Valine", "Isobutyrate"), ("Isoleucine", "2-methylbutyrate")]:
+                iscale = (sfacts[prod]/sfacts[c])**np.array([1, 0, 0])
+                popt_i = popt*iscale
+                perr_i = perr*iscale
+                data['sopt'].append([prod] + [f"{e:.3f}" for e in popt_i])
+                data['serr'].append([prod] + [f"{e:.3f}" for e in perr_i])
+                curves[prod] = popt_i
+                curves_err[prod] = perr_i
+                vscale = (-1)**np.array([0, 1, 0])
+                popt_v = popt_i*vscale
+                data['sopt'].append([subst] + [f"{e:.3f}" for e in popt_v])
+                data['serr'].append([subst] + [f"{e:.3f}" for e in perr_i])
+                curves[subst] = popt_v
+                curves_err[subst] = perr_i
 
         if plot:
             color = cmap[c]
@@ -218,9 +224,6 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
         elif substrate == "Proline":
             ax.set_yticks([0, 1, 2, 3, 4, 5, 6, 7])
             ax.set_yticks(list(np.arange(-0.5, 8, 0.5)), minor=True)
-        # elif substrate == "Proline":
-        #     ax.set_yticks([0, 10, 20, 30])
-        #     ax.set_yticks(list(range(-2, 33)), minor=True)
         elif substrate == "Leucine":
             ax.set_yticks([0, 1, 2, 3, 4, 5, 6, 7, 8])
             ax.set_yticks(list(np.arange(-0.5, 9, 0.5)), minor=True)
@@ -244,7 +247,7 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
                 segs = [o[0]] + [f"{k}pm{m}" for (k, m) in zip(o[1:], e[1:])]
                 wf.write(','.join(segs) + ','*(5-len(segs)) + '\n')
 
-    return curves, curves_lb, curves_ub
+    return curves, curves_err #curves_lb, curves_ub
 
 def call_fit(args):
     n_args = len(args)

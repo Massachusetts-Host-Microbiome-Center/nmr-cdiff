@@ -8051,8 +8051,8 @@
 "nh3_c":1.0,
 "thf_c":-1.0
 },
-"lower_bound":0.0,
-"upper_bound":1000.0,
+"lower_bound":0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -9796,7 +9796,7 @@
 "thrL_c":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000,
+"upper_bound":1000.0,
 "gene_reaction_rule":"CD630_25910"
 },
 {
@@ -9810,7 +9810,7 @@
 "thrL_c":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000,
+"upper_bound":1000.0,
 "gene_reaction_rule":"CD630_17920"
 },
 {
@@ -15464,7 +15464,7 @@
 "glyo_e":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -15863,8 +15863,8 @@
 "metabolites":{
 "ileL_e":-1.0
 },
-"lower_bound":0.0,
-"upper_bound":1000.0,
+"lower_bound":0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -16484,7 +16484,7 @@
 "at_e":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -16614,7 +16614,7 @@
 "succ_e":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -21413,7 +21413,7 @@
 "lacS_e":-1
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -21463,7 +21463,7 @@
 "buta_e":-1
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -21562,7 +21562,7 @@
 "h2s_e":-1
 },
 "lower_bound":0.0,
-"upper_bound":0.0,
+"upper_bound":1000,
 "gene_reaction_rule":""
 },
 {

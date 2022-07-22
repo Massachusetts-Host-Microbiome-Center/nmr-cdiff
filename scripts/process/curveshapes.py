@@ -71,4 +71,88 @@ def ddx_logi_flex(x, *argv):
         return sol + ddx_logi_flex(x, *argv[3:])  # multiple curves
 
 def inv_logi_c(x, L, k, x0, C):
+    """Evaluate the inverse of the logistic function at point x."""
     return -1/k*np.log(L/(x - C) - 1) + x0
+
+def dydL(x, L, k, x0, C=0):
+    """Logistic function partial derivative with respect to L."""
+    return 1/(1 + np.exp(-k*(x - x0)))
+
+def dydk(x, L, k, x0, C=0):
+    """Logistic function partial derivative with respect to k."""
+    return L*(x - x0)*np.exp(-k*(x - x0))/(1. + np.exp(-k*(x - x0)))**2
+
+def dydx0(x, L, k, x0, C=0):
+    """Logistic function partial derivative with respect to x0."""
+    return -L*k*np.exp(-k*(x - x0))/(1. + np.exp(-k*(x - x0)))**2
+
+def dydC(x, L, k, x0, C=0):
+    """Logistic function partial derivative with respect to C."""
+    return 1
+
+def err_logi(x, L, k, x0, C, del_L, del_k, del_x0, del_C):
+    """Evaluate standard error of logistic function at point x.
+
+    Parameters:
+    L, k, x0, C -- logistic function coefficients
+    del_L, del_k, del_x0, del_C -- standard error in logistic coefficients
+    """
+    coeffs = [L, k, x0, C]
+    L_term = (dydL(x, *coeffs)*del_L)**2
+    k_term = (dydk(x, *coeffs)*del_k)**2
+    x0_term = (dydx0(x, *coeffs)*del_x0)**2
+    C_term = (dydC(x, *coeffs)*del_C)**2
+    return np.sqrt(L_term + k_term + x0_term + C_term)
+
+def err_logi_flex(x, *argv):
+    """Evaluate standard error of logistic function at point x.
+    Handles case where the coefficient C is not provided (assume 0).
+    """
+    if len(argv) == 6:
+        return err_logi(x, *argv[:4], 0, *argv[4:], 0)
+    elif len(argv) == 8:
+        return err_logi(x, *argv)
+    else:
+        return None
+
+def dzdL(x, L, k, x0):
+    """Partial derivative of logistic functn. derivative with respect to L."""
+    return ddx_logi(x, L, k, x0)/L
+
+def dzdk(x, L, k, x0):
+    """Partial derivative of logistic functn. derivative with respect to k."""
+    da = 2*(x - x0)*np.exp(-k*(x - x0))/(1 + np.exp(-k*(x - x0)))
+    db = x0 - x
+    dc = 1/k
+    return ddx_logi(x, L, k, x0)*(da + db + dc)
+
+def dzdx0(x, L, k, x0):
+    """Partial derivative of logistic functn. derivative with respect to x0."""
+    da = 2*k*np.exp(-k*(x - x0))/(1 + np.exp(-k*(x - x0)))
+    db = -k
+    return ddx_logi(x, L, k, x0)*(da + db)
+
+def err_ddx_logi(x, L, k, x0, C, del_L, del_k, del_x0, del_C):
+    """Evaluate standard error of logistic function derivative at point x.
+    Ignores coefficient C.
+
+    Parameters:
+    L, k, x0, C -- logistic function coefficients
+    del_L, del_k, del_x0, del_C -- standard error in logistic coefficients
+    """
+    coeffs = [L, k, x0]
+    L_term = (dzdL(x, *coeffs)*del_L)**2
+    k_term = (dzdk(x, *coeffs)*del_k)**2
+    x0_term = (dzdx0(x, *coeffs)*del_x0)**2
+    return np.sqrt(L_term + k_term + x0_term)
+
+def err_ddx_logi_flex(x, *argv):
+    """Evaluate standard error of logistic function derivative at point x.
+    Handles case where the coefficient C is not provided (assume 0).
+    """
+    if len(argv) == 6:
+        return err_ddx_logi(x, *argv[:4], 0, *argv[4:], 0)
+    elif len(argv) == 8:
+        return err_ddx_logi(x, *argv)
+    else:
+        return None
