@@ -13,7 +13,7 @@ function plotRegionsAla (fn, ppm_min, ppm_max, t_min, t_max, yaw, pitch, cmap, o
 % Output:
 %  - <outf> is the waterfall plot of the timecourse
 %
-% Copyright 2021 Massachusetts Host-Microbiome Center
+% Copyright 2021-2022 Massachusetts Host-Microbiome Center
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
 % you may not use this file except in compliance with the License.
@@ -70,8 +70,8 @@ end
 Cpds = [cfg_pks cfg_ids];
 
 % plot surface
-wi = 1.7;     % width in inches
-hi = 1;     % height in inches
+wi = 2.3;     % width in inches
+hi = 1.4;     % height in inches
 dpi = 300;  % dpi resolution
 f = figure('PaperUnits', 'inches', 'PaperPosition', [0 0 wi hi]);
 xlim([ppm_min ppm_max]); %[0 200] %[18 27] %[50 80]
@@ -83,49 +83,6 @@ hold on;
 % initialize some variables for peak ID
 cpd_ids = unique(cfg_ids);
 cMap = cmap;
-
-disp("Identifying peaks...");
-all_ppm = [];   % vector of ppm values for all peaks
-all_pks = [];   % vector of heights for all peaks
-all_int = [];   % vector of integrals for all peaks
-all_tim = [];   % vector timepoints for peaks
-all_ind = [];   % compound id for each peak
-rel_conc = zeros(size(cpd_ids, 1), size(T, 1));  % rel conc over time
-abs_conc = zeros(size(cpd_ids, 1), size(T, 1));  % abs conc over time
-
-% identify and plot peaks
-for i = 1:size(Znorm,1)
-    Zvec = Znorm(i, :);
-    pks = zeros(size(cfg_pks, 1), 1);
-    ints = zeros(size(cfg_pks, 1), 1);
-    incl = zeros(size(cfg_pks, 1), 1);
-    thresh = r;%*meanDev(i);
-    for j = 1:size(cfg_pks,1)
-        rng = P > cfg_pks(j) - tolerance & P < cfg_pks(j) + tolerance;
-        result = max(Zvec .* rng');
-        if result >= thresh
-            pks(j) = result;
-            ints(j) = -1*trapz(P(rng), Zvec(rng));
-            incl(j) = 1;
-        end
-    end
-    % colors = zeros(size(pks, 1), 3);
-    % indices = zeros(size(pks, 1), 1);
-
-    incl = logical(incl);
-    pks_prop = pks ./ sum(pks);
-    all_ppm = [all_ppm; cfg_pks(incl)];  % vector of ppm values for all peaks
-    all_pks = [all_pks; pks(incl)];   % vector of heights for all peaks
-    all_int = [all_int; ints(incl)];
-%    all_pks_prop = [all_pks_prop; pks_prop(incl)];
-    all_tim = [all_tim; ones(sum(incl), 1)*T(i)];
-    all_ind = [all_ind; cfg_ids(incl)];   % compound id for each peak
-
-    for j = 1:size(rel_conc, 1)
-        rel_conc(j, i) = sum(pks_prop(cfg_ids == j));
-        abs_conc(j, i) = sum(ints(cfg_ids == j));
-    end
-end
 
 disp("Plotting...");
 % plot surfaces
@@ -145,9 +102,10 @@ for j = 1:size(cfg_pks,1)
     C2(:, rng) = 0.5 + cfg_ids(j);
 end
 p = waterfall(P, T, Zsurf, C2); %'EdgeColor', 'none'
+p.LineWidth = 1;
 Z2 = Znorm(T >= t_min & T <= t_max, P >= ppm_min & P <= ppm_max);
-plot3([53.8; 53.8].*ones(2, numel(T)), [T T]', [-5*ones(numel(T), 1) Z2(:, 1)]', 'Marker', 'none', 'LineWidth', 0.5, 'Color', "#C2C2C2");
-plot3([53.0; 53.0].*ones(2, numel(T)), [T T]', [-5*ones(numel(T), 1) Z2(:, end)]', 'Marker', 'none', 'LineWidth', 0.5, 'Color', "#C2C2C2");
+plot3([53.8; 53.8].*ones(2, numel(T)), [T T]', [-5*ones(numel(T), 1) Z2(:, 1)]', 'Marker', 'none', 'LineWidth', 1, 'Color', "#C2C2C2");
+plot3([53.0; 53.0].*ones(2, numel(T)), [T T]', [-5*ones(numel(T), 1) Z2(:, end)]', 'Marker', 'none', 'LineWidth', 1, 'Color', "#C2C2C2");
 colormap(nc); % gray
 caxis([0 size(unq_nms, 1)+1]);
 p.LineWidth = 0.5;
@@ -159,7 +117,8 @@ grid(Ax, 'off');
 Ax.XDir = 'reverse';
 Ax.Color = 'none';
 Ax.LineWidth = 0.5;
-Ax.FontSize = 5;
+Ax.FontSize = 7;
+set(Ax,'fontname','Arial');
 %Ax.FontWeight = 'bold';
 yticks(t_min:12:t_max);
 yticklabels(0:12:(t_max-t_min));

@@ -204,14 +204,14 @@
 "formula":"C6H14N4O2"
 },
 {
-"id":"his_e",
+"id":"hisL_e",
 "name":"L-histidine",
 "compartment":"e",
 "charge":0,
 "formula":"C6H9N3O2"
 },
 {
-"id":"his_c",
+"id":"hisL_c",
 "name":"L-histidine",
 "compartment":"c",
 "charge":0,
@@ -5720,6 +5720,81 @@
 "id":"2hbcoa_c",
 "name":"2-hydroxybutyryl-CoA",
 "compartment":"c0"
+},
+{
+"id":"h2s_e",
+"name":"hydrogen sulfide",
+"compartment":"e"
+},
+{
+"id":"phaccoa_c",
+"name":"Phenylacetyl-CoA",
+"compartment":"c"
+},
+{
+"id":"pacp_c",
+"name":"Phenylacetyl phosphate",
+"compartment":"c"
+},
+{
+"id":"indpyr_c",
+"name":"Indolepyruvate",
+"compartment":"c"
+},
+{
+"id":"indaccoa_c",
+"name":"Indoleacetyl-CoA",
+"compartment":"c"
+},
+{
+"id":"indap_c",
+"name":"Indoleacetyl phosphate",
+"compartment":"c"
+},
+{
+"id":"impyr_c",
+"name":"Imidazolepyruvate",
+"compartment":"c"
+},
+{
+"id":"imzacoa_c",
+"name":"Imidazoleacetyl-CoA",
+"compartment":"c"
+},
+{
+"id":"imzac_c",
+"name":"Imidazoleacetate",
+"compartment":"c"
+},
+{
+"id":"imzac_e",
+"name":"Imidazoleacetate",
+"compartment":"e"
+},
+{
+"id":"hphaccoa_c",
+"name":"4-hydroxyphenylacetyl-CoA",
+"compartment":"c"
+},
+{
+"id":"hphap_c",
+"name":"4-hydroxyphenylacetyl phosphate",
+"compartment":"c"
+},
+{
+"id":"hphac_c",
+"name":"4-hydroxyphenylacetate",
+"compartment":"c"
+},
+{
+"id":"hphac_e",
+"name":"4-hydroxyphenylacetate",
+"compartment":"e"
+},
+{
+"id":"imzacp_c",
+"name":"Imidazoleacetyl phosphate",
+"compartment":"c"
 }
 ],
 "reactions":[
@@ -5751,7 +5826,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35330) or (CD630_35340)"
+"gene_reaction_rule":"CD630_35330 or CD630_35340"
 },
 {
 "id":"Trans_gluL",
@@ -5766,7 +5841,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_asnL",
@@ -5781,7 +5856,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_glyb",
@@ -5796,7 +5871,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09000 and CD630_09010 and CD630_32150)"
+"gene_reaction_rule":"CD630_09000 and CD630_09010 and CD630_32150"
 },
 {
 "id":"Trans_aspL2",
@@ -5811,7 +5886,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_ptrc",
@@ -5826,7 +5901,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10240 and CD630_10260 and CD630_10250 and CD630_10270)"
+"gene_reaction_rule":"CD630_10240 and CD630_10260 and CD630_10250 and CD630_10270"
 },
 {
 "id":"Trans_metD",
@@ -5841,7 +5916,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14890 and CD630_14900 and CD630_14910 and CD630_16530)"
+"gene_reaction_rule":"CD630_14890 and CD630_14900 and CD630_14910 and CD630_16530"
 },
 {
 "id":"Trans_chol",
@@ -5856,7 +5931,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09000 and CD630_09010 and CD630_32150)"
+"gene_reaction_rule":"CD630_09000 and CD630_09010 and CD630_32150"
 },
 {
 "id":"Trans_atp",
@@ -5871,7 +5946,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16140) or (CD630_16590) or (CD630_05910) or (CD630_16150)"
+"gene_reaction_rule":"CD630_16140 or CD630_16590 or CD630_05910 or CD630_16150"
 },
 {
 "id":"Trans_glnL",
@@ -5886,7 +5961,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_pi2",
@@ -5900,7 +5975,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32630) or (CD630_32620) or (CD630_32680) or (CD630_32610)"
+"gene_reaction_rule":"CD630_32630 or CD630_32620 or CD630_32680 or CD630_32610"
 },
 {
 "id":"Trans_argL",
@@ -5915,7 +5990,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_his",
@@ -5924,13 +5999,13 @@
 "adp_c":1.0,
 "atp_c":-1.0,
 "h2o_c":-1.0,
-"his_c":1.0,
-"his_e":-1.0,
+"hisL_c":1.0,
+"hisL_e":-1.0,
 "pi_c":1.0
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_tyrL",
@@ -5945,7 +6020,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_zn2",
@@ -5960,7 +6035,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03130)"
+"gene_reaction_rule":"CD630_03130"
 },
 {
 "id":"Trans_g3p",
@@ -5975,7 +6050,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34170 and CD630_34160 and CD630_34150 and CD630_34140)"
+"gene_reaction_rule":"CD630_34170 and CD630_34160 and CD630_34150 and CD630_34140"
 },
 {
 "id":"Trans_fe2",
@@ -5990,7 +6065,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16470) or (CD630_16480) or (CD630_16490) or (CD630_16500)"
+"gene_reaction_rule":"CD630_16470 or CD630_16480 or CD630_16490 or CD630_16500"
 },
 {
 "id":"Trans_no2",
@@ -6005,7 +6080,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10000 and CD630_10010 and CD630_09990) or (CD630_19790 and CD630_19780 and CD630_19800) or (CD630_23610) or (CD630_23650) or (CD630_19040 and CD630_29890 and CD630_29900)"
+"gene_reaction_rule":"(CD630_10000 and CD630_10010 and CD630_09990) or (CD630_19790 and CD630_19780 and CD630_19800) or CD630_23610 or CD630_23650 or (CD630_19040 and CD630_29890 and CD630_29900)"
 },
 {
 "id":"Trans_cysL",
@@ -6020,7 +6095,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_c1ala",
@@ -6050,7 +6125,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_trpL",
@@ -6065,7 +6140,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_spmd",
@@ -6080,7 +6155,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10240) or (CD630_10260)"
+"gene_reaction_rule":"CD630_10240 or CD630_10260"
 },
 {
 "id":"Trans_lysL",
@@ -6095,7 +6170,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_leuL",
@@ -6110,7 +6185,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_alaL2",
@@ -6125,7 +6200,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_pheL",
@@ -6140,7 +6215,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_cobalt",
@@ -6170,7 +6245,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18240) or (CD630_25030) or (CD630_16370) or (CD630_28330)"
+"gene_reaction_rule":"CD630_18240 or CD630_25030 or CD630_16370 or CD630_28330"
 },
 {
 "id":"Trans_valL",
@@ -6185,7 +6260,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_proL",
@@ -6200,7 +6275,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_mg3",
@@ -6215,7 +6290,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33730) or (CD630_33770)"
+"gene_reaction_rule":"CD630_33730 or CD630_33770"
 },
 {
 "id":"Trans_thrL",
@@ -6230,7 +6305,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_k",
@@ -6245,7 +6320,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15910 and CD630_15920 and CD630_15930)"
+"gene_reaction_rule":"CD630_15910 and CD630_15920 and CD630_15930"
 },
 {
 "id":"Trans_gly",
@@ -6260,7 +6335,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_mg2",
@@ -6275,7 +6350,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33750) or (CD630_16590) or (CD630_05910)"
+"gene_reaction_rule":"CD630_33750 or CD630_16590 or CD630_05910"
 },
 {
 "id":"Trans_serL",
@@ -6290,7 +6365,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_ileL",
@@ -6305,7 +6380,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17750) or (CD630_17760) or (CD630_21720) or (CD630_07520) or (CD630_07510)"
+"gene_reaction_rule":"CD630_17750 or CD630_17760 or CD630_21720 or CD630_07520 or CD630_07510"
 },
 {
 "id":"Trans_ribD",
@@ -6366,7 +6441,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03910) or (CD630_16320) or (CD630_26950)"
+"gene_reaction_rule":"CD630_03910 or CD630_16320 or CD630_26950"
 },
 {
 "id":"ID_cbmylphsyn",
@@ -6384,7 +6459,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35900) or (CD630_35880)"
+"gene_reaction_rule":"CD630_35900 or CD630_35880"
 },
 {
 "id":"ID_nacetyltransfer",
@@ -6398,7 +6473,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20330)"
+"gene_reaction_rule":"CD630_20330"
 },
 {
 "id":"ID_470",
@@ -6415,7 +6490,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03910) or (CD630_16320) or (CD630_15370)"
+"gene_reaction_rule":"CD630_03910 or CD630_16320 or CD630_15370"
 },
 {
 "id":"ID_222",
@@ -6430,7 +6505,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26950)"
+"gene_reaction_rule":"CD630_26950"
 },
 {
 "id":"ID_88",
@@ -6445,7 +6520,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23420)"
+"gene_reaction_rule":"CD630_23420"
 },
 {
 "id":"ID_317",
@@ -6458,7 +6533,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27370)"
+"gene_reaction_rule":"CD630_27370"
 },
 {
 "id":"ID_glyamintrans",
@@ -6471,7 +6546,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09940) or (CD630_25320)"
+"gene_reaction_rule":"CD630_09940 or CD630_25320"
 },
 {
 "id":"ID_575",
@@ -6485,9 +6560,9 @@
 "nadh_c":1.0,
 "nh3_c":1.0
 },
-"lower_bound":0.0,
+"lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01790)"
+"gene_reaction_rule":"CD630_01790"
 },
 {
 "id":"ID_712",
@@ -6500,7 +6575,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21580)"
+"gene_reaction_rule":"CD630_21580"
 },
 {
 "id":"ID_411",
@@ -6515,7 +6590,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23420) or (CD630_05800)"
+"gene_reaction_rule":"CD630_23420 or CD630_05800"
 },
 {
 "id":"ID_439",
@@ -6528,7 +6603,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01070) or (CD630_25150) or (CD630_23820) or (CD630_13390) or (CD630_28280)"
+"gene_reaction_rule":"CD630_01070 or CD630_25150 or CD630_23820 or CD630_13390 or CD630_28280"
 },
 {
 "id":"ID_445",
@@ -6541,7 +6616,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01200) or (CD630_24200) or (CD630_33310)"
+"gene_reaction_rule":"CD630_01200 or CD630_24200 or CD630_33310"
 },
 {
 "id":"ID_142",
@@ -6554,7 +6629,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25320)"
+"gene_reaction_rule":"CD630_25320"
 },
 {
 "id":"ID_12",
@@ -6565,7 +6640,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35620) or (CD630_20280) or (CD630_28190) or (CD630_04480)"
+"gene_reaction_rule":"CD630_35620 or CD630_20280 or CD630_28190 or CD630_04480"
 },
 {
 "id":"ID_365",
@@ -6577,7 +6652,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25000)"
+"gene_reaction_rule":"CD630_25000"
 },
 {
 "id":"ID_92",
@@ -6590,7 +6665,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03910) or (CD630_16320) or (CD630_15370)"
+"gene_reaction_rule":"CD630_03910 or CD630_16320 or CD630_15370"
 },
 {
 "id":"ID_543",
@@ -6605,7 +6680,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13390) or (CD630_15370)"
+"gene_reaction_rule":"CD630_13390 or CD630_15370"
 },
 {
 "id":"ID_675",
@@ -6618,7 +6693,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01980) or (CD630_03910) or (CD630_05580) or (CD630_15370) or (CD630_16320) or (CD630_35880) or (CD630_35890) or (CD630_35900) or (CD630_35910)"
+"gene_reaction_rule":"CD630_01980 or CD630_03910 or CD630_05580 or CD630_15370 or CD630_16320 or CD630_35880 or CD630_35890 or CD630_35900 or CD630_35910"
 },
 {
 "id":"ID_688",
@@ -6631,7 +6706,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21580)"
+"gene_reaction_rule":"CD630_21580"
 },
 {
 "id":"ID_336",
@@ -6657,7 +6732,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25320)"
+"gene_reaction_rule":"CD630_25320"
 },
 {
 "id":"ID_506",
@@ -6672,7 +6747,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35180)"
+"gene_reaction_rule":"CD630_35180"
 },
 {
 "id":"ID_3",
@@ -6685,7 +6760,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15340)"
+"gene_reaction_rule":"CD630_15340"
 },
 {
 "id":"ID_428",
@@ -6700,7 +6775,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26530)"
+"gene_reaction_rule":"CD630_26530"
 },
 {
 "id":"ID_526",
@@ -6715,7 +6790,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13430)"
+"gene_reaction_rule":"CD630_13430"
 },
 {
 "id":"ID_357",
@@ -6726,7 +6801,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26230) or (CD630_34630) or (CD630_28190) or (CD630_20280) or (CD630_04480) or (CD630_16280)"
+"gene_reaction_rule":"CD630_26230 or CD630_34630 or CD630_28190 or CD630_20280 or CD630_04480 or CD630_16280"
 },
 {
 "id":"ID_341322",
@@ -6738,7 +6813,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"( CD630_16260 )"
+"gene_reaction_rule":"CD630_16260"
 },
 {
 "id":"ID_346",
@@ -6752,7 +6827,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14080)"
+"gene_reaction_rule":"CD630_14080"
 },
 {
 "id":"ID_396",
@@ -6765,7 +6840,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09940)"
+"gene_reaction_rule":"CD630_09940"
 },
 {
 "id":"ID_446",
@@ -6780,7 +6855,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17850)"
+"gene_reaction_rule":"CD630_17850"
 },
 {
 "id":"ID_561",
@@ -6795,7 +6870,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13390) or (CD630_15370)"
+"gene_reaction_rule":"CD630_13390 or CD630_15370"
 },
 {
 "id":"ID_583",
@@ -6819,7 +6894,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25150)"
+"gene_reaction_rule":"CD630_25150"
 },
 {
 "id":"ID_380",
@@ -6832,7 +6907,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10110)"
+"gene_reaction_rule":"CD630_10110"
 },
 {
 "id":"ID_571",
@@ -6845,7 +6920,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15850)"
+"gene_reaction_rule":"CD630_15850"
 },
 {
 "id":"ID_331",
@@ -6858,7 +6933,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35150)"
+"gene_reaction_rule":"CD630_35150"
 },
 {
 "id":"ID_227",
@@ -6869,7 +6944,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01190)"
+"gene_reaction_rule":"CD630_01190"
 },
 {
 "id":"ID_594",
@@ -6882,7 +6957,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35150)"
+"gene_reaction_rule":"CD630_35150"
 },
 {
 "id":"ID_514",
@@ -6895,7 +6970,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10100) or (CD630_34530)"
+"gene_reaction_rule":"CD630_10100 or CD630_34530"
 },
 {
 "id":"ID_548",
@@ -6908,7 +6983,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10330)"
+"gene_reaction_rule":"CD630_10330"
 },
 {
 "id":"ID_301",
@@ -6921,7 +6996,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01230)"
+"gene_reaction_rule":"CD630_01230"
 },
 {
 "id":"ID_176",
@@ -6935,7 +7010,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34020)"
+"gene_reaction_rule":"CD630_34020"
 },
 {
 "id":"ID_194",
@@ -6947,7 +7022,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22400)"
+"gene_reaction_rule":"CD630_22400"
 },
 {
 "id":"ID_727",
@@ -6958,7 +7033,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22410)"
+"gene_reaction_rule":"CD630_22410"
 },
 {
 "id":"ID_741",
@@ -6971,7 +7046,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21940)"
+"gene_reaction_rule":"CD630_21940"
 },
 {
 "id":"ID_223",
@@ -6985,7 +7060,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34020)"
+"gene_reaction_rule":"CD630_34020"
 },
 {
 "id":"ID_121",
@@ -6996,7 +7071,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10330)"
+"gene_reaction_rule":"CD630_10330"
 },
 {
 "id":"ID_602",
@@ -7008,7 +7083,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08880) or (CD630_35510)"
+"gene_reaction_rule":"CD630_08880 or CD630_35510"
 },
 {
 "id":"ID_367",
@@ -7021,7 +7096,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13860 and CD630_13870)"
+"gene_reaction_rule":"CD630_13860 and CD630_13870"
 },
 {
 "id":"ID_493",
@@ -7034,7 +7109,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12120)"
+"gene_reaction_rule":"CD630_12120"
 },
 {
 "id":"ID_106",
@@ -7049,7 +7124,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20340)"
+"gene_reaction_rule":"CD630_20340"
 },
 {
 "id":"ID_638",
@@ -7062,7 +7137,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08910)"
+"gene_reaction_rule":"CD630_08910"
 },
 {
 "id":"ID_467",
@@ -7075,7 +7150,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20300)"
+"gene_reaction_rule":"CD630_20300"
 },
 {
 "id":"ID_747",
@@ -7088,7 +7163,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03030)"
+"gene_reaction_rule":"CD630_03030"
 },
 {
 "id":"ID_278",
@@ -7101,7 +7176,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20330)"
+"gene_reaction_rule":"CD630_20330"
 },
 {
 "id":"ID_42",
@@ -7116,7 +7191,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22060)"
+"gene_reaction_rule":"CD630_22060"
 },
 {
 "id":"ID_635",
@@ -7129,7 +7204,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20320)"
+"gene_reaction_rule":"CD630_20320"
 },
 {
 "id":"ID_311",
@@ -7142,7 +7217,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20330)"
+"gene_reaction_rule":"CD630_20330"
 },
 {
 "id":"ID_135",
@@ -7153,7 +7228,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32370) or (CD630_20280) or (CD630_28190) or (CD630_04480)"
+"gene_reaction_rule":"CD630_32370 or CD630_20280 or CD630_28190 or CD630_04480"
 },
 {
 "id":"ID_627",
@@ -7169,7 +7244,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13870)"
+"gene_reaction_rule":"CD630_13870"
 },
 {
 "id":"ID_748",
@@ -7182,7 +7257,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20310)"
+"gene_reaction_rule":"CD630_20310"
 },
 {
 "id":"ID_337",
@@ -7282,7 +7357,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26510)"
+"gene_reaction_rule":"CD630_26510"
 },
 {
 "id":"Bio_prot",
@@ -7300,7 +7375,7 @@
 "gluL_c":-0.517,
 "gly_c":-0.442,
 "h2o_c":-1.0,
-"his_c":-0.095,
+"hisL_c":-0.095,
 "ileL_c":-0.693,
 "leuL_c":-0.636,
 "lysL_c":-0.637,
@@ -7358,7 +7433,7 @@
 "glnL_c":-0.0086,
 "gluL_c":-0.5256,
 "gly_c":-0.0398,
-"his_c":-0.0169,
+"hisL_c":-0.0169,
 "ileL_c":-0.0481,
 "leuL_c":-0.0222,
 "lysL_c":-0.0405,
@@ -7390,7 +7465,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23390)"
+"gene_reaction_rule":"CD630_23390"
 },
 {
 "id":"ID_616",
@@ -7401,7 +7476,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23410)"
+"gene_reaction_rule":"CD630_23410"
 },
 {
 "id":"ID_530",
@@ -7416,7 +7491,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_29660)"
+"gene_reaction_rule":"CD630_03340 or CD630_29660"
 },
 {
 "id":"ID_519",
@@ -7430,7 +7505,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10580)"
+"gene_reaction_rule":"CD630_10580"
 },
 {
 "id":"ID_72",
@@ -7443,7 +7518,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26770 and CD630_26780)"
+"gene_reaction_rule":"CD630_26770 and CD630_26780"
 },
 {
 "id":"ID_502",
@@ -7457,7 +7532,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11820)"
+"gene_reaction_rule":"CD630_11820"
 },
 {
 "id":"ID_9718",
@@ -7473,7 +7548,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"( CD630_00390 and CD630_00380 and CD630_00370 and CD630_00360 )"
+"gene_reaction_rule":"CD630_00390 and CD630_00380 and CD630_00370 and CD630_00360"
 },
 {
 "id":"ID_156",
@@ -7485,7 +7560,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23410)"
+"gene_reaction_rule":"CD630_23410"
 },
 {
 "id":"ID_615",
@@ -7499,7 +7574,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11820)"
+"gene_reaction_rule":"CD630_11820"
 },
 {
 "id":"ID_504",
@@ -7513,7 +7588,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03990) or (CD630_10540)"
+"gene_reaction_rule":"CD630_03990 or CD630_10540"
 },
 {
 "id":"ID_507",
@@ -7527,7 +7602,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23380)"
+"gene_reaction_rule":"CD630_23380"
 },
 {
 "id":"ID_18",
@@ -7541,7 +7616,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26790)"
+"gene_reaction_rule":"CD630_26790"
 },
 {
 "id":"ID_463",
@@ -7555,7 +7630,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_19070) or (CD630_29660)"
+"gene_reaction_rule":"CD630_03340 or CD630_19070 or CD630_29660"
 },
 {
 "id":"ID_500",
@@ -7568,7 +7643,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22130)"
+"gene_reaction_rule":"CD630_22130"
 },
 {
 "id":"ID_379",
@@ -7594,7 +7669,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_29660)"
+"gene_reaction_rule":"CD630_03340 or CD630_29660"
 },
 {
 "id":"ID_6",
@@ -7633,7 +7708,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01120) or (CD630_07150) or (CD630_24250)"
+"gene_reaction_rule":"CD630_01120 or CD630_07150 or CD630_24250"
 },
 {
 "id":"ID_21",
@@ -7647,7 +7722,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_30060)"
+"gene_reaction_rule":"CD630_03340 or CD630_30060"
 },
 {
 "id":"ID_251",
@@ -7660,7 +7735,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01130) or (CD630_23790) or (CD630_011301)"
+"gene_reaction_rule":"CD630_01130 or CD630_23790 or CD630_011301"
 },
 {
 "id":"ID_523",
@@ -7683,7 +7758,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24360) or (CD630_09020) or (CD630_18310) or (CD630_21220) or (CD630_28320) or (CD630_32700) or (CD630_35200)"
+"gene_reaction_rule":"CD630_24360 or CD630_09020 or CD630_18310 or CD630_21220 or CD630_28320 or CD630_32700 or CD630_35200"
 },
 {
 "id":"Trans_k4",
@@ -7707,7 +7782,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34030)"
+"gene_reaction_rule":"CD630_34030"
 },
 {
 "id":"Trans_no",
@@ -7718,7 +7793,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22300) or (CD630_34030)"
+"gene_reaction_rule":"CD630_22300 or CD630_34030"
 },
 {
 "id":"Trans_k3",
@@ -7729,7 +7804,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_06970) or (CD630_21420)"
+"gene_reaction_rule":"CD630_06970 or CD630_21420"
 },
 {
 "id":"Trans_zn",
@@ -7740,7 +7815,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10870) or (CD630_09020) or (CD630_18310) or (CD630_21220) or (CD630_28320) or (CD630_32700) or (CD630_35200)"
+"gene_reaction_rule":"CD630_10870 or CD630_09020 or CD630_18310 or CD630_21220 or CD630_28320 or CD630_32700 or CD630_35200"
 },
 {
 "id":"ID_61",
@@ -7755,7 +7830,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08340)"
+"gene_reaction_rule":"CD630_08340"
 },
 {
 "id":"ID_708",
@@ -7771,7 +7846,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07230 and CD630_00390)"
+"gene_reaction_rule":"CD630_07230 and CD630_00390"
 },
 {
 "id":"ID_370",
@@ -7787,7 +7862,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00210)"
+"gene_reaction_rule":"CD630_00210"
 },
 {
 "id":"ID_433",
@@ -7799,7 +7874,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08330)"
+"gene_reaction_rule":"CD630_08330"
 },
 {
 "id":"ID_171",
@@ -7814,7 +7889,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08340)"
+"gene_reaction_rule":"CD630_08340"
 },
 {
 "id":"ID_544",
@@ -7843,7 +7918,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_23430)"
+"gene_reaction_rule":"CD630_23430"
 },
 {
 "id":"ID_606",
@@ -7855,7 +7930,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08330)"
+"gene_reaction_rule":"CD630_08330"
 },
 {
 "id":"ID_198",
@@ -7867,7 +7942,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10030 and CD630_10040)"
+"gene_reaction_rule":"CD630_10030 and CD630_10040"
 },
 {
 "id":"ID_254",
@@ -7881,7 +7956,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21640)"
+"gene_reaction_rule":"CD630_21640"
 },
 {
 "id":"ID_557",
@@ -7896,7 +7971,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01300)"
+"gene_reaction_rule":"CD630_01300"
 },
 {
 "id":"ID_99",
@@ -7922,7 +7997,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26110)"
+"gene_reaction_rule":"CD630_26110"
 },
 {
 "id":"ID_2",
@@ -7935,7 +8010,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12120)"
+"gene_reaction_rule":"CD630_12120"
 },
 {
 "id":"ID_562",
@@ -7961,7 +8036,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35960)"
+"gene_reaction_rule":"CD630_35960"
 },
 {
 "id":"ID_gcvmulti",
@@ -7976,8 +8051,8 @@
 "nh3_c":1.0,
 "thf_c":-1.0
 },
-"lower_bound":0.0,
-"upper_bound":1000.0,
+"lower_bound":0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -7992,7 +8067,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18250)"
+"gene_reaction_rule":"CD630_18250"
 },
 {
 "id":"ID_265",
@@ -8029,7 +8104,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18250)"
+"gene_reaction_rule":"CD630_18250"
 },
 {
 "id":"ID_711",
@@ -8043,7 +8118,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08900)"
+"gene_reaction_rule":"CD630_08900"
 },
 {
 "id":"ID_680",
@@ -8056,7 +8131,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08890)"
+"gene_reaction_rule":"CD630_08890"
 },
 {
 "id":"ID_469",
@@ -8070,7 +8145,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30290) or (CD630_24840) or (CD630_26960) or (CD630_27330)"
+"gene_reaction_rule":"CD630_30290 or CD630_24840 or CD630_26960 or CD630_27330"
 },
 {
 "id":"ID_242",
@@ -8084,7 +8159,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07530) or (CD630_12790) or (CD630_30320) or (CD630_36700)"
+"gene_reaction_rule":"CD630_07530 or CD630_12790 or CD630_30320 or CD630_36700"
 },
 {
 "id":"ID_418",
@@ -8097,7 +8172,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12120)"
+"gene_reaction_rule":"CD630_12120"
 },
 {
 "id":"ID_155",
@@ -8111,7 +8186,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08900)"
+"gene_reaction_rule":"CD630_08900"
 },
 {
 "id":"ID_560",
@@ -8122,7 +8197,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04480) or (CD630_20280) or (CD630_28190)"
+"gene_reaction_rule":"CD630_04480 or CD630_20280 or CD630_28190"
 },
 {
 "id":"ID_189",
@@ -8135,7 +8210,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26110)"
+"gene_reaction_rule":"CD630_26110"
 },
 {
 "id":"ID_235",
@@ -8172,7 +8247,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35770)"
+"gene_reaction_rule":"CD630_35770"
 },
 {
 "id":"ID_259",
@@ -8185,7 +8260,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18260)"
+"gene_reaction_rule":"CD630_18260"
 },
 {
 "id":"ID_358",
@@ -8198,7 +8273,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18250)"
+"gene_reaction_rule":"CD630_18250"
 },
 {
 "id":"ID_309",
@@ -8210,7 +8285,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35980)"
+"gene_reaction_rule":"CD630_35980"
 },
 {
 "id":"ID_410",
@@ -8247,7 +8322,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26110)"
+"gene_reaction_rule":"CD630_26110"
 },
 {
 "id":"ID_94",
@@ -8261,7 +8336,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30290) or (CD630_24840) or (CD630_26960) or (CD630_27330)"
+"gene_reaction_rule":"CD630_30290 or CD630_24840 or CD630_26960 or CD630_27330"
 },
 {
 "id":"ID_167",
@@ -8274,7 +8349,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35960)"
+"gene_reaction_rule":"CD630_35960"
 },
 {
 "id":"ID_664",
@@ -8285,7 +8360,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20280) or (CD630_28190) or (CD630_04480)"
+"gene_reaction_rule":"CD630_20280 or CD630_28190 or CD630_04480"
 },
 {
 "id":"ID_443",
@@ -8298,7 +8373,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04430 and CD630_04440)"
+"gene_reaction_rule":"CD630_04430 and CD630_04440"
 },
 {
 "id":"ID_243",
@@ -8309,7 +8384,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04450 and CD630_04460)"
+"gene_reaction_rule":"CD630_04450 and CD630_04460"
 },
 {
 "id":"ID_319",
@@ -8325,7 +8400,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04420)"
+"gene_reaction_rule":"CD630_04420"
 },
 {
 "id":"ID_193",
@@ -8341,7 +8416,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04420)"
+"gene_reaction_rule":"CD630_04420"
 },
 {
 "id":"Ex_decacd",
@@ -8650,7 +8725,7 @@
 "hco3_e":1.0
 },
 "lower_bound":0.0,
-"upper_bound":59.52380952,
+"upper_bound":59.5,
 "gene_reaction_rule":""
 },
 {
@@ -8660,7 +8735,7 @@
 "h_e":1.0
 },
 "lower_bound":0.0,
-"upper_bound":0.0001,
+"upper_bound":0.0,
 "gene_reaction_rule":""
 },
 {
@@ -8880,7 +8955,7 @@
 "co2_e":1.0
 },
 "lower_bound":0.0,
-"upper_bound":0.001,
+"upper_bound":1000.0,
 "gene_reaction_rule":""
 },
 {
@@ -8917,7 +8992,7 @@
 "id":"Ex_his",
 "name":"Exchange L-histidine",
 "metabolites":{
-"his_e":1.0
+"hisL_e":1.0
 },
 "lower_bound":0.0,
 "upper_bound":0.65,
@@ -9007,7 +9082,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14500)"
+"gene_reaction_rule":"CD630_14500"
 },
 {
 "id":"ID_457",
@@ -9033,7 +9108,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14520)"
+"gene_reaction_rule":"CD630_14520"
 },
 {
 "id":"ID_495",
@@ -9046,7 +9121,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14450 and CD630_14460)"
+"gene_reaction_rule":"CD630_14450 and CD630_14460"
 },
 {
 "id":"ID_75",
@@ -9061,7 +9136,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32530)"
+"gene_reaction_rule":"CD630_32530"
 },
 {
 "id":"ID_438",
@@ -9073,7 +9148,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12260) or (CD630_14470)"
+"gene_reaction_rule":"CD630_12260 or CD630_14470"
 },
 {
 "id":"ID_104",
@@ -9087,7 +9162,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28590) or (CD630_31820)"
+"gene_reaction_rule":"CD630_28590 or CD630_31820"
 },
 {
 "id":"ID_344",
@@ -9100,7 +9175,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14500)"
+"gene_reaction_rule":"CD630_14500"
 },
 {
 "id":"ID_524",
@@ -9113,7 +9188,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14490)"
+"gene_reaction_rule":"CD630_14490"
 },
 {
 "id":"ID_172",
@@ -9125,7 +9200,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14510)"
+"gene_reaction_rule":"CD630_14510"
 },
 {
 "id":"ID_64",
@@ -9136,7 +9211,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27800)"
+"gene_reaction_rule":"CD630_27800"
 },
 {
 "id":"ID_219",
@@ -9149,7 +9224,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22700)"
+"gene_reaction_rule":"CD630_22700"
 },
 {
 "id":"ID_545",
@@ -9162,7 +9237,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31100) or (CD630_33950)"
+"gene_reaction_rule":"CD630_31100 or CD630_33950"
 },
 {
 "id":"ID_541",
@@ -9176,7 +9251,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07680)"
+"gene_reaction_rule":"CD630_07680"
 },
 {
 "id":"ID_726",
@@ -9189,7 +9264,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27790)"
+"gene_reaction_rule":"CD630_27790"
 },
 {
 "id":"ID_610",
@@ -9202,7 +9277,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22360)"
+"gene_reaction_rule":"CD630_22360"
 },
 {
 "id":"ID_253",
@@ -9215,7 +9290,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22360)"
+"gene_reaction_rule":"CD630_22360"
 },
 {
 "id":"ID_276",
@@ -9228,7 +9303,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11910)"
+"gene_reaction_rule":"CD630_11910"
 },
 {
 "id":"ID_567",
@@ -9241,7 +9316,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23290) or (CD630_21100) or (CD630_31060)"
+"gene_reaction_rule":"CD630_23290 or CD630_21100 or CD630_31060"
 },
 {
 "id":"ID_542",
@@ -9254,7 +9329,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18060)"
+"gene_reaction_rule":"CD630_18060"
 },
 {
 "id":"ID_732",
@@ -9266,7 +9341,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04030) or (CD630_31350)"
+"gene_reaction_rule":"CD630_04030 or CD630_31350"
 },
 {
 "id":"ID_302",
@@ -9279,7 +9354,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22360)"
+"gene_reaction_rule":"CD630_22360"
 },
 {
 "id":"ID_353",
@@ -9291,7 +9366,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00450) or (CD630_22770)"
+"gene_reaction_rule":"CD630_00450 or CD630_22770"
 },
 {
 "id":"ID_290",
@@ -9304,7 +9379,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31100) or (CD630_33950)"
+"gene_reaction_rule":"CD630_31100 or CD630_33950"
 },
 {
 "id":"ID_674",
@@ -9316,7 +9391,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04030) or (CD630_31350)"
+"gene_reaction_rule":"CD630_04030 or CD630_31350"
 },
 {
 "id":"ID_613",
@@ -9329,7 +9404,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31100) or (CD630_33950)"
+"gene_reaction_rule":"CD630_31100 or CD630_33950"
 },
 {
 "id":"ID_436",
@@ -9340,7 +9415,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27100)"
+"gene_reaction_rule":"CD630_27100"
 },
 {
 "id":"ID_649",
@@ -9351,7 +9426,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24910)"
+"gene_reaction_rule":"CD630_24910"
 },
 {
 "id":"ID_611",
@@ -9365,7 +9440,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23310)"
+"gene_reaction_rule":"CD630_23310"
 },
 {
 "id":"ID_676",
@@ -9379,7 +9454,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04900) or (CD630_23230) or (CD630_25160)"
+"gene_reaction_rule":"CD630_04900 or CD630_23230 or CD630_25160"
 },
 {
 "id":"ID_527",
@@ -9392,7 +9467,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31100) or (CD630_33950)"
+"gene_reaction_rule":"CD630_31100 or CD630_33950"
 },
 {
 "id":"ID_173",
@@ -9405,7 +9480,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13400)"
+"gene_reaction_rule":"CD630_13400"
 },
 {
 "id":"ID_199",
@@ -9417,7 +9492,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04030) or (CD630_31350)"
+"gene_reaction_rule":"CD630_04030 or CD630_31350"
 },
 {
 "id":"ID_297",
@@ -9430,7 +9505,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31100) or (CD630_33950)"
+"gene_reaction_rule":"CD630_31100 or CD630_33950"
 },
 {
 "id":"ID_659",
@@ -9443,7 +9518,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27790)"
+"gene_reaction_rule":"CD630_27790"
 },
 {
 "id":"ID_333",
@@ -9469,7 +9544,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33950) or (CD630_31100)"
+"gene_reaction_rule":"CD630_33950 or CD630_31100"
 },
 {
 "id":"ID_329",
@@ -9480,7 +9555,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34400)"
+"gene_reaction_rule":"CD630_34400"
 },
 {
 "id":"ID_255",
@@ -9491,7 +9566,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15770) or (CD630_27800)"
+"gene_reaction_rule":"CD630_15770 or CD630_27800"
 },
 {
 "id":"ID_532",
@@ -9504,7 +9579,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34510)"
+"gene_reaction_rule":"CD630_34510"
 },
 {
 "id":"ID_742",
@@ -9518,7 +9593,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23240)"
+"gene_reaction_rule":"CD630_23240"
 },
 {
 "id":"ID_417",
@@ -9531,7 +9606,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13400)"
+"gene_reaction_rule":"CD630_13400"
 },
 {
 "id":"ID_444",
@@ -9542,7 +9617,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27140)"
+"gene_reaction_rule":"CD630_27140"
 },
 {
 "id":"ID_480",
@@ -9555,7 +9630,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33950) or (CD630_31100)"
+"gene_reaction_rule":"CD630_33950 or CD630_31100"
 },
 {
 "id":"ID_763",
@@ -9581,7 +9656,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34480) or (CD630_30740)"
+"gene_reaction_rule":"CD630_34480 or CD630_30740"
 },
 {
 "id":"ID_631",
@@ -9594,7 +9669,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34510) or (CD630_30760)"
+"gene_reaction_rule":"CD630_34510 or CD630_30760"
 },
 {
 "id":"ID_633",
@@ -9605,7 +9680,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23200 and CD630_34800)"
+"gene_reaction_rule":"CD630_23200 and CD630_34800"
 },
 {
 "id":"ID_249",
@@ -9631,7 +9706,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32220)"
+"gene_reaction_rule":"CD630_32220"
 },
 {
 "id":"ID_8899",
@@ -9658,7 +9733,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16570 and CD630_16580)"
+"gene_reaction_rule":"CD630_16570 and CD630_16580"
 },
 {
 "id":"ID_501",
@@ -9670,7 +9745,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28190)"
+"gene_reaction_rule":"CD630_28190"
 },
 {
 "id":"ID_165",
@@ -9684,7 +9759,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11660) or (CD630_15800)"
+"gene_reaction_rule":"CD630_11660 or CD630_15800"
 },
 {
 "id":"ID_283",
@@ -9697,7 +9772,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02410) or (CD630_03090)"
+"gene_reaction_rule":"CD630_02410 or CD630_03090"
 },
 {
 "id":"ID_494",
@@ -9710,7 +9785,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13220) or (CD630_20540) or (CD630_26270)"
+"gene_reaction_rule":"CD630_13220 or CD630_20540 or CD630_26270"
 },
 {
 "id":"ID_556",
@@ -9721,8 +9796,8 @@
 "thrL_c":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":0.0,
-"gene_reaction_rule":"(CD630_25910)"
+"upper_bound":1000.0,
+"gene_reaction_rule":"CD630_25910"
 },
 {
 "id":"ID_625",
@@ -9735,8 +9810,8 @@
 "thrL_c":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":0.0,
-"gene_reaction_rule":"(CD630_17920)"
+"upper_bound":1000.0,
+"gene_reaction_rule":"CD630_17920"
 },
 {
 "id":"ID_240",
@@ -9749,7 +9824,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21180)"
+"gene_reaction_rule":"CD630_21180"
 },
 {
 "id":"ID_130",
@@ -9777,7 +9852,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07080) or (CD630_13000)"
+"gene_reaction_rule":"CD630_07080 or CD630_13000"
 },
 {
 "id":"ID_293",
@@ -9791,7 +9866,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_30060)"
+"gene_reaction_rule":"CD630_03340 or CD630_30060"
 },
 {
 "id":"ID_330",
@@ -9803,7 +9878,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25140)"
+"gene_reaction_rule":"CD630_25140"
 },
 {
 "id":"ID_143",
@@ -9817,7 +9892,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27260) or (CD630_28340)"
+"gene_reaction_rule":"CD630_27260 or CD630_28340"
 },
 {
 "id":"ID_452",
@@ -9831,7 +9906,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09950)"
+"gene_reaction_rule":"CD630_09950"
 },
 {
 "id":"ID_743",
@@ -9842,7 +9917,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16280) or (CD630_28190) or (CD630_20280) or (CD630_04480)"
+"gene_reaction_rule":"CD630_16280 or CD630_28190 or CD630_20280 or CD630_04480"
 },
 {
 "id":"ID_665",
@@ -9855,7 +9930,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09940)"
+"gene_reaction_rule":"CD630_09940"
 },
 {
 "id":"ID_132",
@@ -9869,7 +9944,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11660) or (CD630_15800)"
+"gene_reaction_rule":"CD630_11660 or CD630_15800"
 },
 {
 "id":"ID_124",
@@ -9882,7 +9957,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30850)"
+"gene_reaction_rule":"CD630_30850"
 },
 {
 "id":"ID_609",
@@ -9895,7 +9970,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30840)"
+"gene_reaction_rule":"CD630_30840"
 },
 {
 "id":"ID_385",
@@ -9908,7 +9983,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21190)"
+"gene_reaction_rule":"CD630_21190"
 },
 {
 "id":"ID_52",
@@ -9923,7 +9998,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32240)"
+"gene_reaction_rule":"CD630_32240"
 },
 {
 "id":"ID_320",
@@ -9935,7 +10010,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32220)"
+"gene_reaction_rule":"CD630_32220"
 },
 {
 "id":"ID_694",
@@ -9963,7 +10038,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30060)"
+"gene_reaction_rule":"CD630_30060"
 },
 {
 "id":"ID_393",
@@ -9978,7 +10053,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_31740) or (CD630_17670)"
+"gene_reaction_rule":"CD630_31740 or CD630_17670"
 },
 {
 "id":"ID_55",
@@ -9989,7 +10064,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32850)"
+"gene_reaction_rule":"CD630_32850"
 },
 {
 "id":"ID_496",
@@ -10018,7 +10093,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05800)"
+"gene_reaction_rule":"CD630_05800"
 },
 {
 "id":"ID_360",
@@ -10033,7 +10108,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22060)"
+"gene_reaction_rule":"CD630_22060"
 },
 {
 "id":"ID_401",
@@ -10044,7 +10119,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15770) or (CD630_23180) or (CD630_27800)"
+"gene_reaction_rule":"CD630_15770 or CD630_23180 or CD630_27800"
 },
 {
 "id":"ID_221",
@@ -10058,7 +10133,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07230 and CD630_00390)"
+"gene_reaction_rule":"CD630_07230 and CD630_00390"
 },
 {
 "id":"ID_53",
@@ -10069,12 +10144,12 @@
 "coa_c":-1.0,
 "feroxoxi_c":-1.0,
 "feroxred_c":1.0,
-"h_c":2.0,
+"h_c":1.0,
 "pyr_c":-1.0
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01180 and CD630_21990 and CD630_21980)"
+"gene_reaction_rule":"CD630_01180 and CD630_21990 and CD630_21980"
 },
 {
 "id":"ID_179",
@@ -10085,7 +10160,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31710) or (CD630_18140)"
+"gene_reaction_rule":"CD630_31710 or CD630_18140"
 },
 {
 "id":"ID_414",
@@ -10098,7 +10173,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24590) or (CD630_22360)"
+"gene_reaction_rule":"CD630_24590 or CD630_22360"
 },
 {
 "id":"ID_621",
@@ -10109,7 +10184,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32850)"
+"gene_reaction_rule":"CD630_32850"
 },
 {
 "id":"ID_498",
@@ -10135,7 +10210,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31740) or (CD630_17670)"
+"gene_reaction_rule":"CD630_31740 or CD630_17670"
 },
 {
 "id":"ID_233",
@@ -10148,7 +10223,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31730)"
+"gene_reaction_rule":"CD630_31730"
 },
 {
 "id":"ID_660",
@@ -10162,7 +10237,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21640)"
+"gene_reaction_rule":"CD630_21640"
 },
 {
 "id":"ID_39",
@@ -10188,7 +10263,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24590) or (CD630_22360)"
+"gene_reaction_rule":"CD630_24590 or CD630_22360"
 },
 {
 "id":"ID_147",
@@ -10199,7 +10274,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34400)"
+"gene_reaction_rule":"CD630_34400"
 },
 {
 "id":"ID_721",
@@ -10210,7 +10285,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30640) or (CD630_05560)"
+"gene_reaction_rule":"CD630_30640 or CD630_05560"
 },
 {
 "id":"ID_596",
@@ -10221,7 +10296,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31720)"
+"gene_reaction_rule":"CD630_31720"
 },
 {
 "id":"ID_391",
@@ -10233,7 +10308,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31700)"
+"gene_reaction_rule":"CD630_31700"
 },
 {
 "id":"ID_140",
@@ -10248,7 +10323,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21960)"
+"gene_reaction_rule":"CD630_21960"
 },
 {
 "id":"ID_383",
@@ -10262,7 +10337,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_30060) or (CD630_29660)"
+"gene_reaction_rule":"CD630_03340 or CD630_30060 or CD630_29660"
 },
 {
 "id":"ID_252",
@@ -10275,7 +10350,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33940)"
+"gene_reaction_rule":"CD630_33940"
 },
 {
 "id":"ID_654",
@@ -10314,9 +10389,9 @@
 "h_c":1.0,
 "ppcoa_c":1.0
 },
-"lower_bound":-1000.0,
+"lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26860)"
+"gene_reaction_rule":"CD630_26860"
 },
 {
 "id":"ID_339",
@@ -10340,7 +10415,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09940)"
+"gene_reaction_rule":"CD630_09940"
 },
 {
 "id":"ID_754",
@@ -10367,7 +10442,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08000) or (CD630_10570)"
+"gene_reaction_rule":"CD630_08000 or CD630_10570"
 },
 {
 "id":"ID_752",
@@ -10382,7 +10457,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22060)"
+"gene_reaction_rule":"CD630_22060"
 },
 {
 "id":"ID_128",
@@ -10396,7 +10471,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28130)"
+"gene_reaction_rule":"CD630_28130"
 },
 {
 "id":"ID_374",
@@ -10413,7 +10488,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16570 and CD630_07290)"
+"gene_reaction_rule":"CD630_16570 and CD630_07290"
 },
 {
 "id":"ID_535",
@@ -10427,7 +10502,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28130)"
+"gene_reaction_rule":"CD630_28130"
 },
 {
 "id":"ID_90",
@@ -10454,7 +10529,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28680)"
+"gene_reaction_rule":"CD630_28680"
 },
 {
 "id":"ID_211",
@@ -10481,7 +10556,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15510 and CD630_15530)"
+"gene_reaction_rule":"CD630_15510 and CD630_15530"
 },
 {
 "id":"ID_196",
@@ -10493,7 +10568,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15540)"
+"gene_reaction_rule":"CD630_15540"
 },
 {
 "id":"ID_361",
@@ -10508,7 +10583,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15820)"
+"gene_reaction_rule":"CD630_15820"
 },
 {
 "id":"ID_215",
@@ -10521,7 +10596,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15540) or (CD630_34970)"
+"gene_reaction_rule":"CD630_15540 or CD630_34970"
 },
 {
 "id":"ID_76",
@@ -10534,7 +10609,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07370) or (CD630_10690)"
+"gene_reaction_rule":"CD630_07370 or CD630_10690"
 },
 {
 "id":"ID_191",
@@ -10548,7 +10623,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_20270)"
+"gene_reaction_rule":"CD630_20270"
 },
 {
 "id":"ID_268",
@@ -10559,7 +10634,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15520)"
+"gene_reaction_rule":"CD630_15520"
 },
 {
 "id":"ID_338",
@@ -10572,7 +10647,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15470 and CD630_15480)"
+"gene_reaction_rule":"CD630_15470 and CD630_15480"
 },
 {
 "id":"ID_713",
@@ -10580,14 +10655,14 @@
 "metabolites":{
 "h2o_c":-1.0,
 "h_c":1.0,
-"his_c":1.0,
+"hisL_c":1.0,
 "hista_c":-1.0,
 "nad_c":-1.0,
 "nadh_c":1.0
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15820)"
+"gene_reaction_rule":"CD630_15820"
 },
 {
 "id":"ID_164",
@@ -10600,7 +10675,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15490) or (CD630_22000) or (CD630_25020)"
+"gene_reaction_rule":"CD630_15490 or CD630_22000 or CD630_25020"
 },
 {
 "id":"ID_66",
@@ -10612,7 +10687,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15500)"
+"gene_reaction_rule":"CD630_15500"
 },
 {
 "id":"ID_28",
@@ -10625,7 +10700,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14470)"
+"gene_reaction_rule":"CD630_14470"
 },
 {
 "id":"ID_31",
@@ -10639,7 +10714,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03990)"
+"gene_reaction_rule":"CD630_03990"
 },
 {
 "id":"ID_605",
@@ -10652,7 +10727,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03950)"
+"gene_reaction_rule":"CD630_03950"
 },
 {
 "id":"ID_382",
@@ -10664,7 +10739,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03960 and CD630_03970 and CD630_03980)"
+"gene_reaction_rule":"CD630_03960 and CD630_03970 and CD630_03980"
 },
 {
 "id":"ID_685",
@@ -10678,7 +10753,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03940)"
+"gene_reaction_rule":"CD630_03940"
 },
 {
 "id":"ID_20",
@@ -10692,7 +10767,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03950)"
+"gene_reaction_rule":"CD630_03950"
 },
 {
 "id":"ID_550",
@@ -10705,7 +10780,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30000) or (CD630_32230) or (CD630_32250) or (CD630_36270)"
+"gene_reaction_rule":"CD630_30000 or CD630_32230 or CD630_32250 or CD630_36270"
 },
 {
 "id":"ID_181",
@@ -10730,7 +10805,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30000) or (CD630_32230) or (CD630_32250) or (CD630_36270)"
+"gene_reaction_rule":"CD630_30000 or CD630_32230 or CD630_32250 or CD630_36270"
 },
 {
 "id":"ID_626",
@@ -10743,7 +10818,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31020) or (CD630_21730) or (CD630_20840)"
+"gene_reaction_rule":"CD630_31020 or CD630_21730 or CD630_20840"
 },
 {
 "id":"ID_686",
@@ -10758,7 +10833,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26640)"
+"gene_reaction_rule":"CD630_26640"
 },
 {
 "id":"ID_115",
@@ -10769,7 +10844,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25900)"
+"gene_reaction_rule":"CD630_25900"
 },
 {
 "id":"ID_82",
@@ -10784,7 +10859,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08320)"
+"gene_reaction_rule":"CD630_08320"
 },
 {
 "id":"ID_725",
@@ -10798,7 +10873,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08320)"
+"gene_reaction_rule":"CD630_08320"
 },
 {
 "id":"ID_120",
@@ -10813,7 +10888,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32260) or (CD630_32290)"
+"gene_reaction_rule":"CD630_32260 or CD630_32290"
 },
 {
 "id":"ID_701",
@@ -10827,7 +10902,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32260) or (CD630_32290)"
+"gene_reaction_rule":"CD630_32260 or CD630_32290"
 },
 {
 "id":"ID_462",
@@ -10854,7 +10929,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32270)"
+"gene_reaction_rule":"CD630_32270"
 },
 {
 "id":"ID_479",
@@ -10866,7 +10941,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20530) or (CD630_18080)"
+"gene_reaction_rule":"CD630_20530 or CD630_18080"
 },
 {
 "id":"ID_434",
@@ -10877,7 +10952,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22520)"
+"gene_reaction_rule":"CD630_22520"
 },
 {
 "id":"ID_288",
@@ -10890,7 +10965,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_26770 and CD630_26780)"
+"gene_reaction_rule":"CD630_26770 and CD630_26780"
 },
 {
 "id":"ID_531",
@@ -10904,7 +10979,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12240)"
+"gene_reaction_rule":"CD630_12240"
 },
 {
 "id":"ID_174",
@@ -10919,7 +10994,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23700)"
+"gene_reaction_rule":"CD630_23700"
 },
 {
 "id":"ID_395",
@@ -10932,7 +11007,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33570)"
+"gene_reaction_rule":"CD630_33570"
 },
 {
 "id":"ID_551",
@@ -10946,7 +11021,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25240)"
+"gene_reaction_rule":"CD630_25240"
 },
 {
 "id":"ID_218",
@@ -10961,7 +11036,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07940)"
+"gene_reaction_rule":"CD630_07940"
 },
 {
 "id":"ID_27",
@@ -10974,7 +11049,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25240)"
+"gene_reaction_rule":"CD630_25240"
 },
 {
 "id":"ID_58",
@@ -10988,7 +11063,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16820)"
+"gene_reaction_rule":"CD630_16820"
 },
 {
 "id":"ID_294",
@@ -11002,7 +11077,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23710)"
+"gene_reaction_rule":"CD630_23710"
 },
 {
 "id":"ID_313",
@@ -11019,7 +11094,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07940)"
+"gene_reaction_rule":"CD630_07940"
 },
 {
 "id":"ID_304",
@@ -11033,7 +11108,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23710)"
+"gene_reaction_rule":"CD630_23710"
 },
 {
 "id":"ID_262",
@@ -11051,7 +11126,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35430)"
+"gene_reaction_rule":"CD630_35430"
 },
 {
 "id":"ID_533",
@@ -11065,7 +11140,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25370) or (CD630_01990)"
+"gene_reaction_rule":"CD630_25370 or CD630_01990"
 },
 {
 "id":"ID_580",
@@ -11079,7 +11154,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34130)"
+"gene_reaction_rule":"CD630_34130"
 },
 {
 "id":"ID_41",
@@ -11106,7 +11181,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23720)"
+"gene_reaction_rule":"CD630_23720"
 },
 {
 "id":"ID_559",
@@ -11133,7 +11208,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10490)"
+"gene_reaction_rule":"CD630_10490"
 },
 {
 "id":"ID_651",
@@ -11146,7 +11221,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23710)"
+"gene_reaction_rule":"CD630_23710"
 },
 {
 "id":"ID_286",
@@ -11160,7 +11235,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21790)"
+"gene_reaction_rule":"CD630_21790"
 },
 {
 "id":"ID_386",
@@ -11174,8 +11249,8 @@
 "no3_c":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21790)"
+"upper_bound":0.0,
+"gene_reaction_rule":"CD630_21790"
 },
 {
 "id":"ID_521",
@@ -11190,7 +11265,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24310)"
+"gene_reaction_rule":"CD630_24310"
 },
 {
 "id":"ID_662",
@@ -11205,7 +11280,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_24310)"
+"gene_reaction_rule":"CD630_24310"
 },
 {
 "id":"ID_22",
@@ -11220,7 +11295,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21680)"
+"gene_reaction_rule":"CD630_21680"
 },
 {
 "id":"ID_43",
@@ -11235,7 +11310,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_24310)"
+"gene_reaction_rule":"CD630_24310"
 },
 {
 "id":"ID_697",
@@ -11250,7 +11325,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02220)"
+"gene_reaction_rule":"CD630_02220"
 },
 {
 "id":"ID_482",
@@ -11263,7 +11338,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07190)"
+"gene_reaction_rule":"CD630_07190"
 },
 {
 "id":"ID_591",
@@ -11277,7 +11352,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25770)"
+"gene_reaction_rule":"CD630_25770"
 },
 {
 "id":"ID_723",
@@ -11291,7 +11366,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07220)"
+"gene_reaction_rule":"CD630_07220"
 },
 {
 "id":"ID_326",
@@ -11306,7 +11381,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07260 and CD630_07250) or (CD07280)"
+"gene_reaction_rule":"(CD630_07260 and CD630_07250) or CD07280"
 },
 {
 "id":"ID_14",
@@ -11332,7 +11407,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27260) or (CD630_28340)"
+"gene_reaction_rule":"CD630_27260 or CD630_28340"
 },
 {
 "id":"ID_342",
@@ -11346,7 +11421,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07220)"
+"gene_reaction_rule":"CD630_07220"
 },
 {
 "id":"ID_145",
@@ -11359,7 +11434,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07190)"
+"gene_reaction_rule":"CD630_07190"
 },
 {
 "id":"ID_123",
@@ -11372,7 +11447,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07200)"
+"gene_reaction_rule":"CD630_07200"
 },
 {
 "id":"ID_483",
@@ -11386,7 +11461,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07270)"
+"gene_reaction_rule":"CD630_07270"
 },
 {
 "id":"ID_669",
@@ -11401,7 +11476,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34560)"
+"gene_reaction_rule":"CD630_34560"
 },
 {
 "id":"ID_499",
@@ -11414,7 +11489,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07200)"
+"gene_reaction_rule":"CD630_07200"
 },
 {
 "id":"ID_597",
@@ -11428,7 +11503,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16570)"
+"gene_reaction_rule":"CD630_16570"
 },
 {
 "id":"ID_623",
@@ -11443,7 +11518,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07180)"
+"gene_reaction_rule":"CD630_07180"
 },
 {
 "id":"ID_427",
@@ -11457,7 +11532,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34050 and CD630_34060 and CD630_34070)"
+"gene_reaction_rule":"CD630_34050 and CD630_34060 and CD630_34070"
 },
 {
 "id":"ID_12907",
@@ -11470,7 +11545,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07160) or (CD630_0174 and CD630_0175 and CD630_0176)"
+"gene_reaction_rule":"CD630_07160 or (CD630_0174 and CD630_0175 and CD630_0176)"
 },
 {
 "id":"ID_48",
@@ -11485,7 +11560,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23420)"
+"gene_reaction_rule":"CD630_23420"
 },
 {
 "id":"ID_378",
@@ -11500,7 +11575,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07170 ) or (CD630_07240) or (CD630_07250) or (CD630_07260) or (CD630_07270)"
+"gene_reaction_rule":"CD630_07170 or CD630_07240 or CD630_07250 or CD630_07260 or CD630_07270"
 },
 {
 "id":"ID_566",
@@ -11528,7 +11603,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07170) or (CD630_07240) or (CD630_07270) or (CD630_01740) or (CD630_07280 and CD630_07160)"
+"gene_reaction_rule":"CD630_07170 or CD630_07240 or CD630_07270 or CD630_01740 or (CD630_07280 and CD630_07160)"
 },
 {
 "id":"ID_244",
@@ -11542,7 +11617,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15360)"
+"gene_reaction_rule":"CD630_15360"
 },
 {
 "id":"ID_648",
@@ -11553,9 +11628,9 @@
 "h2_c":1.0,
 "h_c":-2.0
 },
-"lower_bound":-1000.0,
+"lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33140) or (CD630_32580) or (CD630_08930) or (CD630_08940)"
+"gene_reaction_rule":"CD630_33140 or CD630_32580 or CD630_08930 or CD630_08940"
 },
 {
 "id":"ID_316",
@@ -11569,7 +11644,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_07690) or (CD630_21790)"
+"gene_reaction_rule":"CD630_07690 or CD630_21790"
 },
 {
 "id":"Trans_fru",
@@ -11582,7 +11657,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31340) or (CD630_02060 and CD630_02070 and CD630_02080) or (CD630_32780 and CD630_32790 and CD630_32770 and CD630_32760) or (CD630_10740 and CD630_10760 and CD630_10770 and CD630_10780) or (CD630_04910 and CD630_04920 and CD630_04930 and CD630_04940) or (CD630_02860 and CD630_02870 and CD630_02880 and CD630_02890) or (CD630_02840 and CD630_02850) or (CD630_36290 and CD630_36300)"
+"gene_reaction_rule":"CD630_31340 or (CD630_02060 and CD630_02070 and CD630_02080) or (CD630_32780 and CD630_32790 and CD630_32770 and CD630_32760) or (CD630_10740 and CD630_10760 and CD630_10770 and CD630_10780) or (CD630_04910 and CD630_04920 and CD630_04930 and CD630_04940) or (CD630_02860 and CD630_02870 and CD630_02880 and CD630_02890) or (CD630_02840 and CD630_02850) or (CD630_36290 and CD630_36300)"
 },
 {
 "id":"Trans_udpagaepyr",
@@ -11623,7 +11698,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30300 and CD630_30270)"
+"gene_reaction_rule":"CD630_30300 and CD630_30270"
 },
 {
 "id":"Trans_tre",
@@ -11703,7 +11778,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04690)"
+"gene_reaction_rule":"CD630_04690"
 },
 {
 "id":"Trans_aga",
@@ -11716,7 +11791,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04690) or (CD630_08160) or (CD630_30970)"
+"gene_reaction_rule":"CD630_04690 or CD630_08160 or CD630_30970"
 },
 {
 "id":"Trans_mnl",
@@ -11729,7 +11804,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23320 and CD630_23340)"
+"gene_reaction_rule":"CD630_23320 and CD630_23340"
 },
 {
 "id":"Trans_dachi",
@@ -11743,7 +11818,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34450 and CD630_34440 and CD630_34430)"
+"gene_reaction_rule":"CD630_34450 and CD630_34440 and CD630_34430"
 },
 {
 "id":"Trans_fru2",
@@ -11756,7 +11831,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_31340) or (CD630_02060 and CD630_02070 and CD630_02080) or (CD630_32780 and CD630_32790 and CD630_32770 and CD630_32760) or (CD630_10740 and CD630_10760 and CD630_10770 and CD630_10780) or (CD630_04910 and CD630_04920 and CD630_04930 and CD630_04940) or (CD630_02860 and CD630_02870 and CD630_02880 and CD630_02890) or (CD630_02840 and CD630_02850) or (CD630_36290 and CD630_36300)"
+"gene_reaction_rule":"CD630_31340 or (CD630_02060 and CD630_02070 and CD630_02080) or (CD630_32780 and CD630_32790 and CD630_32770 and CD630_32760) or (CD630_10740 and CD630_10760 and CD630_10770 and CD630_10780) or (CD630_04910 and CD630_04920 and CD630_04930 and CD630_04940) or (CD630_02860 and CD630_02870 and CD630_02880 and CD630_02890) or (CD630_02840 and CD630_02850) or (CD630_36290 and CD630_36300)"
 },
 {
 "id":"Trans_tgt",
@@ -11769,7 +11844,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30750)"
+"gene_reaction_rule":"CD630_30750"
 },
 {
 "id":"Trans_sor2",
@@ -11795,7 +11870,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03880) or (CD630_31270) or (CD630_31250) or (CD630_30970) or (CD630_30300 and CD630_30270)"
+"gene_reaction_rule":"CD630_03880 or CD630_31270 or CD630_31250 or CD630_30970 or (CD630_30300 and CD630_30270)"
 },
 {
 "id":"Trans_fuc",
@@ -11821,7 +11896,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26770 and CD630_26780)"
+"gene_reaction_rule":"CD630_26770 and CD630_26780"
 },
 {
 "id":"ID_420",
@@ -11835,7 +11910,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15130)"
+"gene_reaction_rule":"CD630_15130"
 },
 {
 "id":"ID_296",
@@ -11847,7 +11922,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15130)"
+"gene_reaction_rule":"CD630_15130"
 },
 {
 "id":"ID_139",
@@ -11859,7 +11934,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25870)"
+"gene_reaction_rule":"CD630_25870"
 },
 {
 "id":"ID_405",
@@ -11888,7 +11963,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15120)"
+"gene_reaction_rule":"CD630_15120"
 },
 {
 "id":"ID_464",
@@ -11903,7 +11978,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25870)"
+"gene_reaction_rule":"CD630_25870"
 },
 {
 "id":"ID_570",
@@ -11916,7 +11991,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35550)"
+"gene_reaction_rule":"CD630_35550"
 },
 {
 "id":"ID_197",
@@ -11929,7 +12004,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15430)"
+"gene_reaction_rule":"CD630_15430"
 },
 {
 "id":"ID_50",
@@ -11954,7 +12029,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34660)"
+"gene_reaction_rule":"CD630_34660"
 },
 {
 "id":"ID_134",
@@ -11967,7 +12042,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11290)"
+"gene_reaction_rule":"CD630_11290"
 },
 {
 "id":"ID_515",
@@ -11982,7 +12057,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25870)"
+"gene_reaction_rule":"CD630_25870"
 },
 {
 "id":"ID_125",
@@ -11995,7 +12070,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35550)"
+"gene_reaction_rule":"CD630_35550"
 },
 {
 "id":"ID_449",
@@ -12007,7 +12082,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15660)"
+"gene_reaction_rule":"CD630_15660"
 },
 {
 "id":"ID_85",
@@ -12020,7 +12095,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35550)"
+"gene_reaction_rule":"CD630_35550"
 },
 {
 "id":"ID_663",
@@ -12034,7 +12109,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11810)"
+"gene_reaction_rule":"CD630_11810"
 },
 {
 "id":"ID_755",
@@ -12048,7 +12123,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01880) or (CD630_15140)"
+"gene_reaction_rule":"CD630_01880 or CD630_15140"
 },
 {
 "id":"ID_644",
@@ -12061,7 +12136,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25580)"
+"gene_reaction_rule":"CD630_25580"
 },
 {
 "id":"ID_398",
@@ -12074,7 +12149,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27150) or (CD630_34880)"
+"gene_reaction_rule":"CD630_27150 or CD630_34880"
 },
 {
 "id":"ID_592",
@@ -12139,7 +12214,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28720) or (CD630_28720') or (CD630_30020)"
+"gene_reaction_rule":"CD630_28720 or CD630_28720' or CD630_30020"
 },
 {
 "id":"ID_624",
@@ -12152,7 +12227,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30650)"
+"gene_reaction_rule":"CD630_30650"
 },
 {
 "id":"ID_332",
@@ -12176,7 +12251,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22780)"
+"gene_reaction_rule":"CD630_22780"
 },
 {
 "id":"ID_384",
@@ -12187,7 +12262,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30640) or (CD630_27100)"
+"gene_reaction_rule":"CD630_30640 or CD630_27100"
 },
 {
 "id":"ID_368",
@@ -12200,7 +12275,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23210) or (CD630_23220) or (CD630_34600) or (CD630_34590)"
+"gene_reaction_rule":"CD630_23210 or CD630_23220 or CD630_34600 or CD630_34590"
 },
 {
 "id":"ID_629",
@@ -12211,7 +12286,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23190) or (CD630_31090) or (CD630_25750)"
+"gene_reaction_rule":"CD630_23190 or CD630_31090 or CD630_25750"
 },
 {
 "id":"ID_419",
@@ -12251,7 +12326,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35140)"
+"gene_reaction_rule":"CD630_35140"
 },
 {
 "id":"ID_424",
@@ -12262,7 +12337,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23200 and CD630_34800)"
+"gene_reaction_rule":"CD630_23200 and CD630_34800"
 },
 {
 "id":"ID_160",
@@ -12273,7 +12348,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12230)"
+"gene_reaction_rule":"CD630_12230"
 },
 {
 "id":"ID_656",
@@ -12285,7 +12360,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_36260)"
+"gene_reaction_rule":"CD630_36260"
 },
 {
 "id":"ID_658",
@@ -12300,7 +12375,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28130)"
+"gene_reaction_rule":"CD630_28130"
 },
 {
 "id":"ID_68",
@@ -12313,7 +12388,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_36400)"
+"gene_reaction_rule":"CD630_36400"
 },
 {
 "id":"ID_73",
@@ -12326,7 +12401,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11910)"
+"gene_reaction_rule":"CD630_11910"
 },
 {
 "id":"ID_307",
@@ -12339,7 +12414,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30840)"
+"gene_reaction_rule":"CD630_30840"
 },
 {
 "id":"ID_620",
@@ -12351,7 +12426,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20140)"
+"gene_reaction_rule":"CD630_20140"
 },
 {
 "id":"ID_404",
@@ -12364,7 +12439,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02990)"
+"gene_reaction_rule":"CD630_02990"
 },
 {
 "id":"ID_312",
@@ -12376,7 +12451,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10110)"
+"gene_reaction_rule":"CD630_10110"
 },
 {
 "id":"ID_229",
@@ -12389,7 +12464,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02990)"
+"gene_reaction_rule":"CD630_02990"
 },
 {
 "id":"ID_577",
@@ -12402,7 +12477,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23220) or (CD630_23220') or (CD630_34600) or (CD630_34590)"
+"gene_reaction_rule":"CD630_23220 or CD630_23220' or CD630_34600 or CD630_34590"
 },
 {
 "id":"ID_490",
@@ -12413,7 +12488,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12230)"
+"gene_reaction_rule":"CD630_12230"
 },
 {
 "id":"ID_634",
@@ -12451,7 +12526,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15020)"
+"gene_reaction_rule":"CD630_15020"
 },
 {
 "id":"ID_116",
@@ -12464,7 +12539,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18380)"
+"gene_reaction_rule":"CD630_18380"
 },
 {
 "id":"ID_558",
@@ -12479,7 +12554,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22060)"
+"gene_reaction_rule":"CD630_22060"
 },
 {
 "id":"ID_300",
@@ -12494,7 +12569,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18390)"
+"gene_reaction_rule":"CD630_18390"
 },
 {
 "id":"ID_345",
@@ -12507,7 +12582,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18360)"
+"gene_reaction_rule":"CD630_18360"
 },
 {
 "id":"ID_585",
@@ -12534,7 +12609,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27080) or (CD630_270801)"
+"gene_reaction_rule":"CD630_27080 or CD630_270801"
 },
 {
 "id":"ID_335",
@@ -12546,7 +12621,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18350)"
+"gene_reaction_rule":"CD630_18350"
 },
 {
 "id":"ID_318",
@@ -12558,7 +12633,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18330)"
+"gene_reaction_rule":"CD630_18330"
 },
 {
 "id":"ID_568",
@@ -12572,7 +12647,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27080) or (CD630_270801)"
+"gene_reaction_rule":"CD630_27080 or CD630_270801"
 },
 {
 "id":"ID_7",
@@ -12585,7 +12660,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18360)"
+"gene_reaction_rule":"CD630_18360"
 },
 {
 "id":"ID_578",
@@ -12600,7 +12675,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18390)"
+"gene_reaction_rule":"CD630_18390"
 },
 {
 "id":"ID_96",
@@ -12613,7 +12688,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18340)"
+"gene_reaction_rule":"CD630_18340"
 },
 {
 "id":"ID_161",
@@ -12624,7 +12699,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18360)"
+"gene_reaction_rule":"CD630_18360"
 },
 {
 "id":"ID_79",
@@ -12636,7 +12711,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22170) or (CD630_20200) or (CD630_36410)"
+"gene_reaction_rule":"CD630_22170 or CD630_20200 or CD630_36410"
 },
 {
 "id":"ID_416",
@@ -12648,7 +12723,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19930)"
+"gene_reaction_rule":"CD630_19930"
 },
 {
 "id":"ID_476",
@@ -12661,7 +12736,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01070) or (CD630_13390) or (CD630_28280) or (CD630_15490) or (CD630_22000)"
+"gene_reaction_rule":"CD630_23820"
 },
 {
 "id":"ID_166",
@@ -12675,7 +12750,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14530) or (CD630_18320)"
+"gene_reaction_rule":"CD630_14530 or CD630_18320"
 },
 {
 "id":"ID_19",
@@ -12691,7 +12766,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07230 and CD630_00390)"
+"gene_reaction_rule":"CD630_07230 and CD630_00390"
 },
 {
 "id":"ID_576",
@@ -12703,7 +12778,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01540 and CD630_01530 and CD630_01550)"
+"gene_reaction_rule":"CD630_01540 and CD630_01530 and CD630_01550"
 },
 {
 "id":"ID_516",
@@ -12728,7 +12803,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28490)"
+"gene_reaction_rule":"CD630_28490"
 },
 {
 "id":"ID_598",
@@ -12741,7 +12816,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28490)"
+"gene_reaction_rule":"CD630_28490"
 },
 {
 "id":"ID_57",
@@ -12767,7 +12842,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_19170) or (CD630_29660)"
+"gene_reaction_rule":"CD630_03340 or CD630_19170 or CD630_29660"
 },
 {
 "id":"ID_303",
@@ -12780,7 +12855,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_36220)"
+"gene_reaction_rule":"CD630_36220"
 },
 {
 "id":"ID_248",
@@ -12795,7 +12870,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35380) or (CD630_35370) or (CD630_35360) or (CD630_35350)"
+"gene_reaction_rule":"CD630_35380 or CD630_35370 or CD630_35360 or CD630_35350"
 },
 {
 "id":"ID_376",
@@ -12807,7 +12882,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03330)"
+"gene_reaction_rule":"CD630_03330"
 },
 {
 "id":"ID_241",
@@ -12822,7 +12897,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22060)"
+"gene_reaction_rule":"CD630_22060"
 },
 {
 "id":"ID_693",
@@ -12863,7 +12938,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01080)"
+"gene_reaction_rule":"CD630_01080"
 },
 {
 "id":"ID_192",
@@ -12876,7 +12951,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25370)"
+"gene_reaction_rule":"CD630_25370"
 },
 {
 "id":"ID_706",
@@ -12889,7 +12964,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16820)"
+"gene_reaction_rule":"CD630_16820"
 },
 {
 "id":"ID_77",
@@ -12931,7 +13006,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12240)"
+"gene_reaction_rule":"CD630_12240"
 },
 {
 "id":"ID_126",
@@ -12944,7 +13019,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33940)"
+"gene_reaction_rule":"CD630_33940"
 },
 {
 "id":"ID_26",
@@ -12957,7 +13032,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33940)"
+"gene_reaction_rule":"CD630_33940"
 },
 {
 "id":"ID_80",
@@ -12970,7 +13045,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01990) or (CD630_25370)"
+"gene_reaction_rule":"CD630_01990 or CD630_25370"
 },
 {
 "id":"ID_350",
@@ -12985,7 +13060,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20740) or (CD630_20730) or (CD630_20790 and CD630_20800 and CD630_20810) or (CD630_20870) or (CD630_20880) or (CD630_20990 and CD630_21000 and CD630_21010) or (CD630_31770)"
+"gene_reaction_rule":"CD630_20740 or CD630_20730 or (CD630_20790 and CD630_20800 and CD630_20810) or CD630_20870 or CD630_20880 or (CD630_20990 and CD630_21000 and CD630_21010) or CD630_31770"
 },
 {
 "id":"ID_hypoxanribosyltran",
@@ -12998,7 +13073,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26910) or (CD630_32310)"
+"gene_reaction_rule":"CD630_26910 or CD630_32310"
 },
 {
 "id":"ID_901000",
@@ -13039,7 +13114,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12200)"
+"gene_reaction_rule":"CD630_12200"
 },
 {
 "id":"ID_489",
@@ -13065,7 +13140,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25880)"
+"gene_reaction_rule":"CD630_25880"
 },
 {
 "id":"ID_451",
@@ -13090,7 +13165,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23300)"
+"gene_reaction_rule":"CD630_23300"
 },
 {
 "id":"ID_111",
@@ -13102,7 +13177,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00910)"
+"gene_reaction_rule":"CD630_00910"
 },
 {
 "id":"ID_762",
@@ -13115,7 +13190,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25880)"
+"gene_reaction_rule":"CD630_25880"
 },
 {
 "id":"ID_305",
@@ -13130,7 +13205,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02200)"
+"gene_reaction_rule":"CD630_02200"
 },
 {
 "id":"ID_83",
@@ -13143,7 +13218,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16820)"
+"gene_reaction_rule":"CD630_16820"
 },
 {
 "id":"ID_237",
@@ -13156,7 +13231,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27440) or (CD630_03450)"
+"gene_reaction_rule":"CD630_27440 or CD630_03450"
 },
 {
 "id":"ID_589",
@@ -13182,7 +13257,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27440) or (CD630_03450)"
+"gene_reaction_rule":"CD630_27440 or CD630_03450"
 },
 {
 "id":"ID_392",
@@ -13195,7 +13270,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26910) or (CD630_32310)"
+"gene_reaction_rule":"CD630_26910 or CD630_32310"
 },
 {
 "id":"ID_642",
@@ -13209,7 +13284,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02210)"
+"gene_reaction_rule":"CD630_02210"
 },
 {
 "id":"ID_159",
@@ -13222,7 +13297,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12240)"
+"gene_reaction_rule":"CD630_12240"
 },
 {
 "id":"ID_632",
@@ -13235,7 +13310,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33940)"
+"gene_reaction_rule":"CD630_33940"
 },
 {
 "id":"ID_604",
@@ -13248,7 +13323,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01990) or (CD630_25370)"
+"gene_reaction_rule":"CD630_01990 or CD630_25370"
 },
 {
 "id":"ID_372",
@@ -13273,7 +13348,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16820)"
+"gene_reaction_rule":"CD630_16820"
 },
 {
 "id":"ID_100",
@@ -13286,7 +13361,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12240)"
+"gene_reaction_rule":"CD630_12240"
 },
 {
 "id":"ID_537",
@@ -13299,7 +13374,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00910)"
+"gene_reaction_rule":"CD630_00910"
 },
 {
 "id":"ID_343",
@@ -13312,7 +13387,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34910) or (CD630_03450)"
+"gene_reaction_rule":"CD630_34910 or CD630_03450"
 },
 {
 "id":"ID_475",
@@ -13325,7 +13400,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17470) or (CD630_00150)"
+"gene_reaction_rule":"CD630_17470 or CD630_00150"
 },
 {
 "id":"ID_30",
@@ -13338,7 +13413,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25370) or (CD630_01990)"
+"gene_reaction_rule":"CD630_25370 or CD630_01990"
 },
 {
 "id":"ID_81",
@@ -13351,7 +13426,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25880)"
+"gene_reaction_rule":"CD630_25880"
 },
 {
 "id":"ID_148",
@@ -13366,7 +13441,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02220)"
+"gene_reaction_rule":"CD630_02220"
 },
 {
 "id":"ID_730",
@@ -13378,7 +13453,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13340)"
+"gene_reaction_rule":"CD630_13340"
 },
 {
 "id":"ID_681",
@@ -13391,7 +13466,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35520)"
+"gene_reaction_rule":"CD630_35520"
 },
 {
 "id":"ID_274",
@@ -13408,7 +13483,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02250)"
+"gene_reaction_rule":"CD630_02250"
 },
 {
 "id":"ID_745",
@@ -13421,7 +13496,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26910) or (CD630_32310)"
+"gene_reaction_rule":"CD630_26910 or CD630_32310"
 },
 {
 "id":"ID_95",
@@ -13434,7 +13509,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12240)"
+"gene_reaction_rule":"CD630_12240"
 },
 {
 "id":"ID_724",
@@ -13447,7 +13522,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17470) or (CD630_00150)"
+"gene_reaction_rule":"CD630_17470 or CD630_00150"
 },
 {
 "id":"ID_666",
@@ -13459,7 +13534,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02230)"
+"gene_reaction_rule":"CD630_02230"
 },
 {
 "id":"ID_412",
@@ -13472,7 +13547,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02220)"
+"gene_reaction_rule":"CD630_02220"
 },
 {
 "id":"ID_736",
@@ -13508,7 +13583,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13340)"
+"gene_reaction_rule":"CD630_13340"
 },
 {
 "id":"ID_157",
@@ -13525,7 +13600,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01980)"
+"gene_reaction_rule":"CD630_01980"
 },
 {
 "id":"ID_183",
@@ -13538,7 +13613,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16630)"
+"gene_reaction_rule":"CD630_16630"
 },
 {
 "id":"ID_728",
@@ -13552,7 +13627,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_29950 and CD630_29940) or (CD630_12610)"
+"gene_reaction_rule":"(CD630_29950 and CD630_29940) or CD630_12610"
 },
 {
 "id":"ID_682",
@@ -13565,7 +13640,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08410)"
+"gene_reaction_rule":"CD630_08410"
 },
 {
 "id":"ID_503",
@@ -13580,7 +13655,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02190) or (CD630_04890)"
+"gene_reaction_rule":"CD630_02190 or CD630_04890"
 },
 {
 "id":"ID_201",
@@ -13608,7 +13683,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_36550)"
+"gene_reaction_rule":"CD630_36550"
 },
 {
 "id":"ID_63",
@@ -13621,7 +13696,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27450) or (CD630_35170)"
+"gene_reaction_rule":"CD630_27450 or CD630_35170"
 },
 {
 "id":"ID_437",
@@ -13647,7 +13722,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01080)"
+"gene_reaction_rule":"CD630_01080"
 },
 {
 "id":"ID_381",
@@ -13673,7 +13748,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12240)"
+"gene_reaction_rule":"CD630_12240"
 },
 {
 "id":"ID_282",
@@ -13686,7 +13761,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12240)"
+"gene_reaction_rule":"CD630_12240"
 },
 {
 "id":"ID_387",
@@ -13701,7 +13776,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02240)"
+"gene_reaction_rule":"CD630_02240"
 },
 {
 "id":"ID_739",
@@ -13714,7 +13789,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25370) or (CD630_01990)"
+"gene_reaction_rule":"CD630_25370 or CD630_01990"
 },
 {
 "id":"ID_684",
@@ -13727,7 +13802,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12240)"
+"gene_reaction_rule":"CD630_12240"
 },
 {
 "id":"ID_118",
@@ -13739,7 +13814,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02180)"
+"gene_reaction_rule":"CD630_02180"
 },
 {
 "id":"ID_679",
@@ -13767,7 +13842,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01980)"
+"gene_reaction_rule":"CD630_01980"
 },
 {
 "id":"ID_703",
@@ -13781,7 +13856,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_29950 and CD630_29940) or (CD630_12610)"
+"gene_reaction_rule":"(CD630_29950 and CD630_29940) or CD630_12610"
 },
 {
 "id":"ID_512",
@@ -13810,7 +13885,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23350)"
+"gene_reaction_rule":"CD630_23350"
 },
 {
 "id":"ID_thioredoxin",
@@ -13848,7 +13923,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27440) or (CD630_03450)"
+"gene_reaction_rule":"CD630_27440 or CD630_03450"
 },
 {
 "id":"ID_202",
@@ -13861,7 +13936,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27440)"
+"gene_reaction_rule":"CD630_27440"
 },
 {
 "id":"ID_655",
@@ -13874,7 +13949,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16820)"
+"gene_reaction_rule":"CD630_16820"
 },
 {
 "id":"ID_aspcarbtrans",
@@ -13888,7 +13963,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01840)"
+"gene_reaction_rule":"CD630_01840"
 },
 {
 "id":"ID_ncasmyl",
@@ -13901,7 +13976,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15260)"
+"gene_reaction_rule":"CD630_15260"
 },
 {
 "id":"ID_696",
@@ -13914,7 +13989,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_62",
@@ -13927,7 +14002,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33500)"
+"gene_reaction_rule":"CD630_33500"
 },
 {
 "id":"ID_460",
@@ -13941,7 +14016,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01080)"
+"gene_reaction_rule":"CD630_01080"
 },
 {
 "id":"ID_486",
@@ -13955,7 +14030,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04870)"
+"gene_reaction_rule":"CD630_04870"
 },
 {
 "id":"ID_277",
@@ -13969,7 +14044,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_29950 and CD630_29940) or (CD630_12610)"
+"gene_reaction_rule":"(CD630_29950 and CD630_29940) or CD630_12610"
 },
 {
 "id":"ID_1",
@@ -13982,7 +14057,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33940)"
+"gene_reaction_rule":"CD630_33940"
 },
 {
 "id":"ID_87",
@@ -13995,7 +14070,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18160)"
+"gene_reaction_rule":"CD630_18160"
 },
 {
 "id":"ID_715",
@@ -14008,7 +14083,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_327",
@@ -14021,7 +14096,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_593",
@@ -14034,7 +14109,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01870)"
+"gene_reaction_rule":"CD630_01870"
 },
 {
 "id":"ID_582",
@@ -14047,7 +14122,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33940)"
+"gene_reaction_rule":"CD630_33940"
 },
 {
 "id":"ID_97",
@@ -14061,7 +14136,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_29950 and CD630_29940) or (CD630_12610)"
+"gene_reaction_rule":"(CD630_29950 and CD630_29940) or CD630_12610"
 },
 {
 "id":"ID_641",
@@ -14074,7 +14149,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_600",
@@ -14087,7 +14162,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_206",
@@ -14100,7 +14175,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_102",
@@ -14112,7 +14187,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20830) or (CD630_31780) or (CD630_17180)"
+"gene_reaction_rule":"CD630_20830 or CD630_31780 or CD630_17180"
 },
 {
 "id":"ID_69",
@@ -14125,7 +14200,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34770)"
+"gene_reaction_rule":"CD630_34770"
 },
 {
 "id":"ID_13",
@@ -14138,7 +14213,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21380)"
+"gene_reaction_rule":"CD630_21380"
 },
 {
 "id":"ID_216",
@@ -14151,7 +14226,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35880)"
+"gene_reaction_rule":"CD630_35880"
 },
 {
 "id":"ID_363",
@@ -14164,7 +14239,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12250)"
+"gene_reaction_rule":"CD630_12250"
 },
 {
 "id":"ID_628",
@@ -14177,7 +14252,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33080)"
+"gene_reaction_rule":"CD630_33080"
 },
 {
 "id":"ID_614",
@@ -14190,7 +14265,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12250)"
+"gene_reaction_rule":"CD630_12250"
 },
 {
 "id":"ID_511",
@@ -14217,7 +14292,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00150)"
+"gene_reaction_rule":"CD630_00150"
 },
 {
 "id":"ID_144",
@@ -14260,7 +14335,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_289",
@@ -14303,7 +14378,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20830) or (CD630_31780)"
+"gene_reaction_rule":"CD630_20830 or CD630_31780"
 },
 {
 "id":"ID_661",
@@ -14329,7 +14404,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_448",
@@ -14358,7 +14433,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00540)"
+"gene_reaction_rule":"CD630_00540"
 },
 {
 "id":"ID_377",
@@ -14371,7 +14446,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_608",
@@ -14384,7 +14459,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12250)"
+"gene_reaction_rule":"CD630_12250"
 },
 {
 "id":"ID_690",
@@ -14410,7 +14485,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12250)"
+"gene_reaction_rule":"CD630_12250"
 },
 {
 "id":"ID_371",
@@ -14422,7 +14497,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15260) or (CD630_36430)"
+"gene_reaction_rule":"CD630_15260 or CD630_36430"
 },
 {
 "id":"ID_695",
@@ -14448,7 +14523,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_182",
@@ -14461,7 +14536,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34770)"
+"gene_reaction_rule":"CD630_34770"
 },
 {
 "id":"ID_653",
@@ -14474,7 +14549,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_122",
@@ -14526,7 +14601,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24030)"
+"gene_reaction_rule":"CD630_24030"
 },
 {
 "id":"ID_522",
@@ -14540,7 +14615,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04870)"
+"gene_reaction_rule":"CD630_04870"
 },
 {
 "id":"ID_133",
@@ -14569,7 +14644,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35500)"
+"gene_reaction_rule":"CD630_35500"
 },
 {
 "id":"ID_517",
@@ -14595,7 +14670,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_441",
@@ -14608,7 +14683,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_407",
@@ -14621,7 +14696,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33940)"
+"gene_reaction_rule":"CD630_33940"
 },
 {
 "id":"ID_239",
@@ -14634,7 +14709,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_137",
@@ -14648,7 +14723,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01080)"
+"gene_reaction_rule":"CD630_01080"
 },
 {
 "id":"ID_117",
@@ -14661,7 +14736,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25950) or (CD630_34790)"
+"gene_reaction_rule":"CD630_25950 or CD630_34790"
 },
 {
 "id":"ID_29",
@@ -14686,7 +14761,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35920)"
+"gene_reaction_rule":"CD630_35920"
 },
 {
 "id":"ID_734",
@@ -14713,7 +14788,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_413",
@@ -14726,7 +14801,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_269",
@@ -14739,7 +14814,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18160)"
+"gene_reaction_rule":"CD630_18160"
 },
 {
 "id":"ID_16",
@@ -14765,7 +14840,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34770) or (CD630_18990)"
+"gene_reaction_rule":"CD630_34770 or CD630_18990"
 },
 {
 "id":"ID_534",
@@ -14779,7 +14854,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16910) or (CD630_21170) or (CD630_23560)"
+"gene_reaction_rule":"CD630_16910 or CD630_21170 or CD630_23560"
 },
 {
 "id":"ID_718",
@@ -14792,7 +14867,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01030) or (CD630_10600) or (CD630_20500) or (CD630_25960) or (CD630_04050)"
+"gene_reaction_rule":"CD630_01030 or CD630_10600 or CD630_20500 or CD630_25960 or CD630_04050"
 },
 {
 "id":"ID_40",
@@ -14805,7 +14880,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24380)"
+"gene_reaction_rule":"CD630_24380"
 },
 {
 "id":"ID_528",
@@ -14857,7 +14932,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_432",
@@ -14870,7 +14945,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05570)"
+"gene_reaction_rule":"CD630_05570"
 },
 {
 "id":"ID_153",
@@ -14886,7 +14961,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19360 and CD630_19370 and CD630_19390 and CD630_19380)"
+"gene_reaction_rule":"CD630_19360 and CD630_19370 and CD630_19390 and CD630_19380"
 },
 {
 "id":"ID_474",
@@ -14900,8 +14975,8 @@
 "pi_c":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_29540 and CD630_29550 and CD630_29560 and CD630_34670 and CD630_29580 and CD630_29561 and CD630_29590)"
+"upper_bound":0.0,
+"gene_reaction_rule":"CD630_29540 and CD630_29550 and CD630_29560 and CD630_34670 and CD630_29580 and CD630_29561 and CD630_29590"
 },
 {
 "id":"ID_565",
@@ -14913,7 +14988,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10050)"
+"gene_reaction_rule":"CD630_10050"
 },
 {
 "id":"ID_32",
@@ -14929,7 +15004,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07230 and CD630_00360 and CD630_00370)"
+"gene_reaction_rule":"CD630_07230 and CD630_00360 and CD630_00370"
 },
 {
 "id":"ID_35",
@@ -14944,7 +15019,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22060)"
+"gene_reaction_rule":"CD630_22060"
 },
 {
 "id":"ID_49",
@@ -14958,7 +15033,7 @@
 "pi_c":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0.0,
 "gene_reaction_rule":"(CD630_34700 and CD630_34740 and CD630_34720 and CD630_34710 and CD630_34690 and CD630_34680 and CD630_29570 and CD630_29600 and CD630_34760) or (CD630_34700 and CD630_34740 and CD630_34720 and CD630_34710 and CD630_34690 and CD630_34680 and CD630_34730 and CD630_29600 and CD630_34760)"
 },
 {
@@ -14996,7 +15071,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11750)"
+"gene_reaction_rule":"CD630_11750"
 },
 {
 "id":"ID_188",
@@ -15011,7 +15086,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24100) or (CD630_05820)"
+"gene_reaction_rule":"CD630_24100 or CD630_05820"
 },
 {
 "id":"ID_163",
@@ -15040,7 +15115,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05820)"
+"gene_reaction_rule":"CD630_05820"
 },
 {
 "id":"ID_186",
@@ -15067,7 +15142,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03940)"
+"gene_reaction_rule":"CD630_03940"
 },
 {
 "id":"ID_394",
@@ -15079,7 +15154,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11340) or (CD630_19450) or (CD630_06710) or (CD630_04510)"
+"gene_reaction_rule":"CD630_11340 or CD630_19450 or CD630_06710 or CD630_04510"
 },
 {
 "id":"ID_177",
@@ -15094,7 +15169,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22060)"
+"gene_reaction_rule":"CD630_22060"
 },
 {
 "id":"ID_89",
@@ -15107,7 +15182,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23430)"
+"gene_reaction_rule":"CD630_23430"
 },
 {
 "id":"ID_105",
@@ -15120,7 +15195,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27420)"
+"gene_reaction_rule":"CD630_27420"
 },
 {
 "id":"ID_306",
@@ -15160,7 +15235,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10050)"
+"gene_reaction_rule":"CD630_10050"
 },
 {
 "id":"ID_716",
@@ -15172,7 +15247,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11530)"
+"gene_reaction_rule":"CD630_11530"
 },
 {
 "id":"ID_36",
@@ -15185,7 +15260,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07590) or (CD630_11200) or (CD630_32820)"
+"gene_reaction_rule":"CD630_07590 or CD630_11200 or CD630_32820"
 },
 {
 "id":"ID_710",
@@ -15198,7 +15273,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_33100)"
+"gene_reaction_rule":"CD630_33100"
 },
 {
 "id":"ID_234",
@@ -15211,7 +15286,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15350)"
+"gene_reaction_rule":"CD630_15350"
 },
 {
 "id":"ID_643",
@@ -15251,7 +15326,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20860)"
+"gene_reaction_rule":"CD630_20860"
 },
 {
 "id":"ID_692",
@@ -15265,7 +15340,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16740) or (CD630_18070) or (CD630_31890) or (CD630_20860)"
+"gene_reaction_rule":"CD630_16740 or CD630_18070 or CD630_31890 or CD630_20860"
 },
 {
 "id":"ID_162",
@@ -15278,7 +15353,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13150)"
+"gene_reaction_rule":"CD630_13150"
 },
 {
 "id":"ID_257",
@@ -15290,7 +15365,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16980)"
+"gene_reaction_rule":"CD630_16980"
 },
 {
 "id":"ID_375",
@@ -15317,7 +15392,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16980)"
+"gene_reaction_rule":"CD630_16980"
 },
 {
 "id":"ID_599",
@@ -15331,7 +15406,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16970)"
+"gene_reaction_rule":"CD630_16970"
 },
 {
 "id":"ID_250",
@@ -15344,7 +15419,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17000)"
+"gene_reaction_rule":"CD630_17000"
 },
 {
 "id":"ID_279",
@@ -15358,7 +15433,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17000)"
+"gene_reaction_rule":"CD630_17000"
 },
 {
 "id":"ID_110",
@@ -15370,7 +15445,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16970 and CD630_16990)"
+"gene_reaction_rule":"CD630_16970 and CD630_16990"
 },
 {
 "id":"Sec_na",
@@ -15389,7 +15464,7 @@
 "glyo_e":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -15788,8 +15863,8 @@
 "metabolites":{
 "ileL_e":-1.0
 },
-"lower_bound":0.0,
-"upper_bound":1000.0,
+"lower_bound":0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -16286,7 +16361,7 @@
 "id":"Sec_his",
 "name":"Secretion L-histidine",
 "metabolites":{
-"his_e":-1.0
+"hisL_e":-1.0
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
@@ -16409,7 +16484,7 @@
 "at_e":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -16539,7 +16614,7 @@
 "succ_e":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -16553,7 +16628,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17650)"
+"gene_reaction_rule":"CD630_17650"
 },
 {
 "id":"ID_422",
@@ -16566,7 +16641,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18050)"
+"gene_reaction_rule":"CD630_18050"
 },
 {
 "id":"ID_488",
@@ -16578,7 +16653,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08180)"
+"gene_reaction_rule":"CD630_08180"
 },
 {
 "id":"ID_258",
@@ -16591,7 +16666,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08820)"
+"gene_reaction_rule":"CD630_08820"
 },
 {
 "id":"ID_93",
@@ -16604,7 +16679,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18050)"
+"gene_reaction_rule":"CD630_18050"
 },
 {
 "id":"ID_646",
@@ -16618,7 +16693,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28810)"
+"gene_reaction_rule":"CD630_28810"
 },
 {
 "id":"ID_450",
@@ -16631,7 +16706,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03890) or (CD630_28820) or (CD630_038901) or (CD630_30960) or (CD630_038902) or (CD630_31240) or (CD630_038903) or (CD630_31300)"
+"gene_reaction_rule":"CD630_03890 or CD630_28820 or CD630_038901 or CD630_30960 or CD630_038902 or CD630_31240 or CD630_038903 or CD630_31300"
 },
 {
 "id":"ID_509",
@@ -16657,7 +16732,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13380) or (CD630_08640) or (CD630_30600) or (CD630_31300)"
+"gene_reaction_rule":"CD630_13380 or CD630_08640 or CD630_30600 or CD630_31300"
 },
 {
 "id":"ID_45",
@@ -16695,7 +16770,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21890) or (CD630_31280)"
+"gene_reaction_rule":"CD630_21890 or CD630_31280"
 },
 {
 "id":"ID_573",
@@ -16708,7 +16783,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30910)"
+"gene_reaction_rule":"CD630_30910"
 },
 {
 "id":"ID_315",
@@ -16721,7 +16796,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21880)"
+"gene_reaction_rule":"CD630_21880"
 },
 {
 "id":"ID_314",
@@ -16775,7 +16850,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20310)"
+"gene_reaction_rule":"CD630_20310"
 },
 {
 "id":"ID_13670",
@@ -16802,7 +16877,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19170)"
+"gene_reaction_rule":"CD630_19170"
 },
 {
 "id":"ID_114",
@@ -16831,7 +16906,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01120)"
+"gene_reaction_rule":"CD630_01120"
 },
 {
 "id":"ID_71",
@@ -16844,7 +16919,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_18060)"
+"gene_reaction_rule":"CD630_18060"
 },
 {
 "id":"ID_352",
@@ -16857,7 +16932,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01120)"
+"gene_reaction_rule":"CD630_01120"
 },
 {
 "id":"ID_178",
@@ -16897,7 +16972,7 @@
 "ileL_c":1.0,
 "s3m2op_c":-1.0
 },
-"lower_bound":0.0,
+"lower_bound":-1000.0,
 "upper_bound":1000.0,
 "gene_reaction_rule":""
 },
@@ -16911,7 +16986,7 @@
 "pi_c":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000,
+"upper_bound":1000.0,
 "gene_reaction_rule":""
 },
 {
@@ -16943,7 +17018,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_01160)"
+"gene_reaction_rule":"CD630_01160"
 },
 {
 "id":"ID_719",
@@ -16958,7 +17033,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24310) or (CD630_22330 and CD630_22320 and CD630_22310)"
+"gene_reaction_rule":"CD630_24310 or (CD630_22330 and CD630_22320 and CD630_22310)"
 },
 {
 "id":"ID_158",
@@ -16973,7 +17048,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":0.0,
-"gene_reaction_rule":"(CD630_24310)"
+"gene_reaction_rule":"CD630_24310"
 },
 {
 "id":"ID_510",
@@ -16987,7 +17062,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01210) or (CD630_15350)"
+"gene_reaction_rule":"CD630_01210 or CD630_15350"
 },
 {
 "id":"ID_584",
@@ -17014,7 +17089,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01210) or (CD630_15350)"
+"gene_reaction_rule":"CD630_01210 or CD630_15350"
 },
 {
 "id":"ID_141",
@@ -17029,7 +17104,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24310) or (CD630_22330 and CD630_22320 and CD630_22310)"
+"gene_reaction_rule":"CD630_24310 or (CD630_22330 and CD630_22320 and CD630_22310)"
 },
 {
 "id":"ID_266",
@@ -17172,7 +17247,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02440)"
+"gene_reaction_rule":"CD630_02440"
 },
 {
 "id":"ID_617",
@@ -17185,7 +17260,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12050)"
+"gene_reaction_rule":"CD630_12050"
 },
 {
 "id":"ID_292",
@@ -17200,7 +17275,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18180)"
+"gene_reaction_rule":"CD630_18180"
 },
 {
 "id":"ID_640",
@@ -17215,7 +17290,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18180)"
+"gene_reaction_rule":"CD630_18180"
 },
 {
 "id":"ID_187",
@@ -17243,7 +17318,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35660)"
+"gene_reaction_rule":"CD630_35660"
 },
 {
 "id":"ID_645",
@@ -17256,7 +17331,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00470)"
+"gene_reaction_rule":"CD630_00470"
 },
 {
 "id":"ID_705",
@@ -17271,7 +17346,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21280)"
+"gene_reaction_rule":"CD630_21280"
 },
 {
 "id":"ID_637",
@@ -17285,7 +17360,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21300)"
+"gene_reaction_rule":"CD630_21300"
 },
 {
 "id":"ID_150",
@@ -17298,7 +17373,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21360) or (CD630_27620)"
+"gene_reaction_rule":"CD630_21360 or CD630_27620"
 },
 {
 "id":"ID_70",
@@ -17311,7 +17386,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12050)"
+"gene_reaction_rule":"CD630_12050"
 },
 {
 "id":"ID_431",
@@ -17324,7 +17399,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12050)"
+"gene_reaction_rule":"CD630_12050"
 },
 {
 "id":"ID_639",
@@ -17337,7 +17412,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13320) or (CD630_29860)"
+"gene_reaction_rule":"CD630_13320 or CD630_29860"
 },
 {
 "id":"ID_403",
@@ -17350,7 +17425,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12050)"
+"gene_reaction_rule":"CD630_12050"
 },
 {
 "id":"ID_24",
@@ -17362,7 +17437,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07970)"
+"gene_reaction_rule":"CD630_07970"
 },
 {
 "id":"ID_587",
@@ -17373,7 +17448,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23770)"
+"gene_reaction_rule":"CD630_23770"
 },
 {
 "id":"ID_46",
@@ -17388,7 +17463,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18180)"
+"gene_reaction_rule":"CD630_18180"
 },
 {
 "id":"ID_17",
@@ -17400,7 +17475,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00480)"
+"gene_reaction_rule":"CD630_00480"
 },
 {
 "id":"ID_351",
@@ -17415,7 +17490,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18180)"
+"gene_reaction_rule":"CD630_18180"
 },
 {
 "id":"ID_689",
@@ -17445,7 +17520,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17050) or (CD630_21560)"
+"gene_reaction_rule":"CD630_17050 or CD630_21560"
 },
 {
 "id":"ID_468",
@@ -17459,7 +17534,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23220) or (CD630_23210) or (CD630_34600) or (CD630_34590)"
+"gene_reaction_rule":"CD630_23220 or CD630_23210 or CD630_34600 or CD630_34590"
 },
 {
 "id":"ID_225",
@@ -17472,7 +17547,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16000) or (CD630_21560)"
+"gene_reaction_rule":"CD630_16000 or CD630_21560"
 },
 {
 "id":"ID_214",
@@ -17486,7 +17561,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16010) or (CD630_17060)"
+"gene_reaction_rule":"CD630_16010 or CD630_17060"
 },
 {
 "id":"ID_636",
@@ -17502,7 +17577,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17020)"
+"gene_reaction_rule":"CD630_17020"
 },
 {
 "id":"ID_668",
@@ -17518,7 +17593,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17020)"
+"gene_reaction_rule":"CD630_17020"
 },
 {
 "id":"ID_238",
@@ -17544,7 +17619,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13530) or (CD630_15590)"
+"gene_reaction_rule":"CD630_13530 or CD630_15590"
 },
 {
 "id":"ID_228",
@@ -17558,7 +17633,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_23220) or (CD630_23210) or (CD630_34600) or (CD630_34590)"
+"gene_reaction_rule":"CD630_23220 or CD630_23210 or CD630_34600 or CD630_34590"
 },
 {
 "id":"ID_15",
@@ -17571,7 +17646,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20850) or (CD630_31840)"
+"gene_reaction_rule":"CD630_20850 or CD630_31840"
 },
 {
 "id":"ID_478",
@@ -17584,7 +17659,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_12070)"
+"gene_reaction_rule":"CD630_12070"
 },
 {
 "id":"ID_581",
@@ -17628,7 +17703,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25740) or (CD630_12150)"
+"gene_reaction_rule":"CD630_25740 or CD630_12150"
 },
 {
 "id":"ID_389",
@@ -17674,14 +17749,15 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30670 and CD630_30680 and CD630_30700 and CD630_30690) or (CD630_00340)"
+"gene_reaction_rule":"(CD630_30670 and CD630_30680 and CD630_30700 and CD630_30690) or CD630_00340"
 },
 {
 "id":"Trans_isobuta",
 "name":"Isobutyric acid transport",
 "metabolites":{
 "isobuta_c":-1.0,
-"isobuta_e":1.0
+"isobuta_e":1.0,
+"pmf_c":1
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
@@ -17696,14 +17772,15 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14780) or (CD630_15180) or (CD630_32730) or (CD630_14790) or (CD630_15170) or (CD630_32740) or (CD630_14770) or (CD630_09020) or (CD630_18310) or (CD630_21220) or (CD630_28320) or (CD630_32700) or (CD630_35200)"
+"gene_reaction_rule":"CD630_14780 or CD630_15180 or CD630_32730 or CD630_14790 or CD630_15170 or CD630_32740 or CD630_14770 or CD630_09020 or CD630_18310 or CD630_21220 or CD630_28320 or CD630_32700 or CD630_35200"
 },
 {
 "id":"Trans_ival",
 "name":"Isovalerate transport",
 "metabolites":{
 "ival_c":-1.0,
-"ival_e":1.0
+"ival_e":1.0,
+"pmf_c":1
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
@@ -17850,7 +17927,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_29710)"
+"gene_reaction_rule":"CD630_29710"
 },
 {
 "id":"Trans_pntoR",
@@ -17872,7 +17949,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02440)"
+"gene_reaction_rule":"CD630_02440"
 },
 {
 "id":"Trans_ibtol",
@@ -17894,7 +17971,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09020) or (CD630_18310) or (CD630_21220) or (CD630_28320) or (CD630_35200)"
+"gene_reaction_rule":"CD630_09020 or CD630_18310 or CD630_21220 or CD630_28320 or CD630_35200"
 },
 {
 "id":"Trans_glyo",
@@ -17912,7 +17989,8 @@
 "name":"2-Methylbutyric acid transport",
 "metabolites":{
 "2mbut_c":-1.0,
-"2mbut_e":1.0
+"2mbut_e":1.0,
+"pmf_c":1
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
@@ -17938,7 +18016,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22560)"
+"gene_reaction_rule":"CD630_22560"
 },
 {
 "id":"Trans_etoa",
@@ -17949,14 +18027,15 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19240) or (CD630_07420)"
+"gene_reaction_rule":"CD630_19240 or CD630_07420"
 },
 {
 "id":"Trans_5apn",
 "name":"5-aminopentanoate transport",
 "metabolites":{
 "5apn_c":-1.0,
-"5apn_e":1.0
+"5apn_e":1.0,
+"pmf_c":1
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
@@ -18022,7 +18101,8 @@
 "name":"Isocaproate transport",
 "metabolites":{
 "isocap_c":-1.0,
-"isocap_e":1.0
+"isocap_e":1.0,
+"pmf_c":1
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
@@ -18082,7 +18162,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08000)"
+"gene_reaction_rule":"CD630_08000"
 },
 {
 "id":"ID_119",
@@ -18123,7 +18203,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01070) or (CD630_13390) or (CD630_28280) or (CD630_15490) or (CD630_22000)"
+"gene_reaction_rule":"CD630_01070 or CD630_13390 or CD630_28280 or CD630_15490 or CD630_22000"
 },
 {
 "id":"ID_112",
@@ -18215,7 +18295,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09890)"
+"gene_reaction_rule":"CD630_09890"
 },
 {
 "id":"ID_212",
@@ -18227,7 +18307,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08000)"
+"gene_reaction_rule":"CD630_08000"
 },
 {
 "id":"ID_11",
@@ -18241,7 +18321,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09920) or (CD630_08340)"
+"gene_reaction_rule":"CD630_09920 or CD630_08340"
 },
 {
 "id":"ID_354",
@@ -18255,7 +18335,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11820)"
+"gene_reaction_rule":"CD630_11820"
 },
 {
 "id":"ID_757",
@@ -18268,7 +18348,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19930)"
+"gene_reaction_rule":"CD630_19930"
 },
 {
 "id":"ID_328",
@@ -18280,7 +18360,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09900 and CD630_09910)"
+"gene_reaction_rule":"CD630_09900 and CD630_09910"
 },
 {
 "id":"ID_217",
@@ -18293,7 +18373,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_14470)"
+"gene_reaction_rule":"CD630_14470"
 },
 {
 "id":"ID_454",
@@ -18305,7 +18385,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09900 and CD630_09910)"
+"gene_reaction_rule":"CD630_09900 and CD630_09910"
 },
 {
 "id":"ID_735",
@@ -18317,7 +18397,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20140)"
+"gene_reaction_rule":"CD630_20140"
 },
 {
 "id":"ID_369",
@@ -18330,7 +18410,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_36640)"
+"gene_reaction_rule":"CD630_36640"
 },
 {
 "id":"ID_691",
@@ -18343,7 +18423,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03990) or (CD630_10540)"
+"gene_reaction_rule":"CD630_03990 or CD630_10540"
 },
 {
 "id":"ID_731",
@@ -18356,7 +18436,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15660)"
+"gene_reaction_rule":"CD630_15660"
 },
 {
 "id":"ID_453",
@@ -18370,7 +18450,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_15650)"
+"gene_reaction_rule":"CD630_15650"
 },
 {
 "id":"ID_154",
@@ -18383,7 +18463,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10590) or (CD630_26760)"
+"gene_reaction_rule":"CD630_10590 or CD630_26760"
 },
 {
 "id":"ID_359",
@@ -18395,7 +18475,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_09920) or (CD630_08340)"
+"gene_reaction_rule":"CD630_09920 or CD630_08340"
 },
 {
 "id":"ID_520",
@@ -18409,7 +18489,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_30060)"
+"gene_reaction_rule":"CD630_03340 or CD630_30060"
 },
 {
 "id":"ID_430",
@@ -18425,7 +18505,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_05800)"
+"gene_reaction_rule":"CD630_05800"
 },
 {
 "id":"ID_539",
@@ -18437,8 +18517,8 @@
 "ppcoa_c":1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000,
-"gene_reaction_rule":"(CD630_07590) or (CD630_11200) or (CD630_32820)"
+"upper_bound":1000.0,
+"gene_reaction_rule":"CD630_07590 or CD630_11200 or CD630_32820"
 },
 {
 "id":"ID_8765",
@@ -18452,7 +18532,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34230)"
+"gene_reaction_rule":"CD630_34230"
 },
 {
 "id":"ID_203",
@@ -18466,7 +18546,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34180)"
+"gene_reaction_rule":"CD630_34180"
 },
 {
 "id":"ID_497",
@@ -18479,7 +18559,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19190)"
+"gene_reaction_rule":"CD630_19190"
 },
 {
 "id":"ID_256",
@@ -18492,7 +18572,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34200)"
+"gene_reaction_rule":"CD630_34200"
 },
 {
 "id":"ID_207",
@@ -18505,7 +18585,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34380)"
+"gene_reaction_rule":"CD630_34380"
 },
 {
 "id":"ID_236",
@@ -18519,7 +18599,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34390)"
+"gene_reaction_rule":"CD630_34390"
 },
 {
 "id":"ID_465",
@@ -18534,7 +18614,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24640) or (CD630_27410)"
+"gene_reaction_rule":"CD630_24640 or CD630_27410"
 },
 {
 "id":"ID_131",
@@ -18550,7 +18630,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_29710) or (CD630_02970) or (CD630_21550)"
+"gene_reaction_rule":"CD630_29710 or CD630_02970 or CD630_21550"
 },
 {
 "id":"ID_456",
@@ -18562,7 +18642,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34200)"
+"gene_reaction_rule":"CD630_34200"
 },
 {
 "id":"ID_529",
@@ -18574,7 +18654,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26920) or (CD630_34320)"
+"gene_reaction_rule":"CD630_26920 or CD630_34320"
 },
 {
 "id":"ID_538",
@@ -18587,7 +18667,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34380)"
+"gene_reaction_rule":"CD630_34380"
 },
 {
 "id":"ID_717",
@@ -18600,7 +18680,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34200)"
+"gene_reaction_rule":"CD630_34200"
 },
 {
 "id":"ID_47",
@@ -18613,7 +18693,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34380)"
+"gene_reaction_rule":"CD630_34380"
 },
 {
 "id":"ID_37",
@@ -18626,7 +18706,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34220)"
+"gene_reaction_rule":"CD630_34220"
 },
 {
 "id":"ID_260",
@@ -18638,7 +18718,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17330)"
+"gene_reaction_rule":"CD630_17330"
 },
 {
 "id":"ID_553",
@@ -18651,7 +18731,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_02410)"
+"gene_reaction_rule":"CD630_02410"
 },
 {
 "id":"ID_103",
@@ -18664,7 +18744,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35580)"
+"gene_reaction_rule":"CD630_35580"
 },
 {
 "id":"ID_671",
@@ -18678,7 +18758,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34290)"
+"gene_reaction_rule":"CD630_34290"
 },
 {
 "id":"ID_91",
@@ -18693,7 +18773,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11820)"
+"gene_reaction_rule":"CD630_11820"
 },
 {
 "id":"ID_540",
@@ -18705,7 +18785,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34190)"
+"gene_reaction_rule":"CD630_34190"
 },
 {
 "id":"ID_281",
@@ -18718,7 +18798,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34220)"
+"gene_reaction_rule":"CD630_34220"
 },
 {
 "id":"ID_25",
@@ -18732,7 +18812,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34370)"
+"gene_reaction_rule":"CD630_34370"
 },
 {
 "id":"ID_704",
@@ -18745,7 +18825,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_36320) or (CD630_14010)"
+"gene_reaction_rule":"CD630_36320 or CD630_14010"
 },
 {
 "id":"ID_426",
@@ -18759,7 +18839,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34270)"
+"gene_reaction_rule":"CD630_34270"
 },
 {
 "id":"ID_245",
@@ -18773,7 +18853,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19190)"
+"gene_reaction_rule":"CD630_19190"
 },
 {
 "id":"ID_440",
@@ -18800,7 +18880,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16790)"
+"gene_reaction_rule":"CD630_16790"
 },
 {
 "id":"ID_552",
@@ -18815,7 +18895,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34330)"
+"gene_reaction_rule":"CD630_34330"
 },
 {
 "id":"ID_572",
@@ -18828,7 +18908,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34280)"
+"gene_reaction_rule":"CD630_34280"
 },
 {
 "id":"ID_138",
@@ -18841,7 +18921,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34210)"
+"gene_reaction_rule":"CD630_34210"
 },
 {
 "id":"ID_5401",
@@ -18853,7 +18933,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34190)"
+"gene_reaction_rule":"CD630_34190"
 },
 {
 "id":"ID_618",
@@ -18870,7 +18950,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34350)"
+"gene_reaction_rule":"CD630_34350"
 },
 {
 "id":"ID_364",
@@ -18881,7 +18961,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34300)"
+"gene_reaction_rule":"CD630_34300"
 },
 {
 "id":"ID_487",
@@ -18894,7 +18974,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34260)"
+"gene_reaction_rule":"CD630_34260"
 },
 {
 "id":"ID_129",
@@ -18921,7 +19001,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34230)"
+"gene_reaction_rule":"CD630_34230"
 },
 {
 "id":"ID_700",
@@ -18934,7 +19014,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34360)"
+"gene_reaction_rule":"CD630_34360"
 },
 {
 "id":"ID_67",
@@ -18947,7 +19027,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34180) or (CD630_34200)"
+"gene_reaction_rule":"CD630_34180 or CD630_34200"
 },
 {
 "id":"ID_190",
@@ -18960,7 +19040,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34240)"
+"gene_reaction_rule":"CD630_34240"
 },
 {
 "id":"ID_670",
@@ -18977,7 +19057,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34340)"
+"gene_reaction_rule":"CD630_34340"
 },
 {
 "id":"ID_760",
@@ -18991,7 +19071,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34370)"
+"gene_reaction_rule":"CD630_34370"
 },
 {
 "id":"ID_484",
@@ -19004,7 +19084,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34220)"
+"gene_reaction_rule":"CD630_34220"
 },
 {
 "id":"ID_101",
@@ -19017,7 +19097,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34250)"
+"gene_reaction_rule":"CD630_34250"
 },
 {
 "id":"ID_761",
@@ -19030,7 +19110,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_34360)"
+"gene_reaction_rule":"CD630_34360"
 },
 {
 "id":"ID_508",
@@ -19041,8 +19121,8 @@
 "pyam_c":-1.0,
 "pyr_c":-1.0
 },
-"lower_bound":-1000.0,
-"upper_bound":1000.0,
+"lower_bound":0.0,
+"upper_bound":0.0,
 "gene_reaction_rule":""
 },
 {
@@ -19056,7 +19136,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13530)"
+"gene_reaction_rule":"CD630_13530"
 },
 {
 "id":"ID_220",
@@ -19109,7 +19189,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13530)"
+"gene_reaction_rule":"CD630_13530"
 },
 {
 "id":"ID_270",
@@ -19201,7 +19281,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_glcAD",
@@ -19214,7 +19294,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_uri",
@@ -19240,7 +19320,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25940) or (CD630_31800)"
+"gene_reaction_rule":"CD630_25940 or CD630_31800"
 },
 {
 "id":"Trans_h3",
@@ -19252,8 +19332,8 @@
 "na_e":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_04490) or (CD630_16550) or (CD630_27340) or (CD630_21020) or (CD630_26691)"
+"upper_bound":0.0,
+"gene_reaction_rule":"CD630_04490 or CD630_16550 or CD630_27340 or CD630_21020 or CD630_26691"
 },
 {
 "id":"Trans_ca2",
@@ -19266,7 +19346,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07600)"
+"gene_reaction_rule":"CD630_07600"
 },
 {
 "id":"Trans_xyld2",
@@ -19279,7 +19359,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_ac",
@@ -19287,8 +19367,7 @@
 "metabolites":{
 "ac_c":-1.0,
 "ac_e":1.0,
-"h_c":-1.0,
-"h_e":1.0
+"pmf_c":1
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
@@ -19305,7 +19384,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28120) or (CD630_17370)"
+"gene_reaction_rule":"CD630_28120 or CD630_17370"
 },
 {
 "id":"Trans_pi",
@@ -19318,7 +19397,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_32860) or (CD630_17290)"
+"gene_reaction_rule":"CD630_32860 or CD630_17290"
 },
 {
 "id":"Trans_dad",
@@ -19357,7 +19436,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_thymd",
@@ -19396,7 +19475,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21240) or (CD630_31690)"
+"gene_reaction_rule":"CD630_21240 or CD630_31690"
 },
 {
 "id":"Trans_ribflv",
@@ -19435,7 +19514,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30040) or (CD630_28700)"
+"gene_reaction_rule":"CD630_30040 or CD630_28700"
 },
 {
 "id":"Trans_h2",
@@ -19448,7 +19527,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_35750) or (CD630_22390) or (CD630_22020) or (CD630_06820) or (CD630_06570) or (CD630_36160)"
+"gene_reaction_rule":"CD630_35750 or CD630_22390 or CD630_22020 or CD630_06820 or CD630_06570 or CD630_36160"
 },
 {
 "id":"Trans_sor",
@@ -19461,7 +19540,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_malt2",
@@ -19474,7 +19553,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_k2",
@@ -19487,7 +19566,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_06960)"
+"gene_reaction_rule":"CD630_06960"
 },
 {
 "id":"Trans_csn",
@@ -19500,7 +19579,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_27380) or (CD630_17160)"
+"gene_reaction_rule":"CD630_27380 or CD630_17160"
 },
 {
 "id":"Trans_sucr2",
@@ -19513,7 +19592,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_ins",
@@ -19539,7 +19618,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_28350) or (CD630_31000)"
+"gene_reaction_rule":"CD630_28350 or CD630_31000"
 },
 {
 "id":"Trans_arab",
@@ -19552,7 +19631,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_acnam",
@@ -19565,7 +19644,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_xan",
@@ -19578,7 +19657,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_20750) or (CD630_20910) or (CD630_20900)"
+"gene_reaction_rule":"CD630_20750 or CD630_20910 or CD630_20900"
 },
 {
 "id":"Trans_gal",
@@ -19591,7 +19670,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25490)"
+"gene_reaction_rule":"CD630_25490"
 },
 {
 "id":"Trans_so",
@@ -19604,7 +19683,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07980) or (CD630_21090)"
+"gene_reaction_rule":"CD630_07980 or CD630_21090"
 },
 {
 "id":"Trans_xan2",
@@ -19617,7 +19696,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21070)"
+"gene_reaction_rule":"CD630_21070"
 },
 {
 "id":"Trans_alaL",
@@ -19630,7 +19709,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_16960) or (CD630_22760) or (CD630_24220)"
+"gene_reaction_rule":"CD630_16960 or CD630_22760 or CD630_24220"
 },
 {
 "id":"Trans_adn",
@@ -19669,7 +19748,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_17460) or (CD630_25410)"
+"gene_reaction_rule":"CD630_17460 or CD630_25410"
 },
 {
 "id":"Trans_chor",
@@ -19695,7 +19774,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25410)"
+"gene_reaction_rule":"CD630_25410"
 },
 {
 "id":"FAS1_s",
@@ -19735,7 +19814,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25770) or (CD630_11820)"
+"gene_reaction_rule":"CD630_25770 or CD630_11820"
 },
 {
 "id":"FAS1_1_1",
@@ -19747,7 +19826,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01280)"
+"gene_reaction_rule":"CD630_01280"
 },
 {
 "id":"FAS1_1_2",
@@ -19761,7 +19840,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11800)"
+"gene_reaction_rule":"CD630_11800"
 },
 {
 "id":"FAS1_1_3",
@@ -19790,7 +19869,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11790) and (CD630_11840)"
+"gene_reaction_rule":"CD630_11790 and CD630_11840"
 },
 {
 "id":"FAS2_2_2",
@@ -19804,7 +19883,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25770) or (CD630_11820)"
+"gene_reaction_rule":"CD630_25770 or CD630_11820"
 },
 {
 "id":"FAS2_2_3",
@@ -19830,7 +19909,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01280)"
+"gene_reaction_rule":"CD630_01280"
 },
 {
 "id":"FAS1_2_2_1",
@@ -19844,7 +19923,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11800)"
+"gene_reaction_rule":"CD630_11800"
 },
 {
 "id":"FAS2_3_1",
@@ -19859,7 +19938,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11790) and (CD630_11840)"
+"gene_reaction_rule":"CD630_11790 and CD630_11840"
 },
 {
 "id":"FAS2_3_2",
@@ -19873,7 +19952,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25770) or (CD630_11820)"
+"gene_reaction_rule":"CD630_25770 or CD630_11820"
 },
 {
 "id":"FAS2_3_3",
@@ -19899,7 +19978,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01280)"
+"gene_reaction_rule":"CD630_01280"
 },
 {
 "id":"FAS1_3_2_1",
@@ -19913,7 +19992,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25770) or (CD630_11820)"
+"gene_reaction_rule":"CD630_25770 or CD630_11820"
 },
 {
 "id":"FAS2_4_1",
@@ -19928,7 +20007,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11790) and (CD630_11840)"
+"gene_reaction_rule":"CD630_11790 and CD630_11840"
 },
 {
 "id":"FAS2_4_2",
@@ -19942,7 +20021,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25770) or (CD630_11820)"
+"gene_reaction_rule":"CD630_25770 or CD630_11820"
 },
 {
 "id":"FAS2_4_3",
@@ -19968,7 +20047,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01280)"
+"gene_reaction_rule":"CD630_01280"
 },
 {
 "id":"FAS1_4_2_1",
@@ -19982,7 +20061,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11800)"
+"gene_reaction_rule":"CD630_11800"
 },
 {
 "id":"FAS2_5_1",
@@ -19997,7 +20076,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11790) and (CD630_11840)"
+"gene_reaction_rule":"CD630_11790 and CD630_11840"
 },
 {
 "id":"FAS2_5_2",
@@ -20011,7 +20090,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25770) or (CD630_11820)"
+"gene_reaction_rule":"CD630_25770 or CD630_11820"
 },
 {
 "id":"FAS2_5_3",
@@ -20037,7 +20116,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01280)"
+"gene_reaction_rule":"CD630_01280"
 },
 {
 "id":"FAS1_5_2_1",
@@ -20051,7 +20130,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11800)"
+"gene_reaction_rule":"CD630_11800"
 },
 {
 "id":"FAS2_6_1",
@@ -20066,7 +20145,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11790) and (CD630_11840)"
+"gene_reaction_rule":"CD630_11790 and CD630_11840"
 },
 {
 "id":"FAS2_6_2",
@@ -20080,7 +20159,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25770) or (CD630_11820)"
+"gene_reaction_rule":"CD630_25770 or CD630_11820"
 },
 {
 "id":"FAS2_6_3",
@@ -20106,7 +20185,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01280)"
+"gene_reaction_rule":"CD630_01280"
 },
 {
 "id":"FAS1_6_2",
@@ -20120,7 +20199,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11800)"
+"gene_reaction_rule":"CD630_11800"
 },
 {
 "id":"FAS2_7_1",
@@ -20135,7 +20214,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11790) and (CD630_11840)"
+"gene_reaction_rule":"CD630_11790 and CD630_11840"
 },
 {
 "id":"FAS2_7_2",
@@ -20149,7 +20228,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_25770) or (CD630_11820)"
+"gene_reaction_rule":"CD630_25770 or CD630_11820"
 },
 {
 "id":"FAS2_7_3",
@@ -20204,7 +20283,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19660)"
+"gene_reaction_rule":"CD630_19660"
 },
 {
 "id":"FAA1_4",
@@ -20219,7 +20298,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19660)"
+"gene_reaction_rule":"CD630_19660"
 },
 {
 "id":"ID_390",
@@ -20233,7 +20312,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10580)"
+"gene_reaction_rule":"CD630_10580"
 },
 {
 "id":"ID_400",
@@ -20246,7 +20325,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10560) or (CD630_10550) or (CD630_10540)"
+"gene_reaction_rule":"CD630_10560 or CD630_10550 or CD630_10540"
 },
 {
 "id":"ID_325",
@@ -20258,7 +20337,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_08000) or (CD630_10570)"
+"gene_reaction_rule":"CD630_08000 or CD630_10570"
 },
 {
 "id":"ID_481",
@@ -20270,7 +20349,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_10590) or (CD630_26760)"
+"gene_reaction_rule":"CD630_10590 or CD630_26760"
 },
 {
 "id":"ID_471",
@@ -20284,7 +20363,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19660)"
+"gene_reaction_rule":"CD630_19660"
 },
 {
 "id":"ID_409",
@@ -20306,7 +20385,6 @@
 "amp_c":1.0,
 "atp_c":-1.0,
 "coa_c":-1.0,
-"h_c":-1.0,
 "ppi_c":1.0
 },
 "lower_bound":0.0,
@@ -20324,7 +20402,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19660)"
+"gene_reaction_rule":"CD630_19660"
 },
 {
 "id":"ID_05458",
@@ -20337,7 +20415,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19660)"
+"gene_reaction_rule":"CD630_19660"
 },
 {
 "id":"ID_9624",
@@ -20350,7 +20428,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19660)"
+"gene_reaction_rule":"CD630_19660"
 },
 {
 "id":"ID_9",
@@ -20364,7 +20442,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_29660) or (CD630_30060)"
+"gene_reaction_rule":"CD630_03340 or CD630_29660 or CD630_30060"
 },
 {
 "id":"ID_298",
@@ -20378,7 +20456,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_29660) or (CD630_30060)"
+"gene_reaction_rule":"CD630_03340 or CD630_29660 or CD630_30060"
 },
 {
 "id":"ID_678",
@@ -20393,7 +20471,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_22060)"
+"gene_reaction_rule":"CD630_22060"
 },
 {
 "id":"ID_564",
@@ -20406,7 +20484,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_07410) or (CD630_13820)"
+"gene_reaction_rule":"CD630_07410 or CD630_13820"
 },
 {
 "id":"ID_10211",
@@ -20419,7 +20497,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18170) or (CD630_17230)"
+"gene_reaction_rule":"CD630_18170 or CD630_17230"
 },
 {
 "id":"ID_10212",
@@ -20432,7 +20510,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18170) or (CD630_17230)"
+"gene_reaction_rule":"CD630_18170 or CD630_17230"
 },
 {
 "id":"ID_10213",
@@ -20445,7 +20523,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_18170) or (CD630_17230)"
+"gene_reaction_rule":"CD630_18170 or CD630_17230"
 },
 {
 "id":"ID_1021311",
@@ -20458,7 +20536,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24390)"
+"gene_reaction_rule":"CD630_24390"
 },
 {
 "id":"ID_1021312",
@@ -20471,7 +20549,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24390)"
+"gene_reaction_rule":"CD630_24390"
 },
 {
 "id":"ID_1021313",
@@ -20484,7 +20562,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_24390)"
+"gene_reaction_rule":"CD630_24390"
 },
 {
 "id":"ID_429_1",
@@ -20497,7 +20575,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00190) or (CD630_13440)"
+"gene_reaction_rule":"CD630_00190 or CD630_13440"
 },
 {
 "id":"ID_429_2",
@@ -20510,7 +20588,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00190) or (CD630_13440)"
+"gene_reaction_rule":"CD630_00190 or CD630_13440"
 },
 {
 "id":"ID_429_3",
@@ -20523,7 +20601,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00190) or (CD630_13440)"
+"gene_reaction_rule":"CD630_00190 or CD630_13440"
 },
 {
 "id":"ID_86_1",
@@ -20536,7 +20614,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00190) or (CD630_13440)"
+"gene_reaction_rule":"CD630_00190 or CD630_13440"
 },
 {
 "id":"ID_86_2",
@@ -20549,7 +20627,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00190) or (CD630_13440)"
+"gene_reaction_rule":"CD630_00190 or CD630_13440"
 },
 {
 "id":"ID_86_3",
@@ -20562,7 +20640,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_00190) or (CD630_13440)"
+"gene_reaction_rule":"CD630_00190 or CD630_13440"
 },
 {
 "id":"ID_477",
@@ -20577,7 +20655,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26550)"
+"gene_reaction_rule":"CD630_26550"
 },
 {
 "id":"ID_224_1",
@@ -20643,7 +20721,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26300)"
+"gene_reaction_rule":"CD630_26300"
 },
 {
 "id":"ID_56",
@@ -20657,7 +20735,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_26300)"
+"gene_reaction_rule":"CD630_26300"
 },
 {
 "id":"ID_340",
@@ -20669,7 +20747,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_19130 and CD630_19140)"
+"gene_reaction_rule":"CD630_19130 and CD630_19140"
 },
 {
 "id":"ID_546_1",
@@ -20682,7 +20760,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21350)"
+"gene_reaction_rule":"CD630_21350"
 },
 {
 "id":"ID_546_2",
@@ -20695,7 +20773,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21350)"
+"gene_reaction_rule":"CD630_21350"
 },
 {
 "id":"ID_546_3",
@@ -20708,7 +20786,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_21350)"
+"gene_reaction_rule":"CD630_21350"
 },
 {
 "id":"ID_204_1",
@@ -20760,7 +20838,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13270)"
+"gene_reaction_rule":"CD630_13270"
 },
 {
 "id":"ID_588_2",
@@ -20773,7 +20851,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13270)"
+"gene_reaction_rule":"CD630_13270"
 },
 {
 "id":"ID_588_3",
@@ -20786,7 +20864,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_13270)"
+"gene_reaction_rule":"CD630_13270"
 },
 {
 "id":"ID_185_1",
@@ -20840,7 +20918,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01920) or (CD630_34040)"
+"gene_reaction_rule":"CD630_01920 or CD630_34040"
 },
 {
 "id":"ID_232_2",
@@ -20852,7 +20930,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01920) or (CD630_34040)"
+"gene_reaction_rule":"CD630_01920 or CD630_34040"
 },
 {
 "id":"ID_232_3",
@@ -20864,7 +20942,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01920) or (CD630_34040)"
+"gene_reaction_rule":"CD630_01920 or CD630_34040"
 },
 {
 "id":"ID_78_1",
@@ -20877,7 +20955,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11780)"
+"gene_reaction_rule":"CD630_11780"
 },
 {
 "id":"ID_78_2",
@@ -20890,7 +20968,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11780)"
+"gene_reaction_rule":"CD630_11780"
 },
 {
 "id":"ID_78_3",
@@ -20903,7 +20981,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_11780)"
+"gene_reaction_rule":"CD630_11780"
 },
 {
 "id":"SELprotein",
@@ -20914,7 +20992,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"( CD630_24930 )"
+"gene_reaction_rule":"CD630_24930"
 },
 {
 "id":"SELCYSS",
@@ -20928,7 +21006,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"( CD630_24950) or ( CD630_36420 )"
+"gene_reaction_rule":"CD630_24950 or CD630_36420"
 },
 {
 "id":"SELGTHR",
@@ -20987,7 +21065,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"( CD630_24960 )"
+"gene_reaction_rule":"CD630_24960"
 },
 {
 "id":"SELR",
@@ -21001,7 +21079,7 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"( CD630_20990 )"
+"gene_reaction_rule":"CD630_20990"
 },
 {
 "id":"SELtpp",
@@ -21054,7 +21132,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30290)"
+"gene_reaction_rule":"CD630_30290"
 },
 {
 "id":"ID_15137",
@@ -21067,7 +21145,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_30290)"
+"gene_reaction_rule":"CD630_30290"
 },
 {
 "id":"Ex_biomass",
@@ -21076,8 +21154,9 @@
 "biomass_c":-1.0
 },
 "lower_bound":0.0,
-"upper_bound":0.0,
-"gene_reaction_rule":""
+"upper_bound":1000.0,
+"gene_reaction_rule":"",
+"objective_coefficient":1.0
 },
 {
 "id":"Ex_fe2",
@@ -21098,7 +21177,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01130) or (CD630_23790) or (CD630_011301)"
+"gene_reaction_rule":"CD630_01130 or CD630_23790 or CD630_011301"
 },
 {
 "id":"PTA2",
@@ -21111,12 +21190,13 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01120) or (CD630_07150) or (CD630_24250)"
+"gene_reaction_rule":"CD630_01120 or CD630_07150 or CD630_24250"
 },
 {
 "id":"PPAtex",
 "name":"Propionate transport via diffusion",
 "metabolites":{
+"pmf_c":1,
 "ppa_c":-1,
 "ppa_e":1
 },
@@ -21160,7 +21240,8 @@
 "name":"Transport of Indole-3-acetate",
 "metabolites":{
 "ind3ac_c":-1,
-"ind3ac_e":1
+"ind3ac_e":1,
+"pmf_c":1
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
@@ -21173,7 +21254,7 @@
 "ind3ac_e":-1
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0.0,
 "gene_reaction_rule":""
 },
 {
@@ -21216,7 +21297,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03990)"
+"gene_reaction_rule":"CD630_03990"
 },
 {
 "id":"RNF-Complex",
@@ -21260,7 +21341,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03990)"
+"gene_reaction_rule":"CD630_03990"
 },
 {
 "id":"CrotCoA_DHG_EB",
@@ -21301,18 +21382,19 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01130) or (CD630_23790) or (CD630_011301)"
+"gene_reaction_rule":"CD630_01130 or CD630_23790 or CD630_011301"
 },
 {
 "id":"BUTt",
 "name":"Butyrate transport",
 "metabolites":{
 "but_c":-1,
-"but_e":1
+"but_e":1,
+"pmf_c":1
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_01120) or (CD630_07150) or (CD630_24250)"
+"gene_reaction_rule":"CD630_01120 or CD630_07150 or CD630_24250"
 },
 {
 "id":"Sec_but",
@@ -21331,7 +21413,7 @@
 "lacS_e":-1
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -21347,7 +21429,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_29660)"
+"gene_reaction_rule":"CD630_03340 or CD630_29660"
 },
 {
 "id":"ADH_Btal",
@@ -21361,7 +21443,7 @@
 },
 "lower_bound":-1000.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"(CD630_03340) or (CD630_30060) or (CD630_29660)"
+"gene_reaction_rule":"CD630_03340 or CD630_30060 or CD630_29660"
 },
 {
 "id":"BUTAt",
@@ -21381,7 +21463,7 @@
 "buta_e":-1
 },
 "lower_bound":0.0,
-"upper_bound":1000.0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
@@ -21408,7 +21490,7 @@
 "nad_c":-1,
 "nadh_c":1
 },
-"lower_bound":0.0,
+"lower_bound":-1000.0,
 "upper_bound":1000.0,
 "gene_reaction_rule":"CD630_34050 and CD630_34060 and CD630_34070"
 },
@@ -21424,8 +21506,76 @@
 },
 "lower_bound":0.0,
 "upper_bound":1000.0,
-"gene_reaction_rule":"",
-"objective_coefficient":1.0
+"gene_reaction_rule":""
+},
+{
+"id":"Trans_alaL_PMF",
+"name":"Alanine transport, proton-motive force",
+"metabolites":{
+"alaL_c":-1,
+"alaL_e":1,
+"pmf_c":1
+},
+"lower_bound":-1000.0,
+"upper_bound":1000.0,
+"gene_reaction_rule":"(CD630_16960) or (CD630_22760) or (CD630_24220)"
+},
+{
+"id":"Trans_leuL_PMF",
+"name":"Leucine transport, proton-motive force brnQ",
+"metabolites":{
+"leuL_c":1,
+"leuL_e":-1,
+"pmf_c":-1
+},
+"lower_bound":-1000.0,
+"upper_bound":1000.0,
+"gene_reaction_rule":"(CD630_27020) or (CD630_12590 and CD630_12600)"
+},
+{
+"id":"Trans_proL_PMF",
+"name":"Proline proton symport",
+"metabolites":{
+"pmf_c":-1,
+"proL_c":1,
+"proL_e":-1
+},
+"lower_bound":-1000.0,
+"upper_bound":1000.0,
+"gene_reaction_rule":""
+},
+{
+"id":"Trans_h2s",
+"name":"H2S diffusion",
+"metabolites":{
+"h2s_c":-1,
+"h2s_e":1
+},
+"lower_bound":-1000.0,
+"upper_bound":1000.0,
+"gene_reaction_rule":""
+},
+{
+"id":"Sec_h2s",
+"name":"H2S secretion",
+"metabolites":{
+"h2s_e":-1
+},
+"lower_bound":0.0,
+"upper_bound":1000,
+"gene_reaction_rule":""
+},
+{
+"id":"Trans_ileL_PMF",
+"name":"Isoleucine transport, proton-motive force brnQ",
+"metabolites":{
+"ileL_c":1,
+"ileL_e":-1,
+"pmf_c":-1
+},
+"lower_bound":-1000.0,
+"upper_bound":1000.0,
+"gene_reaction_rule":""
 }
 ],
 "genes":[
@@ -24799,6 +24949,26 @@
 },
 {
 "id":"CD630_33150",
+"name":""
+},
+{
+"id":"CD630_12590",
+"name":""
+},
+{
+"id":"CD630_12600",
+"name":""
+},
+{
+"id":"CD630_27020",
+"name":""
+},
+{
+"id":"CD630_23810",
+"name":""
+},
+{
+"id":"CD630_23800",
 "name":""
 }
 ],

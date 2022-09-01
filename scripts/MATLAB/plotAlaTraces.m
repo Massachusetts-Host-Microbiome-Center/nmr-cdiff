@@ -1,6 +1,6 @@
 function plotAlaTraces (fn, sns, cmap, outf)
 % Plots NMR traces of the alpha carbon alanine peaks, with splitting lines.
-% SEE Fig. 4A,C
+% SEE Fig. 5
 %
 % Parameters:
 % - fn : the filename of the spreadsheet
@@ -17,7 +17,7 @@ function plotAlaTraces (fn, sns, cmap, outf)
 %   MATLAB Central File Exchange.
 %   https://www.mathworks.com/matlabcentral/fileexchange/1892-dashline
 %
-% Copyright 2021 Massachusetts Host-Microbiome Center
+% Copyright 2021-2022 Massachusetts Host-Microbiome Center
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
 % you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ function plotAlaTraces (fn, sns, cmap, outf)
 
 % Set up figure with tiled plot and axes labels
 % set figure resolution
-wi = 2;   % width in inches
-hi = 2.6;     % height in inches
+wi = 2.7;   % width in inches
+hi = 3.5;     % height in inches
 f = figure('PaperUnits', 'inches', 'PaperPosition', [0 0 wi hi]);
 t = tiledlayout(numel(sns), 1, 'Padding', 'none', 'TileSpacing', 'none');
 
@@ -55,8 +55,10 @@ for i = 1:numel(sns)
     hold(ax, 'on');
     ax.XDir = 'reverse';
     ax.LineWidth = 0.5;
-    ax.FontSize = 5;
+    ax.FontSize = 7;
     ax.YAxis.Visible = 'off';
+    ax.TickDir = 'out';
+    set(ax,'fontname','Arial');
     yticks([]);
     ymin = min(Zl, [], 'all');
     ymax = max(Zu, [], 'all');
@@ -79,7 +81,7 @@ for i = 1:numel(sns)
     % plot trace
     plot(P, M, 'Color', 'k', 'LineWidth', 1);
 
-    % PLOT SPLITS %
+    %% PLOT SPLITS %%
     basis = 53.7031;
     c1 = -0.3588; % split distance from 13C-C1
     c3 = -0.2306; % split distance from 13C-C3

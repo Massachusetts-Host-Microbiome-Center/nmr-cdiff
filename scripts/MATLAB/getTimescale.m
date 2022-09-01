@@ -12,7 +12,7 @@ function [t5p t95p] = getTimescale (fn, cfg_pk, cfg_nm, outf)
 %  - <outf> is a plot of the logistic curve fit for cfg_pk,
 %    to be used for visual validation
 %
-% Copyright 2021 Massachusetts Host-Microbiome Center
+% Copyright 2021-2022 Massachusetts Host-Microbiome Center
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
 % you may not use this file except in compliance with the License.
