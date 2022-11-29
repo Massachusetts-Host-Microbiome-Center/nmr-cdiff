@@ -26,6 +26,109 @@ Copyright 2022 Massachusetts Host-Microbiome Center
 
 import numpy as np
 
+class LogisticSet:
+    """Class to store coefficients for multiple logistic equations.
+    Equations will be evaluated independently and solutions averaged (with
+    error propagation).
+    """
+    def __init__(self):
+        """Init set -- curves and errors are lists of coefficients/errs."""
+        self._curves = []
+        self._errors = []
+        self._time = None # time scale to evaluate
+        self._val = None # evaluated function over time series
+        self._err = None # evaluated errors over time series
+        self._dval = None # evaluated derivative over time series
+        self._derr = None # evaluated derivative error over time series
+
+    def add_curve(self, params, errors):
+        self._curves.append(params.tolist())
+        self._errors.append(errors.tolist())
+
+    def _eval(self, x, eval_fn, err_fn, avg_first=True):
+        """Internal evaluate with eval_fn and error function err_fn."""
+        if avg_first:
+            return self._eval_avg_first(x, eval_fn, err_fn)
+        else:
+            return self._eval_avg_last(x, eval_fn, err_fn)
+
+    def _eval_avg_last(self, x, eval_fn, err_fn):
+        """Internal evaluate with eval_fn and error function err_fn.
+        Evaluates each curve in self._curves independently, and averages the
+        result.
+        """
+        eval_sol = np.array([eval_fn(x, *ps) for ps in self._curves])
+        eval_err = np.array([err_fn(x, *ps, *es) for ps, es in zip(self._curves, self._errors)])
+        avg_sol = np.sum(eval_sol, axis=0)/eval_sol.shape[0]
+        avg_err = np.sqrt(np.sum(np.square(eval_err), axis=0))/eval_err.shape[0]
+        return avg_sol, avg_err
+
+    def _eval_avg_first(self, x, eval_fn, err_fn):
+        """Internal evaluate with eval_fn and error function err_fn.
+        Averages each parameter accross all curves, then evaluates using the
+        average coefficient values.
+        """
+        avg_ps = np.average(np.array(self._curves), axis=0)
+        avg_es = rss(np.array(self._errors), axis=0)
+        avg_sol = eval_fn(x, *avg_ps)
+        avg_err = err_fn(x, *avg_ps, *avg_es)
+        return avg_sol, avg_err
+
+    def eval(self, ts):
+        """Evaluate and store function and derivative over time series ts."""
+        self._time = ts
+        self._val, self._err = self._eval(ts, logi_flex, err_logi_flex)
+        self._dval, self._derr = self._eval(ts, ddx_logi_flex, err_ddx_logi_flex)
+        return self._val, self._err, self._dval, self._derr
+
+    def get_sol(self, t):
+        """Get solution at time t if stored, else calculate it."""
+        idx = np.nonzero(self._time == t)
+        if idx[0].size == 0:
+            val, err = self._eval(t, logi_flex, err_logi_flex)
+            dval, derr = self._eval(t, ddx_logi_flex, err_ddx_logi_flex)
+            return val, err, dval, derr
+        else:
+            i = idx[0][0]
+            return self._val[i], self._err[i], self._dval[i], self._derr[i]
+
+    def get_bounds(self, t):
+        """Get 95% confint bounds at time t if stored, else calculate them."""
+        val, err, dval, derr = self.get_sol(t)
+        exch_l = dval - 1.96*derr
+        exch_u = dval + 1.96*derr
+        signal_l = val - 1.96*err
+        signal_u = val + 1.96*err
+        return exch_l, exch_u, signal_l, signal_u
+
+    def halfmax(self):
+        """Return timepoint of maximum flux (logistic half-max)."""
+        if sum([curve[1] for curve in self._curves]) < 0:
+            return self._time[np.argmin(self._dval)]
+        else:
+            return self._time[np.argmax(self._dval)]
+
+    def tshift(self, t):
+        """Shift all curves' half-max (x0) to t."""
+        for param_set in self._curves:
+            param_set[2] = t
+        self.eval(self._time)
+
+    def display(self):
+        print(self._curves)
+        print(self._errors)
+
+    def display_avg_coeffs(self, param_names, prefix="\t"):
+        """Display average coefficients p/m error. Pass in coefficient names."""
+        avg_ps = np.average(np.array(self._curves), axis=0)
+        avg_es = rss(np.array(self._errors), axis=0)
+        for i, par in enumerate(param_names):
+            print(f"{prefix}{par}: {avg_ps[i]:.3f} ± {avg_es[i]:.3f}")
+
+def rss(args, axis=None):
+    """Calculate the square root of the sum of squares."""
+    return np.sqrt(np.sum(np.array(args)**2, axis=axis))
+
 def logi(x, L, k, x0):
     """Evaluate the logistic function at point x."""
     return L*np.reciprocal(1. + np.exp(-1*k*(x - x0)))

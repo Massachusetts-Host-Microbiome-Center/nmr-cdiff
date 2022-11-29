@@ -1,6 +1,6 @@
 function plotRegionsAla (fn, ppm_min, ppm_max, t_min, t_max, yaw, pitch, cmap, outf)
 % Plot 13C waterfall with colored peaks at Ala-a13C.
-% SEE Fig. 4B,D
+% SEE Fig. 5b,d
 %
 % Parameters:
 %  - fn is the filename of the spectral data

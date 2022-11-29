@@ -1,7 +1,7 @@
-function plotStacks (T, P, Znorm, cfg_pks, cfg_ids, cMap, outpath)
+function plotStacks (T, P, Znorm, cfg_pks, cfg_ids, cMap, outf)
 % Plot 13C stacks with colored peaks.
 % The time axis is normalized to the metabolic onset of cfg_pk.
-% SEE Fig. 1A,C; Fig. S1
+% SEE Fig. 2a,c,e,g,h; ED Figs. 2-4
 %
 % Parameters:
 %  - T: time axis vector for NMR data, normalized to overall metabolic rate
@@ -10,7 +10,7 @@ function plotStacks (T, P, Znorm, cfg_pks, cfg_ids, cMap, outpath)
 %  - cfg_pks: expected ppm shifts of reference peaks
 %  - cfg_ids: numerical indices grouping cfg_pks by compound
 %  - cMap is the colormap for the metabolite labels
-%  - outpath is the path to which the output files are written, including
+%  - outf is the path to which the output files are written, including
 %        filename stem
 %
 % This script requires 1H and 13C spectra, given by <stem + "_1H.xlsx"> and
@@ -20,27 +20,17 @@ function plotStacks (T, P, Znorm, cfg_pks, cfg_ids, cMap, outpath)
 %  - <stem + "_13Cn.png"> is the surface plot of the timecourse
 %  - <stem + "_13Cspecs.svg"> is the final 1D spectrum with color-coded peaks
 %
-% Copyright 2021-2022 Massachusetts Host-Microbiome Center
-%
-% Licensed under the Apache License, Version 2.0 (the "License");
-% you may not use this file except in compliance with the License.
-% You may obtain a copy of the License at
-%
-%     http://www.apache.org/licenses/LICENSE-2.0
-%
-% Unless required by applicable law or agreed to in writing, software
-% distributed under the License is distributed on an "AS IS" BASIS,
-% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-% See the License for the specific language governing permissions and
-% limitations under the License.
-%
-r = 4;
+r = 4.5;
 tolerance = 0.45;
 ppm_min = 0.0;
-ppm_max = 100.0;
+ppm_max = 200.0;
 isotope = '13C';
 t_min = 0;
-t_max = 36;
+t_max = 36; % 36;
+
+Znorm = Znorm(T >= t_min & T <= t_max, P >= ppm_min & P <= ppm_max);
+T = T(T >= t_min & T <= t_max);
+P = P(P >= ppm_min & P <= ppm_max);
 
 % handle colors
 C = max(log2(abs(Znorm)), ones(size(Znorm, 1), size(Znorm, 2)));
@@ -114,9 +104,9 @@ if strcmp(isotope, '13C')
     % plot peak region in stack and panel
     p = surf(P(rng), T, Zarea, C(:, rng) + cfg_ids(j) - 0.01, 'EdgeColor', 'None');
     p.FaceAlpha = 0.15;
-        set(0, 'currentfigure', f2);
+    set(0, 'currentfigure', f2);
     ax = subplot(1, 1, 1);
-    if (cfg_pks(j) == 24.6) % special case for leucine isocap-isoval overlap
+    if (cfg_pks(j) == 24.5) % special case for leucine isocap-isoval overlap
       plot(P(rng), Zarea(end, :), 'Color', "#8C8C8C", 'LineWidth', 0.5);
     else
       plot(P(rng), Zarea(end, :), 'Color', cMap(cfg_ids(j), :), 'LineWidth', 0.5);
@@ -167,7 +157,8 @@ Ax.LineWidth = 0.5;
 Ax.FontSize = 7;
 xlim([ppm_min ppm_max]);
 ylim([t_min t_max]);
-zlim([0 1.3*max(Znorm(end, :), [], 'all')]);  % 1.3x Pro, Glc, inf Leu
+% zlim([0 1.7*max(Znorm(end, :), [], 'all')]);  % 1.3x Pro, Glc, inf Leu
+zlim([0 inf]);
 Ax.Clipping = 'off';
 set(Ax, 'Layer', 'top');
 yticks(t_min:12:t_max);
@@ -192,7 +183,7 @@ for i = 1:size(unq_nms, 1)
   p_shift = all_shifts(choice);
   p_time = all_time(choice);
   p_signal = all_signal(choice);
-  if cfg_pks(i) == 24.6 % leucine overlap peak
+  if cfg_pks(i) == 24.5 % leucine overlap peak
     stem3(p_shift(p_time <= 6), p_time(p_time <= 6), p_signal(p_time <= 6),...
           'filled',...
           'Color', cMap(1, :),...
@@ -222,7 +213,7 @@ for i = 1:size(cfg_pks)
     fit_fcn = fit(all_time(choice), all_signal(choice), 'smoothingspline');
     p_shift = ones(size(p_time, 2), 1)*cfg_pks(i);
     p_curve = fit_fcn(p_time);
-    if cfg_pks(i) == 24.6 % leucine overlap peak
+    if cfg_pks(i) == 24.5 % leucine overlap peak
       plot3(p_shift(p_time <= 6), p_time(p_time <= 6), p_curve(p_time <= 6),...
             'Color', cMap(1, :), 'linewidth', 1);
       plot3(p_shift(p_time > 6), p_time(p_time > 6), p_curve(p_time > 6),...
@@ -234,8 +225,8 @@ for i = 1:size(cfg_pks)
 end
 
 %view(4.2, 30); % 10, 30
-print(f1, outpath + stem + "_" + isotope + "n", "-dpng", "-r1200");
+print(f1, outf + "_" + isotope + "n", "-dpng", "-r1200");
 if strcmp(isotope, '13C')
-  saveas(f2, outpath + stem + "_13Cspecs.svg");
+  saveas(f2, outf + "_13Cspecs.svg");
 end
 end

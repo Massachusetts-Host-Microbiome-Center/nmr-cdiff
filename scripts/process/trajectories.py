@@ -34,8 +34,7 @@ import scipy
 
 from process import main as process
 from standard_curves import compute_standard_curves
-from curveshapes import logi, logi_c, logi_sum, logi_flex
-from synchronize import synchronizers
+from curveshapes import logi, logi_c, logi_flex
 from get_color import get_cmap
 
 SCDIR = os.path.dirname(__file__)   # location of script
@@ -80,6 +79,10 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
 
     basename = os.path.basename(filepath) # current run name
 
+    print("=========")
+    print(f"Computing logistic trajectories for run {basename}.")
+    print("=========")
+
     # Process stack, will be written to an excel file
     if not os.path.exists(f'{filepath}/{basename}_13C.xlsx'):
         process('13C', init)
@@ -113,7 +116,10 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
             "AcetateNA": 0.5,
         }
     elif substrate == "Glucose":
+        print("Computing standard curves.")
+        print("---------")
         sfacts = compute_standard_curves(filepath=spath)
+        print("---------")
     pareas = areas[[c for c in areas.columns if c in sfacts]]
     cest = pareas.apply(lambda col: col*sfacts[col.name], axis=0)
 
@@ -153,7 +159,14 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
     data['serr'].append([substrate] + [f"{ele:.3f}" for ele in perr])
     curves[substrate] = popt
     curves_err[substrate] = perr
+    print("Logistic coefficients")
+    print("---------")
+    print(substrate)
+    print(f" - L : {popt[0]}")
+    print(f" - k : {popt[1]}")
+    print(f" - x0: {popt[2]}")
     if substrate != "Acetate13C":
+        print(f" - C : {popt[3]}")
         gscale = gscale[:-1] # products do not have C coefficient
 
     if plot:
@@ -167,13 +180,19 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
             edgecolors='w', linewidths=0.5, sizes=[22 for ele in A], zorder=3,
             label=f"_{substrate}",
         )
+
+
     # Get products curves
     for i, c in enumerate(cest.columns):
         mask = (~np.isnan(cest[c]))
         A = np.array(cest[c])
-        popt, pcov = scipy.optimize.curve_fit(
-            logi, np.array(T[mask]), A, p0=[500, 0.2, 12]
-        )
+        try:
+            popt, pcov = scipy.optimize.curve_fit(
+                logi, np.array(T[mask]), A, p0=[500, 0.2, 12]
+            )
+        except:
+            print(f"Optimal parameters not found for compound {c} and run {basename}.")
+            continue
         perr = np.sqrt(np.diagonal(pcov))
         data['popt'].append([c] + [f"{ele:.3f}" for ele in popt])
         data['perr'].append([c] + [f"{ele:.3f}" for ele in perr])
@@ -185,6 +204,11 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
         data['serr'].append([c] + [f"{ele:.3f}" for ele in perr])
         curves[c] = popt
         curves_err[c] = perr
+
+        print(c)
+        print(f" - L : {popt[0]}")
+        print(f" - k : {popt[1]}")
+        print(f" - x0: {popt[2]}")
 
         ## Add curves for other oxidative BCAA fermentations
         if c == "Isovalerate":
