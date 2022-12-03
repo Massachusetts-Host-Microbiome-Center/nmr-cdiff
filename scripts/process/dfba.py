@@ -50,9 +50,9 @@ METHODS = {
 }
 
 ## Objective function for dFBA simulations
-objective_function = 'ATP_sink'
+# objective_function = 'ATP_sink'
 # objective_function = 'Ex_biomass'
-# objective_function = 'Sec_exopoly'
+objective_function = 'Sec_exopoly'
 
 ## Arguments to dFBA function. Edit these to modify behavior.
 dFBA_kwargs = {
@@ -136,6 +136,29 @@ namemap = {
     '2-methylbutyrate': '2-Methylbutyric acid',
     'Acetate13C': 'acetyl-CoA',
     'AcetateNA': 'glycine',
+}
+
+substrate_map = {
+    'Glucose': [
+        'Glucose',
+        'Acetate',
+        'Alanine',
+        'Ethanol',
+        'Butyrate',
+    ],
+    'Leucine': [
+        'Leucine',
+        'Isovalerate',
+        'Isocaproate',
+    ],
+    'Proline': [
+        'Proline',
+        '5-aminovalerate',
+    ],
+    'Acetate13C': [
+        'Acetate13C',
+        'AcetateNA',
+    ]
 }
 
 ## Whether to stretch (True) or just shift (False) timecourse during normalization
@@ -266,24 +289,6 @@ def areaplot2(t, params):
     t_max -- maximum value of x-axis
     ylabel -- y-axis label
     """
-    substrate_map = {
-        'Glucose': [
-            'Glucose',
-            'Acetate',
-            'Alanine',
-            'Ethanol',
-            'Butyrate',
-        ],
-        'Leucine': [
-            'Leucine',
-            'Isovalerate',
-            'Isocaproate',
-        ],
-        'Proline': [
-            'Proline',
-            '5-aminovalerate',
-        ],
-    }
     cmap = get_cmap()
     for substrate, products in substrate_map.items():
         f = plt.figure(figsize=(2.5, 2), constrained_layout=True)
@@ -317,6 +322,26 @@ def areaplot2(t, params):
         plt.setp(ax.spines.values(), linewidth=0.5)
         plt.show()
 
+def load_model(modelfile, objective):
+    """Load model and set constraints."""
+    model = cb.io.load_json_model(modelfile)
+    model.objective = objective
+    model.reactions.get_by_id(objective).upper_bound=1000
+
+    # Set default exchange bounds from media composition
+    init_cnc = dict()
+    for rxn in model.reactions:
+        if ( rxn.id.startswith('Ex_') and rxn.id.endswith('L') \
+                or rxn.id in ['Ex_gly', 'Ex_his'] ):
+            init_cnc[rxn.id] = rxn.upper_bound
+            rxn.upper_bound *= 0.03
+        if rxn.id in ['Ex_valL', 'Ex_ileL']:
+            rxn.upper_bound=0
+    model.reactions.Ex_glc.upper_bound=0
+    model.reactions.Ex_thrL.upper_bound = 0
+    model.reactions.Ex_cysL.upper_bound = 1000
+    return model
+
 def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False, 
               tracked_mets=["alaL", "gluL"], modelfile=MODEL_PATH,
               t_max=48, resolution=1, obj="ATP_sink", dry_run=False):
@@ -344,22 +369,7 @@ def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False,
         print("Dry run, will not write results.")
     # Load metabolic model and logistic fit specs #
     print('dFBA log: loading model and specsheet...')
-    model = cb.io.load_json_model(modelfile)
-    model.objective = obj
-    model.reactions.get_by_id(obj).upper_bound=1000
-
-    # Set default exchange bounds from media composition
-    init_cnc = dict()
-    for rxn in model.reactions:
-        if ( rxn.id.startswith('Ex_') and rxn.id.endswith('L') \
-                or rxn.id in ['Ex_gly', 'Ex_his'] ):
-            init_cnc[rxn.id] = rxn.upper_bound
-            rxn.upper_bound *= 0.03
-        if rxn.id in ['Ex_valL', 'Ex_ileL']:
-            rxn.upper_bound=0
-    model.reactions.Ex_glc.upper_bound=0
-    model.reactions.Ex_thrL.upper_bound = 0
-    model.reactions.Ex_cysL.upper_bound = 1000
+    model = load_model(modelfile, obj)
     
     # Set up logistic parameters and time scale
     params = {mi: params[mn] for mn, mi in metmap.items() if mn in params}
@@ -442,7 +452,7 @@ def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False,
             sol_v = cb.flux_analysis.flux_variability_analysis(
                 model,
                 fraction_of_optimum=0.995,
-                # loopless=True,
+                loopless=False,
             )
             fullflux_lb.loc[t, :] = sol_v['minimum']
             fullflux_ub.loc[t, :] = sol_v['maximum']
@@ -643,10 +653,12 @@ def handle_args(args):
         return
     dirs = [fp.rstrip('/') for fp in args]
     params = defaultdict(LogisticSet)
+    runcount = dict()
     for i, tscale in enumerate(synchronizers(dirs, stretch=stretch, \
             plot=False)):
         filepath = dirs[i]
-        curves, errors = fit_trajectories(filepath, tscale=tscale, plot=True)
+        curves, errors, substrate = fit_trajectories(filepath, tscale=tscale, plot=True)
+        runcount[substrate] = runcount.get(substrate, 0) + 1
         for met, pset in curves.items(): # update LogisticSet of metabolite
             params[met].add_curve(pset, errors[met])
     t_max = dFBA_kwargs['t_max']
@@ -654,6 +666,9 @@ def handle_args(args):
     print("=========")
     print("dFBA run average curveshapes.")
     print("---------")
+    for substrate, nruns in runcount.items():
+        for met in substrate_map[substrate]:
+            params[met].set_runcount(nruns)
     for met, curveset in params.items():
         print(met)
         param_names = ["L", "k", "x0"]

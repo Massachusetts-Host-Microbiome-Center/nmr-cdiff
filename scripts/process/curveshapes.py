@@ -35,6 +35,7 @@ class LogisticSet:
         """Init set -- curves and errors are lists of coefficients/errs."""
         self._curves = []
         self._errors = []
+        self._scalar = 1. # scale factor for logistic
         self._time = None # time scale to evaluate
         self._val = None # evaluated function over time series
         self._err = None # evaluated errors over time series
@@ -48,9 +49,10 @@ class LogisticSet:
     def _eval(self, x, eval_fn, err_fn, avg_first=True):
         """Internal evaluate with eval_fn and error function err_fn."""
         if avg_first:
-            return self._eval_avg_first(x, eval_fn, err_fn)
+            val, err = self._eval_avg_first(x, eval_fn, err_fn)
         else:
-            return self._eval_avg_last(x, eval_fn, err_fn)
+            val, err = self._eval_avg_last(x, eval_fn, err_fn)
+        return self._scalar*val, err
 
     def _eval_avg_last(self, x, eval_fn, err_fn):
         """Internal evaluate with eval_fn and error function err_fn.
@@ -113,6 +115,10 @@ class LogisticSet:
         for param_set in self._curves:
             param_set[2] = t
         self.eval(self._time)
+
+    def set_runcount(self, runcount):
+        """Calculate scalar from total run count."""
+        self._scalar = len(self._curves)/runcount
 
     def display(self):
         print(self._curves)

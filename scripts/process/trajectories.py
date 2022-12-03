@@ -271,7 +271,7 @@ def fit_trajectories(filepath, init='11', plot=False, tscale=None,
                 segs = [o[0]] + [f"{k}pm{m}" for (k, m) in zip(o[1:], e[1:])]
                 wf.write(','.join(segs) + ','*(5-len(segs)) + '\n')
 
-    return curves, curves_err #curves_lb, curves_ub
+    return curves, curves_err, substrate #curves_lb, curves_ub
 
 def call_fit(args):
     n_args = len(args)

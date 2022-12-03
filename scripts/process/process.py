@@ -42,13 +42,14 @@ CURVE_FIT_RESOLUTION = 2**19
 
 ## ver: proc script version. If you encounter "ValueError: buffer is smaller than
 #       requested size", try changing this value.
-ver = ''
-# ver = '_2'
+# ver = ''
+ver = '_2'
 
-DRY_RUN = True  # In a dry run, no Excel file is written after processing
+DRY_RUN = False  # In a dry run, no Excel file is written after processing
 OVERWRITE = False  # Whether to overwrite existing FT spectra
 INDICES = None  # FID indices. None to auto-detect. Otherwise must be list of strings.
-# INDICES = [str(3*i) for i in range(7, 46)]
+# INDICES = [str(3*i) for i in range(7, 77)]
+# INDICES = [str(3*i - 1) for i in range(4, 35)]
 # INDICES = ['241']
 
 
@@ -296,7 +297,7 @@ def peak_fit(dic, data, history, r=2.5, sep=0.005, plot=True, vb=False):
     isotope_scale = 1
     plot_bounds = (200, 0)
     if isotope == '1H':
-        isotope_scale = 2./30
+        isotope_scale = 1/15
         plot_bounds = (12, 0)
 
     def p2f_interval(xx): return abs(uc.f(0, unit='ppm') - uc.f(isotope_scale*xx, unit='ppm')) # convert PPM scale to index
@@ -330,16 +331,24 @@ def peak_fit(dic, data, history, r=2.5, sep=0.005, plot=True, vb=False):
 
     # ---------------------------- PEAK-PICKING -----------------------------
     if isotope == '1H':
-        pthres = 2000
+        # pthres = 2200 #1600
+        pthres = 3800
     else:
         pthres = r*rmse(data[(ppm <= p2p(160)) & (ppm >= p2p(130))])
 
+    # if isotope == '1H':
+    #     shifts, cIDs, params, amps = ng.analysis.peakpick.pick( # Find peaks
+    #         data, pthres=pthres, msep=(p2i_interval(sep),), algorithm='connected',
+    #         est_params=True, lineshapes=['g'], cluster=True,
+    #         c_ndil=p2i_interval(0.3), table=False)
+    # else:
     shifts, cIDs, params, amps = ng.analysis.peakpick.pick( # Find peaks
         data, pthres=pthres, msep=(p2i_interval(sep),), algorithm='thres',
         est_params=True, lineshapes=['g'], cluster=True,
         c_ndil=p2i_interval(0.3), table=False)
     amps = np.array([data.real[a] for a in shifts])
     if len(shifts) == 0:
+        print('foo')
         return {}, []
     shifts = np.array(shifts)
 
@@ -391,7 +400,7 @@ def peak_fit(dic, data, history, r=2.5, sep=0.005, plot=True, vb=False):
         (p2f_interval(0.01), p2f_interval(0.5))),) for par in vf_params]
     params, amps, p_err, a_err, found = ng.analysis.linesh.fit_spectrum(
         data, ['v'], vf_params, amps, vf_bounds, amp_bounds, shifts, cIDs,
-        p2i_interval(0.5), True, verb=False)
+        p2i_interval(0.3), True, verb=False)
     mask = ~(np.isnan(amps) \
              | np.array([any(np.isnan(pset[0])) for pset in params])) # \
              # | (np.array([sh[0] for sh in shifts]) <= p2i(170)))
@@ -676,9 +685,9 @@ def process_trace(loc, item, cf, ps, history, overwrite=OVERWRITE, man_ps=False)
             stdout=subprocess.PIPE)
         dic, data = ng.fileio.pipe.read(pipe_output.stdout)
 
-        if isotope == "1H":
-            data = ng.process.proc_bl.baseline_corrector(data, wd=25)
-            data = np.float32(data)
+        # if isotope == "1H":
+        #     data = ng.process.proc_bl.baseline_corrector(data, wd=25)
+        #     data = np.float32(data)
 
         # Calibrate PPM shift
         ppm = ng.pipe.make_uc(dic, data, dim=0).ppm_scale()
@@ -696,13 +705,13 @@ def process_trace(loc, item, cf, ps, history, overwrite=OVERWRITE, man_ps=False)
         # signals = ridge_trace(dic, data, plot=False)
         curve = data.real
     else:
-        # uc = ng.pipe.make_uc(dic, data, dim=0)
-        # plot_datasets(ppm, [data.real], ppm_bounds=(12, 0))
-        # plt.plot(data.real)
-        # plt.show()
-        # lb = abs(uc.f(0, unit='ppm') - uc.f(1.70, unit='ppm'))
-        # ub = abs(uc.f(0, unit='ppm') - uc.f(1.97, unit='ppm'))
-        # ndic, ndata = ng.process.pipe_proc.ext(dic, data, x1=21066, xn=21211) #(x1=20056, xn=20412)
+        uc = ng.pipe.make_uc(dic, data, dim=0)
+        plot_datasets(ppm, [data.real], ppm_bounds=(12, 0))
+        plt.plot(data.real)
+        plt.show()
+        lb = abs(uc.f(0, unit='ppm') - uc.f(1.70, unit='ppm'))
+        ub = abs(uc.f(0, unit='ppm') - uc.f(1.97, unit='ppm'))
+        ndic, ndata = ng.process.pipe_proc.ext(dic, data, x1=20100, xn=20355) #(x1=20056, xn=20412) # (x1=41543, xn=42239)
         # pipe_output = subprocess.run(
         #     ["csh", f"{SCDIR}/bl.com"],
         #     input=to_stream(ndic, ndata),
@@ -711,8 +720,12 @@ def process_trace(loc, item, cf, ps, history, overwrite=OVERWRITE, man_ps=False)
 
         # ndata = ng.process.proc_bl.base(ndata, nl=[10, 20, 30, 40, 50, 66, 82, 104, 114, 124, 134])
         # ndata = np.float32(ndata)
-        # signals, curve = peak_fit(ndic, ndata, history, sep=30/2*0.001, plot=True, vb=True)
-        signals = ridge_trace(dic, data, plot=False)
+        # if int(item) < 20:
+        #     r = 3800
+        # else:
+        #     r = 6000
+        signals, curve = peak_fit(ndic, ndata, history, r=1, sep=30/2*0.001, plot=True, vb=True)
+        # signals = ridge_trace(dic, data, plot=False)
         curve = data.real
 
     return ppm, data.real, timestamp, signals, n_scans, curve
@@ -795,9 +808,10 @@ def process_stack(loc, ids, initial=None, iso='13C', vb=True, dry_run=DRY_RUN):
     else:
         xrange = ppm.shape[0]
         xmin = 0.5
-        xmax = 6
+        xmax = 6.0
         # zmax = traj["Isocaproate 0.8642"].max()
         # zmax = traj["Acetate 1.91"].max()
+        zmax=100
         lcol = 'turquoise'
         baseline = -2000.
     colors = ['darkblue', 'deepskyblue', 'blue', 'lightskyblue', 'dodgerblue']
@@ -806,7 +820,7 @@ def process_stack(loc, ids, initial=None, iso='13C', vb=True, dry_run=DRY_RUN):
     verts = []
     for i in range(len(curves)-1, -1, -1):
         curve = [baseline] + list(curves[i][(pp_array <= xmax) & (pp_array >= xmin)]) + [baseline]
-        # curve = [min(x, zmax) for x in curve]
+        curve = [min(x, zmax) if plot_ppm[i] < 4.35 or plot_ppm[i] > 5.15 else 0 for i, x in enumerate(curve)]
         # ax.plot3D(plot_ppm, [header[1][i] for t in plot_ppm], curve, lw=0.3)
         verts.append(list(zip(plot_ppm, curve)))
     if iso == "13C":
@@ -830,13 +844,13 @@ def process_stack(loc, ids, initial=None, iso='13C', vb=True, dry_run=DRY_RUN):
     ax.set_ylabel("Time (h)")
     ax.set_ylim3d(0, max(header[1]))
     ax.set_zlabel("NMR signal (unitless)")
-    ax.set_zlim3d(min([min(cv) for cv in curves]), max([max(cv) for cv in curves]))
-    # ax.set_zlim3d(min([min(cv) for cv in curves]), zmax)
+    # ax.set_zlim3d(min([min(cv) for cv in curves]), max([max(cv) for cv in curves]))
+    ax.set_zlim3d(baseline, zmax)
     ax.view_init(12., -97.)
-    if iso == "13C":
-        plt.savefig(f"Stack_{iso}_1200ppi.png", format="png", dpi=1200)
-    else:
-        plt.savefig(f"Stack_{iso}.svg")
+    # if iso == "13C":
+    #     plt.savefig(f"Stack_{iso}_1200ppi.png", format="png", dpi=1200)
+    # else:
+    #     plt.savefig(f"Stack_{iso}.svg")
     plt.close('all')
 
     ax = traj.plot(x='Time', y=list(traj.columns)[2:], marker='.', lw=2)
