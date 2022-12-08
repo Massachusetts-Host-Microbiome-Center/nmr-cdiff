@@ -1,9 +1,12 @@
-import inspect
+import os
+
 import matplotlib.pyplot as plt
 import matplotlib.widgets as mpw
 import matplotlib.colors as mpc
 import nmrglue as ng
 import numpy as np
+
+SCDIR = os.path.dirname(__file__)   # location of script
 
 def euclid_dist(a, b):
     """Compute euclidean distance between two points."""
@@ -260,7 +263,14 @@ class SliderTextObject():
             self.slider.set_val(fval)
 
 class PlotWindow():
-    def __init__(self, isotope, peaks):
+    def __init__(self, isotope, peaks, spec):
+        """Initialize plot window.
+        
+        Parameters:
+        -- isotope : Isotope object matching labeled isotope of the NMR spectrum
+        -- peaks : list of Peak objects detected in the spectrum
+        -- spec : 2D array-like: (ppm, trace), currently ignored
+        """
         self.res = 100000
         self.peaks = peaks
         if len(peaks) > 0:
@@ -271,16 +281,33 @@ class PlotWindow():
         self.fig = plt.figure(figsize=(10, 10))
         self.text_canvas = plt.axes([0, 0, 1, 1])
         self.plot_ax = plt.axes([0.05, 0.4, 0.65, 0.55])
+        spec = (
+            np.linspace(isotope.ppm_min, isotope.ppm_max, num=20000),
+            sum([peak.render_trace(20000) for peak in peaks])
+        )
         simspec = sum([peak.render_trace(self.res) for peak in peaks])
-        l1 = self.plot_ax.plot(np.linspace(isotope.ppm_min, isotope.ppm_max, num=self.res), simspec)
-        l2 = self.plot_ax.plot(np.linspace(isotope.ppm_min, isotope.ppm_max, num=self.res), self.active_peak.render_trace(self.res))
-        self.spec = Trace(l1[0])
-        self.overlay = Trace(l2[0])
+        l1 = self.plot_ax.plot(
+            spec[0], 
+            spec[1], 
+            c='slategray', 
+            lw=2,
+        ) # plot NMR spectrum
+        l2 = self.plot_ax.plot(
+            np.linspace(isotope.ppm_min, isotope.ppm_max, num=self.res), 
+            simspec, 
+            c='royalblue', 
+            lw=1,
+        )
+        l3 = self.plot_ax.plot(
+            np.linspace(isotope.ppm_min, isotope.ppm_max, num=self.res), 
+            self.active_peak.render_trace(self.res),
+            c='darkorange',
+            lw=1,
+        )
+        self.spec = Trace(l1[0]) # should not be edited
+        self.simspec = Trace(l2[0])
+        self.overlay = Trace(l3[0])
 
-        # self.xmin = TextObject(self, [0.1, 0.325, 0.08, 0.03], "min ppm ", initial=iso.ppm_min)
-        # self.xmax = TextObject(self, [0.28, 0.325, 0.08, 0.03], "max ppm ", initial=iso.ppm_max)
-        # self.ymin = TextObject(self, [0.46, 0.325, 0.08, 0.03], "min signal ", initial=ylim[0])
-        # self.ymax = TextObject(self, [0.64, 0.325, 0.08, 0.03], "max signal ", initial=ylim[1])
         self.peak_selector = RadioButtonsObject(self, [0.71, 0.9, 0.25, 0.02], [f"{pk.cpd} {pk.x}" for pk in self.peaks])
         self.peak_title = self.text_canvas.text(0.375, 0.276, f"Active Peak: {self.peak_selector.get_label()}", ha='center', va='bottom', size='large')
         self.peak_cpd = TextBoxObject(self, [0.2, 0.225, 0.3, 0.04], "Peak compound ", initial=self.active_peak.cpd)
@@ -309,8 +336,6 @@ class PlotWindow():
 
         self.plot_ax.set_xlim(left=isotope.ppm_max, right=isotope.ppm_min)
         ylim = self.plot_ax.get_ylim()
-
-        plt.show()
 
     def populate_panel(self, pk):
         self.peak_title.set_text(f"Active Peak: {self.peak_selector.get_label()}")
@@ -341,16 +366,18 @@ class PlotWindow():
             if widget is self.peak_cpd:
                 self.active_peak.update(cpd=val)
                 self.refresh_labels()
-            elif widget is self.peak_x:
-                self.active_peak.update(x=float(val))
-                self.refresh_labels()
-            elif widget is self.peak_y:
-                self.active_peak.update(y=float(val))
-            elif widget is self.peak_lw:
-                self.active_peak.update(lw=val)
-            elif widget is self.peak_gw:
-                self.active_peak.update(gw=val)
-            self.overlay.set(ydata=self.active_peak.trace)
+            else:
+                if widget is self.peak_x:
+                    self.active_peak.update(x=float(val))
+                    self.refresh_labels()
+                elif widget is self.peak_y:
+                    self.active_peak.update(y=float(val))
+                elif widget is self.peak_lw:
+                    self.active_peak.update(lw=val)
+                elif widget is self.peak_gw:
+                    self.active_peak.update(gw=val)
+                self.overlay.set(ydata=self.active_peak.trace)
+                self.simspec.set(ydata=sum([peak.render_trace(self.res) for peak in self.peaks]))
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
@@ -383,7 +410,7 @@ class PlotWindow():
         if shiftstring != '' and cpd != '':
             shift = float(shiftstring)
             height = self.spec.y(shift)
-            newpeak = Peak(self.isotope, shift, height, shift=shift, height=height,
+            newpeak = Peak(self.isotope, shift, height,
                            l_fwhm=0.5, g_fwhm=0.5, cpd=cpd)
             self.clear_add_dialogue(arg)
             self.peaks.append(newpeak)
@@ -414,22 +441,25 @@ class PlotWindow():
         self.peak_selector.refresh([f"{pk.cpd} {pk.x}" for pk in self.peaks])
         self.peak_selector.select(min(selected, len(self.peaks) - 1))
 
-iso = Isotope('13C', (0., 200.))
+if __name__ == "__main__":
 
-long_test_peaks = []
-with open('/Users/aj286/NMR/20210519_13CGlc/cfg_13C.txt', 'r') as rf:
-    for line in rf:
-        ls = line.strip().split('\t')
-        sh = float(ls[0])
-        nm = ls[1]
-        ht = np.random.randint(100, 200)
-        pk = Peak(iso, sh, ht, l_fwhm=0.5, g_fwhm=0.5, cpd=nm)
-        long_test_peaks.append(pk)
+    iso = Isotope('13C', (0., 200.))
 
-test_peaks = [
-    Peak(iso, 25.9762, 200., l_fwhm=0.5, g_fwhm=0.5, cpd="Acetate"),
-    Peak(iso, 18.78, 200., l_fwhm=0.6, g_fwhm=0.6, cpd="Alanine"),
-    Peak(iso, 53.425, 200., l_fwhm=0.4, g_fwhm=0.4, cpd="Alanine"),
-]
+    long_test_peaks = []
+    with open(f'{SCDIR}/../../data/test/20210519_13CGlc/cfg_13C.txt', 'r') as rf:
+        for line in rf:
+            ls = line.strip().split('\t')
+            sh = float(ls[0])
+            nm = ls[1]
+            ht = np.random.randint(100, 200)
+            pk = Peak(iso, sh, ht, l_fwhm=0.5, g_fwhm=0.5, cpd=nm)
+            long_test_peaks.append(pk)
 
-a = PlotWindow(iso, long_test_peaks)
+    test_peaks = [
+        Peak(iso, 25.9762, 200., l_fwhm=0.5, g_fwhm=0.5, cpd="Acetate"),
+        Peak(iso, 18.78, 200., l_fwhm=0.6, g_fwhm=0.6, cpd="Alanine"),
+        Peak(iso, 53.425, 200., l_fwhm=0.4, g_fwhm=0.4, cpd="Alanine"),
+    ]
+
+    a = PlotWindow(iso, long_test_peaks, None)
+    plt.show()

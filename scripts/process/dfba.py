@@ -71,7 +71,7 @@ tracked_reactions = [
     "ID_407", # UDP
     "ID_582", # CDP
     "ID_1",   # IDP
-    # "Ex_biomass",
+    "Ex_biomass",
 ]
 
 tracked_metabolites = [
@@ -80,6 +80,7 @@ tracked_metabolites = [
     "atp",  #ATP
     "pyr",  #Pyruvate
     "nh3",  #Ammonia
+    "feroxred", #Ferredoxin
 ]
 
 metmap = {
@@ -339,21 +340,21 @@ def dfba_main(params_opt, params_err, tracked_rxns, fba_method=lsol, prop_ids=["
             mk = model.metabolites.get_by_id(met + '_c').name
 
             ## Record exchange constraints ##
-            if met != 'glc':
-                for k, df in enumerate(results):
-                    df.at[t, mk] = fbounds[k]
+            # if met != 'glc':
+            for k, df in enumerate(results):
+                df.at[t, mk] = fbounds[k]
 
-            ## Calculate glucose uptake constraint ##
-            if met in ['ac', 'eto', 'but', 'alaL']:
-                for k, df in enumerate(results):
-                    if met == 'but':
-                        df.at[t, 'beta-D-glucose'] += fbounds[k]
-                    else:
-                        df.at[t, 'beta-D-glucose'] += 0.5*fbounds[k]
-
-        ## Set glucose uptake constraint ##
-        set_bounds(model, "Ex_glc", lower=results[1].at[t, 'beta-D-glucose'],
-                   upper=results[2].at[t, 'beta-D-glucose'], update=True)
+        #     ## Calculate glucose uptake constraint ##
+        #     if met in ['ac', 'eto', 'but', 'alaL']:
+        #         for k, df in enumerate(results):
+        #             if met == 'but':
+        #                 df.at[t, 'beta-D-glucose'] += fbounds[k]
+        #             else:
+        #                 df.at[t, 'beta-D-glucose'] += 0.5*fbounds[k]
+        #
+        # ## Set glucose uptake constraint ##
+        # set_bounds(model, "Ex_glc", lower=results[1].at[t, 'beta-D-glucose'],
+        #            upper=results[2].at[t, 'beta-D-glucose'], update=True)
 
         ## Add natural abundance acetate allowance to secretion constraint ##
         lower, upper = model.reactions.Sec_ac.bounds
