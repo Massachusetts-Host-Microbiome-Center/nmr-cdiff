@@ -12,6 +12,6 @@ bruk2pipe -in ./$1/fid \
   -ndim               1  \
 | nmrPipe -fn MULT -c 4.06901e-02 \
 # | nmrPipe -fn EM -lb 5.0 -c 1.0 \
-| nmrPipe -fn ZF -size 16384 # -zf 1 \
+| nmrPipe -fn ZF -size 32768 # -zf 1 \
 | nmrPipe -fn FT \
 #| nmrPipe -fn POLY -auto
