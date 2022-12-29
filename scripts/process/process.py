@@ -25,7 +25,6 @@ Copyright 2021 Massachusetts Host-Microbiome Center
 """
 
 import collections
-import copy
 import datetime
 import glob
 import os
@@ -38,24 +37,24 @@ import nmrglue as ng
 import numpy as np
 import pandas as pd
 import scipy
-# import skimage
 
 SCDIR = os.path.dirname(__file__)   # location of script
 CURVE_FIT_RESOLUTION = 2**19
 
 # ver = ''
 # ver = '_2'
-ver = '_3'
-# ver = '_4'
+# ver = '_3'
+ver = '_4'
 
 ISOTOPE_PARAMS = {
     '1H': {
         'fit_ppm_delta': 0.01,   # +/- drift tolerance for peak centers during fitting
-        'fit_fwhm_max': 0.25,   # max FWHM of fit curve
+        'fit_fwhm_max': 0.1,   # max FWHM of fit curve
         'fit_fwhm_min': 0.001,  # min FWHM of fit curve (unused, no lower bound)
         'plot_bounds': (12., 0.),   # PPM shift bounds for plotting
         'assignment_display_window': 1.,    # extra plot padding to contextualize peaks during assignment
-        'fit_cluster_msep': 0.1,    # minimum separation for distinct clusters, also cluster buffer for automatic peak assignment
+        'assignment_cluster_msep': 0.1, # minimum separation for distinct clusters
+        'fit_cluster_msep': 0.1,    #  cluster buffer for automatic peak assignment
         'fit_cluster_reach': 0.05,  # buffer to include around cluster for curve fitting
     },
     '13C': {
@@ -69,20 +68,22 @@ ISOTOPE_PARAMS = {
     }
 }
 
-def plot_datasets(xx, yys, ppm_bounds=(200., 0.)):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+def plot_datasets(xx, yys, ppm_bounds=(200., 0.), show=True, ax=None):
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
     for yy in yys:
         ax.plot(xx, yy, lw=0.5)
     ax.set_xlim(*ppm_bounds)
-    plt.show()
+    if show:
+        plt.show()
 
-def plot_with_labels(xx, yy, labeli, labels, ppm_bounds=(200., 0.), yopt=None, **kwargs):
+def plot_with_labels(xx, yys, labeli, labels, ppm_bounds=(200., 0.), yopt=None, **kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(xx, yy, lw=0.5)
+    plot_datasets(xx, yys, show=False, ax=ax)
     if yopt is None:
-        yopt = yy[labeli]
+        yopt = yys[0][labeli]
     ax.plot(xx[labeli], yopt, ls='', marker='*', **kwargs)
     for ci, xi, yi in zip(labels, xx[labeli], yopt):
         ax.annotate(ci, (xi,yi), textcoords='offset points', xytext=(0,10),
@@ -232,7 +233,7 @@ def sg_peakpick(data, w_len, p_order, rsg=2, rd=2, nr=None, plot=True):
         err_fd2 = rsg*np.std(fd2[slice(*nr)])
 
     # Find peaks, estimate widths and amplitudes, filter by noise thresholds
-    pks, prp = scipy.signal.find_peaks(fd2, distance=3, width=(3, 75), prominence=err_fd2)
+    pks, prp = scipy.signal.find_peaks(fd2, distance=3, width=(3, w_len*1.5), prominence=err_fd2) # width=(3, 75)
     pkw = np.array([abs(prp['right_ips'][i] - prp['left_ips'][i]) for i in range(pks.shape[0])])
     amps = np.array(data[[int(pk) for pk in pks]])
     pks = pks[amps > err_f]
@@ -241,8 +242,9 @@ def sg_peakpick(data, w_len, p_order, rsg=2, rd=2, nr=None, plot=True):
 
     # Plot found peaks
     if plot:
+        fd0 = scipy.signal.savgol_filter(data, w_len, p_order, deriv=0)
         pklabels = list(range(pks.shape[0]))
-        plot_with_labels(x, fd2, pks, pklabels, ppm_bounds=(max(x), min(x)))
+        plot_with_labels(x, [10*w_len*fd2, fd0, data], pks, pklabels, ppm_bounds=(max(x), min(x)))
 
     return list(pks), list(pkw)
 
@@ -263,14 +265,16 @@ def peak_pick(dic, data, plot=True):
     # Perform peak-peaking using Savitsky-Golay filter tuned to coarse and fine detail
     if isotope == '1H':
         nr = (int(uc.f(12, unit="ppm")), int(uc.f(8, unit="ppm")))
-        coarse, cpeakw = sg_peakpick(data, 41, 2, rsg=5, rd=4, nr=nr, plot=plot)
-        fine, fpeakw = sg_peakpick(data, 11, 2, rsg=8, rd=8, nr=nr, plot=plot)
+        # coarse, cpeakw = sg_peakpick(data, 101, 2, rsg=5, rd=4, nr=nr, plot=plot)
+        fine, fpeakw = sg_peakpick(data, 11, 2, rsg=3, rd=8, nr=nr, plot=plot)
+        # coarse, cpeakw = sg_peakpick(data, 41, 2, rsg=5, rd=4, nr=nr, plot=plot)  # 8/12 glucose run, no 13C decoupling
+        # fine, fpeakw = sg_peakpick(data, 11, 2, rsg=8, rd=8, nr=nr, plot=plot)
     # elif isotope == '13C': # TODO: OPTIMIZE FOR 13C
     #     nr = (int(uc.f(160, unit="ppm")), int(uc.f(130, unit="ppm")))
     #     coarse_peaks = list(sg_peakpick(data, 31, 3, r=2, nr=nr))
     #     fine_peaks = list(sg_peakpick(data, 11, 2, r=5, nr=nr))
-    all_peaks = fine + coarse   # ppm shifts of peaks
-    all_widths = fpeakw + cpeakw    # estimated widths of peaks
+    all_peaks = fine # all_peaks = fine + coarse   # ppm shifts of peaks
+    all_widths = fpeakw# all_widths = fpeakw + cpeakw    # estimated widths of peaks
     peaks = []
     peakw = []
     for pair in zip(all_peaks, all_widths):
@@ -300,8 +304,8 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
     data = data.real
     isotope = dic["FDF2LABEL"]
     plot_bounds = ISOTOPE_PARAMS[isotope]['plot_bounds']
-    if isotope == '1H':
-        data = -1*data
+    # if isotope == '1H':
+    #     data = -1*data
 
     def p2f_interval(xx): return abs(uc.f(0, unit='ppm') - uc.f(xx, unit='ppm')) # convert PPM scale to index
     def p2i_interval(xx): return int(p2f_interval(xx)) # convert PPM scale to index # convert PPM scale to index
@@ -312,7 +316,7 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
     if isotope == '1H':
         pthres = 1000 # 300
         shifts, peakw = peak_pick(dic, data, plot=plot)
-        cluster_sep = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_cluster_msep'])
+        cluster_sep = p2f_interval(ISOTOPE_PARAMS[isotope]['assignment_cluster_msep'])
         distances = scipy.spatial.distance.cdist(shifts, shifts)
         nclust, cIDs = scipy.sparse.csgraph.connected_components(
             (distances <= cluster_sep).astype(int), 
@@ -336,7 +340,7 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
     peakw = np.array(peakw)
 
     if plot:
-        plot_with_labels(ppm, data, shifts, cIDs, ppm_bounds=plot_bounds)
+        plot_with_labels(ppm, [data], shifts, cIDs, ppm_bounds=plot_bounds)
         plt.show()
 
     # --------------------------- ASSIGN PEAKS TO COMPOUNDS ----------------------------
@@ -372,7 +376,7 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
             for cpd in np.unique(colliding_refs['Compound']):
                 while True:
                     plot_with_labels(
-                        ppm, data.real, subpeaks, range(len(subpeaks)),
+                        ppm, [data.real], subpeaks, range(len(subpeaks)),
                         ppm_bounds=(i2p(min(subpeaks) - display_window),
                                     i2p(max(subpeaks) + display_window))
                     )
@@ -419,16 +423,16 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
         for par in cparams:
             cbounds.append(((
                 (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
-                (None, fwhm_max), # gauss bounds
-                (None, fwhm_max), # lorentz bounds
+                (0., p2f_interval(fwhm_max)), # gauss bounds
+                (0., p2f_interval(fwhm_max)), # lorentz bounds
             ),))
     elif cv == 'l':
-        cparams = np.array([((a, 2*b[0]),) for a, b in zip(shifts, peakw)])
+        cparams = np.array([((a, b[0]),) for a, b in zip(shifts, peakw)])
         cbounds = []
         for par in cparams:
             cbounds.append(((
                 (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
-                (None, p2f_interval(fwhm_max)), # lorentz bounds
+                (0., fwhm_max), # lorentz bounds
             ),))
     cbounds = np.array(cbounds)
 
@@ -569,9 +573,9 @@ def ridge_trace(dic, data, wr=0.01, plot=True):
             amps.append(amplitude)
     if plot:
         plot_bounds = ISOTOPE_PARAMS[isotope]['plot_bounds']
-        plot_with_labels(uc.ppm_scale(), data, [p2i(s) for s in shifts],
+        plot_with_labels(uc.ppm_scale(), [data], [p2i(s) for s in shifts],
             [str(s) for s in shifts], ppm_bounds=plot_bounds, yopt=amps)
-        plot_with_labels(uc.ppm_scale(), data, [p2i(s) for s in shifts],
+        plot_with_labels(uc.ppm_scale(), [data], [p2i(s) for s in shifts],
             [c for c in cpds], ppm_bounds=plot_bounds, yopt=amps, lw=2)
 
     return signals
@@ -825,8 +829,8 @@ def main(iso, init):
         return
     loc = os.getcwd()
     # indices = detect_spectra(iso=iso, init=init)
-    indices = [str(3*i + 1) for i in range(4, 34)]
-    # indices = ['25']
+    # indices = [str(3*i + 1) for i in range(4, 34)]
+    indices = ['23']
     # indices = ['91'] #, '14', '15']
     # print("Beginning calibration with following parameters:")
     print("\t- Directory: " + loc)
