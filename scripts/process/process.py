@@ -38,24 +38,36 @@ import numpy as np
 import pandas as pd
 import scipy
 
+from man_bl import Baseline
+from lineshapes_addon import split_lorentz_fwhm
+
 SCDIR = os.path.dirname(__file__)   # location of script
 CURVE_FIT_RESOLUTION = 2**19
 
+## ver: proc script version. If you encounter "ValueError: buffer is smaller than
+#       requested size", try changing this value.
 # ver = ''
-# ver = '_2'
+ver = '_2'
 # ver = '_3'
-ver = '_4'
+# ver = '_4'
+
+DRY_RUN = False  # In a dry run, no Excel file is written after processing
+OVERWRITE = True  # Whether to overwrite existing FT spectra
+# INDICES = None  # FID indices. None to auto-detect. Otherwise must be list of strings.
+# INDICES = [str(3*i + 1) for i in range(4, 34)]
+INDICES = ['21'] #, '23']
+# INDICES = ['91'] #, '14', '15']
 
 ISOTOPE_PARAMS = {
     '1H': {
-        'fit_ppm_delta': 0.01,   # +/- drift tolerance for peak centers during fitting
-        'fit_fwhm_max': 0.1,   # max FWHM of fit curve
+        'fit_ppm_delta': 0.05,   # +/- drift tolerance for peak centers during fitting
+        'fit_fwhm_max': 0.1, #0.1,   # max FWHM of fit curve
         'fit_fwhm_min': 0.001,  # min FWHM of fit curve (unused, no lower bound)
         'plot_bounds': (12., 0.),   # PPM shift bounds for plotting
         'assignment_display_window': 1.,    # extra plot padding to contextualize peaks during assignment
         'assignment_cluster_msep': 0.1, # minimum separation for distinct clusters
-        'fit_cluster_msep': 0.1,    #  cluster buffer for automatic peak assignment
-        'fit_cluster_reach': 0.05,  # buffer to include around cluster for curve fitting
+        'fit_cluster_msep': 0.5, # 0.1,    #  cluster buffer for automatic peak assignment
+        'fit_reach': 0.5,  # buffer to include around cluster for curve fitting
     },
     '13C': {
         'fit_ppm_delta': 5,
@@ -205,6 +217,24 @@ def shift_params(s, *args):
             param[0] -= s
     return args
 
+def calc_peaks_from_cfg(isotope, J=0.):
+    """Calculate expected peak locations from cfg sheet.
+    
+    Parameters:
+    isotope -- isotope name, to guess cfgsheet filename
+    J -- J-coupling ppm shift, distance between two multiplets. Zero if no splitting.
+    """
+    assignments = collections.defaultdict(list)
+    with open(f"cfg_{isotope}.txt", 'r') as rf:
+        for line in rf:
+            ls = line.strip().split('\t')
+            pkshift = float(ls[0])
+            if J == 0:
+                assignments[ls[1]].append(pkshift)
+            else:
+                assignments[ls[1]].extend([pkshift - J/2, pkshift + J/2])
+    return assignments
+
 def sg_peakpick(data, w_len, p_order, rsg=2, rd=2, nr=None, plot=True):
     """Detect peaks using a second-derivative Savitzky-Golay filter.
     
@@ -265,24 +295,43 @@ def peak_pick(dic, data, plot=True):
     # Perform peak-peaking using Savitsky-Golay filter tuned to coarse and fine detail
     if isotope == '1H':
         nr = (int(uc.f(12, unit="ppm")), int(uc.f(8, unit="ppm")))
-        # coarse, cpeakw = sg_peakpick(data, 101, 2, rsg=5, rd=4, nr=nr, plot=plot)
-        fine, fpeakw = sg_peakpick(data, 11, 2, rsg=3, rd=8, nr=nr, plot=plot)
+        coarse, cpeakw = sg_peakpick(data, 101, 2, rsg=5, rd=5, nr=nr, plot=plot)
+        # fine, fpeakw = sg_peakpick(data, 11, 2, rsg=3, rd=12, nr=nr, plot=plot) # 13CED rsg=5: StdA; rsg=4: StdC ; rsg=3: StdB
+        fine, fpeakw = sg_peakpick(data, 11, 2, rsg=8, rd=12, nr=nr, plot=plot) # 1H StdA;
         # coarse, cpeakw = sg_peakpick(data, 41, 2, rsg=5, rd=4, nr=nr, plot=plot)  # 8/12 glucose run, no 13C decoupling
         # fine, fpeakw = sg_peakpick(data, 11, 2, rsg=8, rd=8, nr=nr, plot=plot)
     # elif isotope == '13C': # TODO: OPTIMIZE FOR 13C
     #     nr = (int(uc.f(160, unit="ppm")), int(uc.f(130, unit="ppm")))
     #     coarse_peaks = list(sg_peakpick(data, 31, 3, r=2, nr=nr))
     #     fine_peaks = list(sg_peakpick(data, 11, 2, r=5, nr=nr))
-    all_peaks = fine # all_peaks = fine + coarse   # ppm shifts of peaks
-    all_widths = fpeakw# all_widths = fpeakw + cpeakw    # estimated widths of peaks
+    all_peaks = fine + coarse
+    all_widths = fpeakw + cpeakw
+    amps = [data.real[a] for a in fine] + [0.5*data.real[a] for a in coarse]
+    # all_peaks = fine  # ppm shifts of peaks
+    # all_widths = fpeakw    # estimated widths of peaks
     peaks = []
     peakw = []
     for pair in zip(all_peaks, all_widths):
         peaks.append((pair[0],))
         peakw.append((pair[1],))
-    return peaks, peakw
+    return peaks, peakw, amps
 
-def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
+def cluster_peaks(peaks, msep):
+    """Cluster peaks by chemical shift.
+    
+    Parameters:
+    peaks -- array of peaks' chemical shifts
+    msep -- minimum separation of clusters in ppm
+    """
+    distances = scipy.spatial.distance.cdist(peaks, peaks)
+    n_clusts, cIDs = scipy.sparse.csgraph.connected_components(
+        (distances <= msep).astype(int), 
+        directed=False
+    )
+    return n_clusts, cIDs
+
+def peak_fit(dic, data, r=6, sep=0.005, peak_method='guess', plot=True, vb=False, 
+             cv='sl'):
     """Peak-pick NMR spectrum.
     Includes peak-picking, peak assignment, and integration functionality. The
     reference peaks to be fit should be specified in cfg_{isotope}.txt and
@@ -315,13 +364,21 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
     # ---------------------------------- PEAK-PICKING ----------------------------------
     if isotope == '1H':
         pthres = 1000 # 300
-        shifts, peakw = peak_pick(dic, data, plot=plot)
-        cluster_sep = p2f_interval(ISOTOPE_PARAMS[isotope]['assignment_cluster_msep'])
-        distances = scipy.spatial.distance.cdist(shifts, shifts)
-        nclust, cIDs = scipy.sparse.csgraph.connected_components(
-            (distances <= cluster_sep).astype(int), 
-            directed=False
-        )
+        if peak_method == 'from_cfg':
+            ppm_assign = calc_peaks_from_cfg(isotope, J=0.) # J=0.209)
+            assignments = {}
+            shifts, shifts_tup, peakw = [], [], []
+            for cpd, cpshift in ppm_assign.items():
+                cpshift = [int(p2i(s)) for s in cpshift]
+                assignments[cpd] = cpshift
+                shifts.extend(cpshift)
+                shifts_tup.extend([(s,) for s in cpshift])
+                peakw.extend([(p2f_interval(0.025),) for _ in cpshift])
+                amps = np.array([data.real[a] for a in shifts])
+        elif peak_method == 'guess':
+            shifts_tup, peakw, amps = peak_pick(dic, data, plot=plot)
+        cluster_msep = p2f_interval(ISOTOPE_PARAMS[isotope]['assignment_cluster_msep'])
+        _, cIDs = cluster_peaks(shifts_tup, cluster_msep)
     else:
         pthres = r*rmse(data[(ppm <= 160) & (ppm >= 130)])
         shifts, cIDs, params, amps = ng.analysis.peakpick.pick( # Find peaks
@@ -330,64 +387,65 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
             cluster=True, c_ndil=p2i_interval(0.3), table=False
         )
 
-    if len(shifts) == 0:
+    if len(shifts_tup) == 0:
         # Exit if no peaks detected
         print("No peaks detected; exit.")
-        return {}, []    
-    amps = np.array([data.real[a] for a in shifts])
-    shifts_tup = np.array(shifts, dtype=np.int32)
-    shifts = np.array([sh[0] for sh in shifts])
+        return {}, []
+    shifts = np.array([s[0] for s in shifts_tup])
+    amps = np.array(amps)
     peakw = np.array(peakw)
+    shifts_tup = np.array(shifts_tup)
 
     if plot:
         plot_with_labels(ppm, [data], shifts, cIDs, ppm_bounds=plot_bounds)
         plt.show()
 
     # --------------------------- ASSIGN PEAKS TO COMPOUNDS ----------------------------
-    # Prepare arrays and constants for use within the loop
-    refsh = pd.read_csv(f"cfg_{isotope}.txt", sep='\t', names=['Shift', 'Compound']) # Shift | Compound
-    refpks = np.array([p2i(v) for _, v in refsh['Shift'].items()])
-    assignments = collections.defaultdict(list) # dict to store compound assignments
-    display_window = p2f_interval(ISOTOPE_PARAMS[isotope]['assignment_display_window'])
+    if peak_method == 'guess':
+        # Prepare arrays and constants for use within the loop
+        refsh = pd.read_csv(f"cfg_{isotope}.txt", sep='\t', names=['Shift', 'Compound']) # Shift | Compound
+        refpks = np.array([p2i(v) for _, v in refsh['Shift'].items()])
+        assignments = collections.defaultdict(list) # dict to store compound assignments
+        display_window = p2f_interval(ISOTOPE_PARAMS[isotope]['assignment_display_window'])
 
-    # Assign compound to peaks by proximity to reference shifts, handling collisions
-    # Iterate: cluster ID
-    for cid in np.unique(cIDs):
-        subpeaks = shifts[cIDs == cid] # detected peaks w/in cluster
-        clb = subpeaks.min() - cluster_sep # calculate cluster bounds
-        cub = subpeaks.max() + cluster_sep
+        # Assign compound to peaks by proximity to reference shifts, handling collisions
+        # Iterate: cluster ID
+        for cid in np.unique(cIDs):
+            subpeaks = shifts[cIDs == cid] # detected peaks w/in cluster
+            clb = subpeaks.min() - cluster_msep # calculate cluster bounds
+            cub = subpeaks.max() + cluster_msep
 
-        # Determine which reference peaks fall within cluster bounds
-        close_refpks = [i for i, xx in enumerate(refpks) if xx > clb and xx < cub]
+            # Determine which reference peaks fall within cluster bounds
+            close_refpks = [i for i, xx in enumerate(refpks) if xx > clb and xx < cub]
 
-        # Assign peaks to compounds; skip clusters with no nearby reference shifts
-        if len(close_refpks) == 1:
-            # If only one matched ref. peak, assign all cluster sub-peaks to that compound
-            assignments[refsh.at[close_refpks[0], 'Compound']].extend(subpeaks)
-        elif len(close_refpks) > 1: # Collision!
-            # If multiple ref. peaks, manually assign sub-peaks in plot window
-            colliding_refs = refsh.loc[close_refpks, :]
-            print(f"Cluster {cid} assigned to {len(close_refpks)} conflicting reference peaks.")
-            print("In the plot, find the contributions from each " \
-                    "peak using the reference shifts listed:")
-            with pd.option_context(
-                    'display.max_rows', None, 'display.max_columns', None):
-                print(colliding_refs)
-            for cpd in np.unique(colliding_refs['Compound']):
-                while True:
-                    plot_with_labels(
-                        ppm, [data.real], subpeaks, range(len(subpeaks)),
-                        ppm_bounds=(i2p(min(subpeaks) - display_window),
-                                    i2p(max(subpeaks) + display_window))
-                    )
-                    raw_text = input(f"Subpeak contributions of {cpd}: ")
-                    try:
-                        indices = [int(i) for i in raw_text.strip().split()]
-                        break
-                    except ValueError:
-                        print("Invalid assignments.")
-                if len(indices) > 0:
-                    assignments[cpd].extend(subpeaks[indices])
+            # Assign peaks to compounds; skip clusters with no nearby reference shifts
+            if len(close_refpks) == 1:
+                # If only one matched ref. peak, assign all cluster sub-peaks to that compound
+                assignments[refsh.at[close_refpks[0], 'Compound']].extend(subpeaks)
+            elif len(close_refpks) > 1: # Collision!
+                # If multiple ref. peaks, manually assign sub-peaks in plot window
+                colliding_refs = refsh.loc[close_refpks, :]
+                print(f"Cluster {cid} assigned to {len(close_refpks)} conflicting reference peaks.")
+                print("In the plot, find the contributions from each " \
+                        "peak using the reference shifts listed:")
+                with pd.option_context(
+                        'display.max_rows', None, 'display.max_columns', None):
+                    print(colliding_refs)
+                for cpd in np.unique(colliding_refs['Compound']):
+                    while True:
+                        plot_with_labels(
+                            ppm, [data.real], subpeaks, range(len(subpeaks)),
+                            ppm_bounds=(i2p(min(subpeaks) - display_window),
+                                        i2p(max(subpeaks) + display_window))
+                        )
+                        raw_text = input(f"Subpeak contributions of {cpd}: ")
+                        try:
+                            indices = [int(i) for i in raw_text.strip().split()]
+                            break
+                        except ValueError:
+                            print("Invalid assignments.")
+                    if len(indices) > 0:
+                        assignments[cpd].extend(subpeaks[indices])
 
     if len(assignments) == 0:
         print("No reference peaks detected; exit.")
@@ -404,6 +462,7 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
     mask = np.isin(shifts, used_pks)
     shifts = shifts[mask]
     peakw = np.array(peakw)[mask]
+    amps = amps[mask]
     shifts_tup = shifts_tup[mask]
     cIDs = cIDs[mask]
 
@@ -412,11 +471,23 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
     ppm_delta = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_ppm_delta'])
     fwhm_min = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_fwhm_min'])
     fwhm_max = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_fwhm_max'])
-    amps = np.array([data.real[int(a)] for a in shifts], dtype=np.float64)
-    amp_bounds = np.array([(0.05*b, 1.2*b) for b in amps])
+    cluster_sep = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_cluster_msep'])
+    fit_reach = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_reach'])
+    if cv == 'sl':
+        amps = []
+        amp_bounds = []
+        for x in shifts:
+            delp = 0.209*0.6
+            maxb = data[(ppm < (i2p(x) + delp)) & (ppm > (i2p(x) - delp))].max()
+            amps.append(maxb)
+            amp_bounds.append((0.05, 1.2*maxb))
+        amps = np.array(amps)
+        amp_bounds = np.array(amp_bounds)
+    else:
+        amps = np.array([data.real[int(a)] for a in shifts], dtype=np.float64)
+        amp_bounds = np.array([(0.05, 1.2*a) for a in amps])
 
     # Define start parameters and bounds for each peak
-    cv = 'l'
     if cv == 'v':
         cparams = np.array([((a, b[0], b[0]),) for a, b in zip(shifts, peakw)])
         cbounds = []
@@ -434,28 +505,34 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
                 (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
                 (0., fwhm_max), # lorentz bounds
             ),))
+    elif cv == 'sl':
+        # Custom split lorentzian function. Split peaks have identical parameters.
+        cparams = np.array([((a, b[0], p2f_interval(0.209)),) for a, b in zip(shifts, peakw)])
+        cbounds = []
+        for par in cparams:
+            cbounds.append(((
+                    (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
+                    (0., p2f_interval(fwhm_max)), # lorentz bounds
+                    (p2f_interval(0.208), p2f_interval(0.210)),   # J-constant bounds
+                ),))
+        cv = split_lorentz_fwhm()
     cbounds = np.array(cbounds)
+    rIDs = np.array([1 for _ in shifts_tup])
 
     # Prepare arrays and constants for use within the loop
-    curve_params = [cparams, amps, cbounds, amp_bounds, shifts_tup, cIDs]
+    curve_params = [cparams, amps, cbounds, amp_bounds, shifts_tup, rIDs]
     fit_params = np.zeros_like(cparams) # array for fit result, curve shift + FWHM
     fit_amps = np.zeros_like(amps)      # array for fit result, curve amplitudes
-    cluster_sep = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_cluster_msep'])
-    cluster_reach = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_cluster_reach'])
 
     # Calculate curve fitting windows and iterate for curve fit
-    distances = scipy.spatial.distance.cdist(shifts_tup, shifts_tup)
-    n_fitwd, fitwd = scipy.sparse.csgraph.connected_components(
-        (distances <= cluster_sep).astype(int), 
-        directed=False
-    )
+    n_fitwd, fitwd = cluster_peaks(shifts_tup, cluster_sep)
     for wid in range(n_fitwd):
         mask = (fitwd == wid)
         fit_args = [pset[mask] for pset in curve_params]
         
         # slice region from +/- <cluster_reach> for curve-fitting
-        lb = min(shifts[mask]) - cluster_reach
-        ub = max(shifts[mask]) + cluster_reach
+        lb = min(shifts[mask]) - cluster_sep # 0.5*cluster_sep
+        ub = max(shifts[mask]) + cluster_sep # 0.5*cluster_sep
         _, ndata = ng.process.pipe_proc.ext(dic, data, x1=lb, xn=ub)
 
         # Shift peak parameters into slice and perform curve fit
@@ -466,7 +543,7 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
             ndata, 
             [cv],
             *fit_args,
-            p2i_interval(ppm_delta), 
+            p2i_interval(fit_reach), 
             False, 
             verb=False,
             maxfev=1000000,
@@ -497,6 +574,9 @@ def peak_fit(dic, data, r=6, sep=0.005, plot=True, vb=False):
         # Select peaks belonging to compound
         include = np.isin(shifts, assignments[cpd])
         idxs = shifts[include]
+
+        for i, pset in enumerate(fit_params[include]):
+            print(cpd, i, ':', *[scale*e for e in pset], fit_amps[include][i])
 
         # Simulate spectrum with fit parameters
         sim_smooth = ng.analysis.linesh.sim_NDregion( # Simulate spectrum in high-resolution
@@ -580,7 +660,7 @@ def ridge_trace(dic, data, wr=0.01, plot=True):
 
     return signals
 
-def process_trace(loc, item, cf, ps, overwrite=True, man_ps=False):
+def process_trace(loc, item, cf, ps, overwrite=OVERWRITE, man_ps=False):
     """Process a single 1D 13C-NMR trace.
 
     Parameters:
@@ -623,10 +703,18 @@ def process_trace(loc, item, cf, ps, overwrite=True, man_ps=False):
         # dic, data = pipe_bl(dic, data)  # Baseline correction
         # if isotope == "1H":
         #     data = ng.process.proc_bl.baseline_corrector(data, wd=25)
-        #     data = np.float32(data)
+        # data = np.float32(data)
 
         # Calibrate PPM shift
-        ppm = ng.pipe.make_uc(dic, data, dim=0).ppm_scale()
+        uc = ng.pipe.make_uc(dic, data, dim=0)
+        ppm = uc.ppm_scale()
+        
+        nodes = np.arange(min(ppm), max(ppm), 0.4)
+        baseline_corrector = Baseline(ppm, data, nodes, 11, nr=0.1)
+        plt.show()
+        bl = baseline_corrector.get_baseline()
+        data = np.float32(data) - np.float32(bl)
+
         if cf != 0:
             shift = cf*data.shape[0]/(max(ppm) - min(ppm))
             dic, data = ng.process.pipe_proc.ls(dic, data, shift, sw=False)
@@ -643,6 +731,7 @@ def process_trace(loc, item, cf, ps, overwrite=True, man_ps=False):
     else:
         # Flatten water resonances
         # ppm_array = np.array(ppm)
+        data = data.copy()
         data[(ppm > 4.2) & (ppm < 4.9)] = 0
 
         # Pick peaks and calculate signal
@@ -657,7 +746,7 @@ def message(message, verbose):
     if verbose:
         print(message)
 
-def process_stack(loc, ids, initial=None, iso='13C', vb=True, dry_run=False):
+def process_stack(loc, ids, initial=None, iso='13C', vb=True, dry_run=DRY_RUN):
     """Process entire NMR stack and write to xlsx file.
 
     Parameters:
@@ -828,11 +917,11 @@ def main(iso, init):
         print("Isotope not recognized.")
         return
     loc = os.getcwd()
-    # indices = detect_spectra(iso=iso, init=init)
-    # indices = [str(3*i + 1) for i in range(4, 34)]
-    indices = ['23']
-    # indices = ['91'] #, '14', '15']
-    # print("Beginning calibration with following parameters:")
+    if INDICES is not None:
+        indices = INDICES
+    else:
+        indices = detect_spectra(iso=iso, init=init)
+    print("Beginning calibration with following parameters:")
     print("\t- Directory: " + loc)
     print(f"\t- {iso} spectrum IDs: " + ', '.join(indices))
     print("\t- Initial timepoint reference: " + init)
