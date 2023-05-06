@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Apr  8 12:00:24 2021
+"""Created on Thu Apr  8 12:00:24 2021
 
 @author: Aidan Pavao for Massachusetts Host-Microbiome Center
  - Process raw Bruker NMR files into Excel spreadsheet for downstream analysis
@@ -24,14 +21,17 @@ Copyright 2021 Massachusetts Host-Microbiome Center
 
 """
 
+import argparse
 import collections
 import datetime
 import glob
+import json
 import os
 import subprocess
-import sys
+import traceback
 
 import matplotlib as mpl
+mpl.use("TkAgg")
 import matplotlib.pyplot as plt
 import nmrglue as ng
 import numpy as np
@@ -39,69 +39,78 @@ import pandas as pd
 import scipy
 
 from man_bl import Baseline
-from lineshapes_addon import split_lorentz_fwhm
+from lineshapes_addon import split_lorentz_fwhm, gumbel_hb
+from ui import Isotope, Peak, Window
+from sandbox import ConflictWindow, CalibrateWindow
 
 SCDIR = os.path.dirname(__file__)   # location of script
 CURVE_FIT_RESOLUTION = 2**19
 
-## ver: proc script version. If you encounter "ValueError: buffer is smaller than
-#       requested size", try changing this value.
-# ver = ''
-ver = '_2'
-# ver = '_3'
-# ver = '_4'
-
 DRY_RUN = False  # In a dry run, no Excel file is written after processing
 OVERWRITE = True  # Whether to overwrite existing FT spectra
-# INDICES = None  # FID indices. None to auto-detect. Otherwise must be list of strings.
-# INDICES = [str(3*i + 1) for i in range(4, 34)]
-INDICES = ['21'] #, '23']
+INDICES = None  # FID indices. None to auto-detect. Otherwise must be list of strings.
+# INDICES = [str(3*i) for i in range(68, 69)]
+# INDICES = ['43'] #, '23']
+# INDICES = ["bmse000402_1"]
 # INDICES = ['91'] #, '14', '15']
 
-ISOTOPE_PARAMS = {
-    '1H': {
-        'fit_ppm_delta': 0.05,   # +/- drift tolerance for peak centers during fitting
-        'fit_fwhm_max': 0.1, #0.1,   # max FWHM of fit curve
-        'fit_fwhm_min': 0.001,  # min FWHM of fit curve (unused, no lower bound)
-        'plot_bounds': (12., 0.),   # PPM shift bounds for plotting
-        'assignment_display_window': 1.,    # extra plot padding to contextualize peaks during assignment
-        'assignment_cluster_msep': 0.1, # minimum separation for distinct clusters
-        'fit_cluster_msep': 0.5, # 0.1,    #  cluster buffer for automatic peak assignment
-        'fit_reach': 0.5,  # buffer to include around cluster for curve fitting
-    },
-    '13C': {
-        'fit_ppm_delta': 5,
-        'fit_fwhm_max': 0.5,
-        'fit_fwhm_min': 0.01,
-        'plot_bounds': (200., 0.),
-        'assignment_display_window': 8,
-        'fit_cluster_msep': 10,
-        'fit_cluster_reach': 8,
-    }
-}
+isotope_params = ["id", "name", "fit_ppm_delta", "fit_fwhm_max", "fit_fwhm_min",
+                  "peak_pick_msep", "ppm_min", "ppm_max", "assignment_display_window",
+                  "assignment_cluster_msep", "fit_cluster_msep", "fit_reach"]
+Isotope = collections.namedtuple("Isotope", isotope_params)
+isotopes = {}
+with open(f"{SCDIR}/isotopes.json", "r") as rf:
+    isotope_data = json.loads(rf.read())
+    for iso, params in isotope_data.items():
+        isotopes[iso] = Isotope(id=iso, **params)
 
-def plot_datasets(xx, yys, ppm_bounds=(200., 0.), show=True, ax=None):
-    if ax is None:
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-    for yy in yys:
-        ax.plot(xx, yy, lw=0.5)
-    ax.set_xlim(*ppm_bounds)
-    if show:
-        plt.show()
+def match_pulprog(isotope, pulprog):
+    if isotope == '1H':
+        return pulprog == 'noesypr1d'
+    elif isotope == '13C':
+        return pulprog == 'zgpg30'
+    elif isotope == '1H_13C':
+        return pulprog == 'hsqcphpr'
+    return False
 
-def plot_with_labels(xx, yys, labeli, labels, ppm_bounds=(200., 0.), yopt=None, **kwargs):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    plot_datasets(xx, yys, show=False, ax=ax)
-    if yopt is None:
-        yopt = yys[0][labeli]
-    ax.plot(xx[labeli], yopt, ls='', marker='*', **kwargs)
-    for ci, xi, yi in zip(labels, xx[labeli], yopt):
-        ax.annotate(ci, (xi,yi), textcoords='offset points', xytext=(0,10),
-            ha='center')
-    ax.set_xlim(*ppm_bounds)
-    plt.show()
+def prompt_continue():
+    while True:
+        cont = input("Continue? (y/n): ")
+        if cont.strip() in ['y', 'n']:
+            break
+        else:
+            print("\tInvalid input.")
+    if cont == 'n':
+        return False
+    else:
+        return True
+
+def rmse(vector):
+    """Calculate the Root Mean Squared Error (RMSE) of a 1D-array."""
+    return np.sqrt(((vector - vector.mean()) ** 2).mean())
+
+def shift_params(s, *args):
+    """Shift parameters by a factor s.
+    Only acts on first element, which is usually the ppm shift.
+    """
+    for params in args:
+        for param in params:
+            param[0] -= s
+    return args
+
+def cluster_peaks(peaks, msep):
+    """Cluster peaks by chemical shift.
+    
+    Parameters:
+    peaks -- array of peaks' chemical shifts
+    msep -- minimum separation of clusters in ppm
+    """
+    distances = scipy.spatial.distance.cdist(peaks, peaks)
+    n_clusts, cIDs = scipy.sparse.csgraph.connected_components(
+        (distances <= msep).astype(int), 
+        directed=False
+    )
+    return n_clusts, cIDs
 
 def to_stream(dic, data):
     """Prepare data for NMRpipe.
@@ -123,21 +132,10 @@ def to_stream(dic, data):
     datastream = fdata.tobytes() + data.tobytes()
     return datastream
 
-def get_ppm_bounds(isotope):
-    if isotope == '13C':
-        return (200., 0)
-    else:
-        return (12., 0.)
-
-def get_timestamp(fidpath):
-    """Get FID timestamp from acqus file."""
-    dic, _ = ng.bruker.read(fidpath)
-    return datetime.datetime.fromtimestamp(dic['acqus']['DATE'])
-
-def pipe_process(isotope, fid):
+def pipe_process(expt, fid):
     """Process Bruker FID using NMRPipe and load using nmrglue."""
     pipe_output = subprocess.run(
-        ["csh", f"{SCDIR}/proc_{isotope}{ver}.com", fid],
+        ["csh", f"{SCDIR}/proc_{expt}.com", fid],
         stdout=subprocess.PIPE)
     return ng.fileio.pipe.read(pipe_output.stdout)
 
@@ -149,813 +147,866 @@ def pipe_bl(dic, data):
         stdout=subprocess.PIPE)
     return ng.fileio.pipe.read(pipe_output.stdout)
 
-def calibrate_process(loc, item, acq1, isotope, verbose=True):
-    """Get process parameters using NMRglue and write NMRpipe script
-
-    Parameters:
-    loc -- directory for the NMR run
-    item  -- ID of spectrum (also folder name)
-    acq1 -- Initial acquisition ID for timepoint anchor
-
-    Returns: ppm correction to calibrate the x axis
-    """
-    
-    ppm_bounds = get_ppm_bounds(isotope)
-
-    runf = loc.split('/')[-1]
-
-    dic, _ = ng.bruker.read(f'{loc}/{acq1}') # get initial timestamp
-    time0 = datetime.datetime.fromtimestamp(dic['acqus']['DATE'])
-
-    dic, data = ng.bruker.read(f'{loc}/{item}') # get number of scans
-    n_scans = dic['acqus']['NS']
-
-    dic, data = pipe_process(isotope, item) # CONVERT, PROCESS, and LOAD SPECTRUM
-
-    p0, p1 = ng.process.proc_autophase.manual_ps(data, notebook=False) # MANUAL PHASE SHIFT
-    dic, data = ng.process.pipe_proc.ps(dic, data, p0=p0, p1=p1)
-
-    dic, data = ng.process.pipe_proc.mult(dic, data, r=n_scans, inv=True) # NORMALIZE BY NUMBER OF SCANS
-    
-    dic, data = pipe_bl(dic, data) # BASELINE CORRECTION
-    # if dic['FDF2LABEL'] == "1H":
-    #     data = ng.process.proc_bl.baseline_corrector(data, wd=25)
-
-    ## CALIBRATE PPM SHIFT ##
-    print("Find the experimental ppm shift of a reference peak to " \
-            "calibrate the chemical shift axis.")
-    ref_shift = input("Type the reference ppm shift of the peak to " \
-        "calibrate: ")
-    ref_shift = float(ref_shift)
-    print("Now, find the experimental shift of that peak.")
-    print("Note the x-coordinate, then close the window.")
-    uc = ng.pipe.make_uc(dic, data, dim=0)
-    plot_datasets(uc.ppm_scale(), [data.real], ppm_bounds=ppm_bounds)
-    calib = input("Type the ppm shift of the peak you wish to calibrate: ")
-    actual_shift = float(calib)
-
-    calibration_shift = float(ref_shift) - float(actual_shift)
-    print(f"Shifting by {calibration_shift} ppm.")
-    uc = ng.pipe.make_uc(dic, data, dim=0)
-    ppm = uc.ppm_scale()
-    return calibration_shift, time0, [p0, p1], ppm
-
-def rmse(vector):
-    """Calculate the Root Mean Squared Error (RMSE) of a 1D-array."""
-    return np.sqrt(((vector - vector.mean()) ** 2).mean())
-
-def ppm_ivl(uc, xx): 
-    """Convert PPM scale to index."""
-    return abs(uc.f(0, unit='ppm') - uc.f(xx, unit='ppm'))
-
-def shift_params(s, *args):
-    """Shift parameters by a factor s.
-    Only acts on first element, which is usually the ppm shift.
-    """
-    for params in args:
-        for param in params:
-            param[0] -= s
-    return args
-
-def calc_peaks_from_cfg(isotope, J=0.):
-    """Calculate expected peak locations from cfg sheet.
-    
-    Parameters:
-    isotope -- isotope name, to guess cfgsheet filename
-    J -- J-coupling ppm shift, distance between two multiplets. Zero if no splitting.
-    """
-    assignments = collections.defaultdict(list)
-    with open(f"cfg_{isotope}.txt", 'r') as rf:
-        for line in rf:
-            ls = line.strip().split('\t')
-            pkshift = float(ls[0])
-            if J == 0:
-                assignments[ls[1]].append(pkshift)
-            else:
-                assignments[ls[1]].extend([pkshift - J/2, pkshift + J/2])
-    return assignments
-
-def sg_peakpick(data, w_len, p_order, rsg=2, rd=2, nr=None, plot=True):
+def sg_findpeaks(spec, window_size, poly_order, prominence_sg=2, prominence_fid=2, noise_bounds=None, plot=True):
     """Detect peaks using a second-derivative Savitzky-Golay filter.
     
     TODO: calculate SD from noise region, not whole spec
 
     Parameters:
-    data -- FT-NMR spectrum for peak-picking.
-    w_len -- SG filter window size, must be odd. Larger window size results in greater
-             smoothing.
-    p_order -- order of SG polynomial.
-    rsg -- number of standard deviations for peak-finding minimum prominence, SG.
-    rd -- number of standard deviations for peak-finding minimum prominence, FT data.
-    nr -- two-ple of index bounds of noise region for std calculation.
+    vector : the spectrum object to process
+    window_size : SG filter window size, must be odd. Larger window size results in greater
+            smoothing.
+    poly_order : order of SG polynomial.
+    prominence_sg : number of standard deviations for peak-finding minimum prominence, SG.
+    prominence_fid : number of standard deviations for peak-finding minimum prominence, FT data.
+    noise_bounds : two-ple of index bounds of noise region for std calculation.
+    plot : whether to plot the SG second derivative with found peaks
     
-    Return lost containing indices of found peaks and estimated widths.
+    Return lists containing indices of found peaks and estimated widths.
     """
     # Compute Savitsky-Golay filter, 2nd derivative
-    fd2 = -1*scipy.signal.savgol_filter(data, w_len, p_order, deriv=2)
+    signal = spec.data
+    fd2 = -1*scipy.signal.savgol_filter(spec.data, window_size, poly_order, deriv=2)
 
     # Calculate noise thresholds
-    if nr is None:
-        err_f = rd*np.std(data)
-        err_fd2 = rsg*np.std(fd2)
+    if noise_bounds is None:
+        err_f = prominence_fid*np.std(signal)
+        err_fd2 = prominence_sg*np.std(fd2)
     else:
-        err_f = rd*np.std(data[slice(*nr)])
-        err_fd2 = rsg*np.std(fd2[slice(*nr)])
+        err_f = prominence_fid*np.std(signal[slice(*noise_bounds)])
+        err_fd2 = prominence_sg*np.std(fd2[slice(*noise_bounds)])
 
     # Find peaks, estimate widths and amplitudes, filter by noise thresholds
-    pks, prp = scipy.signal.find_peaks(fd2, distance=3, width=(3, w_len*1.5), prominence=err_fd2) # width=(3, 75)
+    pks, prp = scipy.signal.find_peaks(fd2, distance=3, width=(3, window_size*1.5), prominence=err_fd2)
     pkw = np.array([abs(prp['right_ips'][i] - prp['left_ips'][i]) for i in range(pks.shape[0])])
-    amps = np.array(data[[int(pk) for pk in pks]])
+    amps = np.array(signal[[int(pk) for pk in pks]])
     pks = pks[amps > err_f]
     pkw = pkw[amps > err_f]
-    x = np.array(range(len(data), 0, -1))
+    x = np.array(range(len(signal), 0, -1))
 
     # Plot found peaks
     if plot:
-        fd0 = scipy.signal.savgol_filter(data, w_len, p_order, deriv=0)
+        fd0 = scipy.signal.savgol_filter(signal, window_size, poly_order, deriv=0)
         pklabels = list(range(pks.shape[0]))
-        plot_with_labels(x, [10*w_len*fd2, fd0, data], pks, pklabels, ppm_bounds=(max(x), min(x)))
+        spec.plot_with_labels([10*window_size*fd2, fd0], pks, pklabels, ppm_bounds=(max(x), min(x)))
 
     return list(pks), list(pkw)
 
-def peak_pick(dic, data, plot=True):
-    """Use Savitzky-Golay method to detect both fine and coarse peaks.
-    
-    TODO: tune for 13C
-    
-    Parameters:
-    data -- vector of data for peak-picking.
-    isotope -- isotope to determine SG filter parameters.
+class Stack():
+    def __init__(self, path: str, expt: str, acq1: str):
+        self.path = path
+        self.basename = os.path.basename(path)
+        self.expt = expt
+        direct = expt.split('_')[0]
+        self.isotope = isotopes[direct]
+        self.spectra = {}
+        self.ppm_bounds = (self.isotope.ppm_max, self.isotope.ppm_min)
+        self.refpeaks = self.load_cfg()
+        self.acq1 = acq1
 
-    Returns list containing positions of peaks detected.
-    """
-    isotope = dic['FDF2LABEL']
-    uc = ng.pipe.make_uc(dic, data, dim=0)
+        # Processing parameters
+        self.p0 = 0.
+        self.p1 = 0.
+        self.cf = 0.
 
-    # Perform peak-peaking using Savitsky-Golay filter tuned to coarse and fine detail
-    if isotope == '1H':
-        nr = (int(uc.f(12, unit="ppm")), int(uc.f(8, unit="ppm")))
-        coarse, cpeakw = sg_peakpick(data, 101, 2, rsg=5, rd=5, nr=nr, plot=plot)
-        # fine, fpeakw = sg_peakpick(data, 11, 2, rsg=3, rd=12, nr=nr, plot=plot) # 13CED rsg=5: StdA; rsg=4: StdC ; rsg=3: StdB
-        fine, fpeakw = sg_peakpick(data, 11, 2, rsg=8, rd=12, nr=nr, plot=plot) # 1H StdA;
-        # coarse, cpeakw = sg_peakpick(data, 41, 2, rsg=5, rd=4, nr=nr, plot=plot)  # 8/12 glucose run, no 13C decoupling
-        # fine, fpeakw = sg_peakpick(data, 11, 2, rsg=8, rd=8, nr=nr, plot=plot)
-    # elif isotope == '13C': # TODO: OPTIMIZE FOR 13C
-    #     nr = (int(uc.f(160, unit="ppm")), int(uc.f(130, unit="ppm")))
-    #     coarse_peaks = list(sg_peakpick(data, 31, 3, r=2, nr=nr))
-    #     fine_peaks = list(sg_peakpick(data, 11, 2, r=5, nr=nr))
-    all_peaks = fine + coarse
-    all_widths = fpeakw + cpeakw
-    amps = [data.real[a] for a in fine] + [0.5*data.real[a] for a in coarse]
-    # all_peaks = fine  # ppm shifts of peaks
-    # all_widths = fpeakw    # estimated widths of peaks
-    peaks = []
-    peakw = []
-    for pair in zip(all_peaks, all_widths):
-        peaks.append((pair[0],))
-        peakw.append((pair[1],))
-    return peaks, peakw, amps
+        # Detect valid FIDs
+        self.ordered_fids = self.detect_spectra(self.acq1)
 
-def cluster_peaks(peaks, msep):
-    """Cluster peaks by chemical shift.
-    
-    Parameters:
-    peaks -- array of peaks' chemical shifts
-    msep -- minimum separation of clusters in ppm
-    """
-    distances = scipy.spatial.distance.cdist(peaks, peaks)
-    n_clusts, cIDs = scipy.sparse.csgraph.connected_components(
-        (distances <= msep).astype(int), 
-        directed=False
-    )
-    return n_clusts, cIDs
+    def load_cfg(self):
+        try:
+            refpeaks = pd.read_csv(
+                f"{self.path}/cfg_{self.isotope.id}.txt", 
+                sep='\t', 
+                names=['Shift', 'Compound']
+            )
+        except FileNotFoundError:
+            print("Config file not found, skipping.")
+            refpeaks = None
+        return refpeaks
 
-def peak_fit(dic, data, r=6, sep=0.005, peak_method='guess', plot=True, vb=False, 
-             cv='sl'):
-    """Peak-pick NMR spectrum.
-    Includes peak-picking, peak assignment, and integration functionality. The
-    reference peaks to be fit should be specified in cfg_{isotope}.txt and
-    provided in the directory of the run to be processed.
+    def detect_spectra(self, acq1):
+        """Returns a list of spectra IDs for the given isotope."""
+        iso_spectra = []
+        subdirs = [os.path.basename(dir) for dir in glob.iglob(f"{self.path}/*") if os.path.isdir(dir)]
+        sorted_fids = sorted([int(dir) for dir in subdirs if str.isdigit(dir)])
+        for fid in sorted_fids:
+            if fid < int(acq1):
+                continue
+            try:
+                fn = str(fid)
+                dic, _ = ng.bruker.read(f"{self.path}/{fn}")
+                if match_pulprog(self.expt, dic['acqus']['PULPROG']):
+                    iso_spectra.append(fn)
+            except OSError:
+                pass
+        return iso_spectra
 
-    Parameters:
-    ppm -- chemical shift axis of the data, in ppm
-    data -- signal axis of the data
-    r -- RMSE noise threshold for peak detection (default: 6)
-    plot -- True (default) to plot fit peaks with cluster labels over the data.
-    vb -- True for verbose mode.
+    def read_calibration(self):
+        print("Reading existing calibration parameters")
+        with open(f"{self.path}/calibrate_{self.expt}.txt", "r") as rf:
+            rf.readline()
+            values = rf.readline().strip('\n').split('\t')
+            self.p0 = values[0]
+            self.p1 = values[1]
+            self.cf = values[2]
 
-    Returns a dictionary mapping compounds to their peak areas, and a curve
-    summing all of the fit peaks.
-    """
-    # ----------------------------------- UTILITIES ------------------------------------
-    uc = ng.pipe.make_uc(dic, data, dim=0)
-    ppm = uc.ppm_scale()
-    data = data.real
-    isotope = dic["FDF2LABEL"]
-    plot_bounds = ISOTOPE_PARAMS[isotope]['plot_bounds']
-    # if isotope == '1H':
-    #     data = -1*data
+    def write_calibration(self):
+        print("Writing new calibration parameters")
+        with open(f"{self.path}/calibrate_{self.expt}.txt", "w") as wf:
+            wf.write("p0\tp1\tcf\n")
+            wf.write(f"{self.p0}\t{self.p1}\t{self.cf}\n")
 
-    def p2f_interval(xx): return abs(uc.f(0, unit='ppm') - uc.f(xx, unit='ppm')) # convert PPM scale to index
-    def p2i_interval(xx): return int(p2f_interval(xx)) # convert PPM scale to index # convert PPM scale to index
-    def p2i(xx): return uc.f(xx, unit='ppm')
-    def i2p(yy): return uc.ppm(yy) # convert index to PPM shift
+    def calibrate(self, overwrite=False):
+        """Get process parameters using NMRglue and write NMRpipe script
 
-    # ---------------------------------- PEAK-PICKING ----------------------------------
-    if isotope == '1H':
-        pthres = 1000 # 300
-        if peak_method == 'from_cfg':
-            ppm_assign = calc_peaks_from_cfg(isotope, J=0.) # J=0.209)
-            assignments = {}
-            shifts, shifts_tup, peakw = [], [], []
-            for cpd, cpshift in ppm_assign.items():
-                cpshift = [int(p2i(s)) for s in cpshift]
-                assignments[cpd] = cpshift
-                shifts.extend(cpshift)
-                shifts_tup.extend([(s,) for s in cpshift])
-                peakw.extend([(p2f_interval(0.025),) for _ in cpshift])
-                amps = np.array([data.real[a] for a in shifts])
-        elif peak_method == 'guess':
-            shifts_tup, peakw, amps = peak_pick(dic, data, plot=plot)
-        cluster_msep = p2f_interval(ISOTOPE_PARAMS[isotope]['assignment_cluster_msep'])
-        _, cIDs = cluster_peaks(shifts_tup, cluster_msep)
-    else:
-        pthres = r*rmse(data[(ppm <= 160) & (ppm >= 130)])
-        shifts, cIDs, params, amps = ng.analysis.peakpick.pick( # Find peaks
-            data, pthres=pthres, msep=(p2i_interval(sep),),
-            algorithm='thres-fast', est_params=True, lineshapes=['g'],
-            cluster=True, c_ndil=p2i_interval(0.3), table=False
-        )
+        Parameters:
+        acq1 -- FID of first spectrum in experiment, timepoint anchor
 
-    if len(shifts_tup) == 0:
-        # Exit if no peaks detected
-        print("No peaks detected; exit.")
-        return {}, []
-    shifts = np.array([s[0] for s in shifts_tup])
-    amps = np.array(amps)
-    peakw = np.array(peakw)
-    shifts_tup = np.array(shifts_tup)
+        Returns: ppm correction to calibrate the x axis
+        """
+        # Get timestamp anchor
+        acq1_dic, _ = ng.bruker.read(f"{self.path}/{self.acq1}")
+        self.timestamp = datetime.datetime.fromtimestamp(acq1_dic['acqus']['DATE'])
 
-    if plot:
-        plot_with_labels(ppm, [data], shifts, cIDs, ppm_bounds=plot_bounds)
+        if not overwrite and os.path.isfile(f"{self.path}/calibrate_{self.expt}.txt"):
+            self.read_calibration()
+            return
+
+        # Process initial FID and calibrate phase and ppm shift
+        spec_id = self.ordered_fids[0]
+        fid = Spectrum(spec_id, self)
+        fid.process(manual_ps=True)
+        CalibrateWindow(fid.ppm, fid.data, self)
+        fid.calibrate(update_ft=True)
+        self.spectra[spec_id] = fid
+        self.write_calibration()
+
+    def process_fids(self, overwrite=True, auto_bl=True, manual_bl=False):
+        for spec_id in self.ordered_fids:
+            if spec_id in self.spectra:
+                spec = self.spectra[spec_id]
+                if spec.is_processed:
+                    continue
+            else:
+                spec = Spectrum(spec_id, self)
+            try:
+                spec.process(manual_ps=False, overwrite=overwrite, auto_bl=auto_bl, 
+                                    manual_bl=manual_bl)
+                self.spectra[spec_id] = spec
+            except Exception as err:
+                print(f"There was an error during the processing of trace {spec_id}:")
+                print(Exception, err, '\n')
+                print(traceback.format_exc())
+                print("\nAborting process routine.")
+                return
+
+    def write_stack(self, suffix=None):
+        """Write processed stack to Excel."""
+        if suffix is None:
+            suffix = ""
+        else:
+            suffix = "_" + suffix
+        spectra = []
+        vectors = []
+        timestamps = []
+        areas = []
+        areas_index = []
+        for spec_id in self.ordered_fids:
+            spec = self.spectra[spec_id]
+            if spec.is_processed:
+                spectra.append(spec)
+                vectors.append(spec.data)
+                timestamps.append(spec.time_elapsed)
+            if spec.is_peakfit:
+                areas.append(spec.cpd_areas)
+                areas_index.append(spec.time_elapsed)
+        stack_array = np.array(vectors)
+        df = pd.DataFrame(stack_array, columns=spectra[0].ppm, index=timestamps)
+        print(f"\tCollected {len(spectra)} processed of {len(self.ordered_fids)} total spectra.")
+        print(f"\tCollected {len(areas)} peak-fit of {len(self.ordered_fids)} total spectra.")
+
+        savepath = f"{self.path}/{self.basename}_{self.expt}{suffix}.xlsx"
+        try:
+            writer = pd.ExcelWriter(savepath, engine='xlsxwriter')
+            print(f"\tOpened {savepath}.")
+        except FileNotFoundError:
+            print(f"\tCould not save {savepath}: directory does not exist.")
+            return
+        
+        print("\tWriting processed spectra...")
+        df = df.T
+        df.to_excel(writer, sheet_name='trace', startrow=1)
+        ws = writer.sheets['trace']
+        ws.write(0, 0, 'trace')
+        ws.write(1, 0, 'ppm')
+        for i, item in enumerate(self.ordered_fids):
+            ws.write(0, i + 1, item)
+
+        if self.refpeaks is not None:
+            print("Writing reference shifts...")
+            self.refpeaks.to_excel(writer, sheet_name='cfg')
+        else:
+            print("No config loaded, will not write reference shifts.")
+
+        if len(areas) > 0:
+            print("Writing peak table...")
+            df = pd.DataFrame(areas, index=areas_index)
+            df.to_excel(writer, sheet_name='area')
+        else:
+            print("No peak-fit spectra, will not right integrals table.")
+
+        print("Saving file...")
+        writer.save()
+        print(f"Done. Written to {savepath}.")
+
+    def peakfit_fids(self, overwrite=False):
+        print("Beginning peak fitting procedure for the stack.")
+        for spec_id in self.ordered_fids:
+            spec = self.spectra[spec_id]
+            if spec.is_peakfit:
+                print(f"Skipping fid {spec_id}: it is already peak-fit.")
+                continue
+            if not overwrite and os.path.isfile(f"{spec.path}/peaklist.txt"):
+                print(f"Loading existing peaklist for fid {spec_id}.")
+                spec.load_peaklist()
+                continue
+            try:
+                spec.peak_fit()
+            except Exception as err:
+                print(f"There was an error during the peak fitting of fid {spec_id}:")
+                print(Exception, err, '\n')
+                print(traceback.format_exc())
+                print("\nAborting peak fit routine.")
+                return
+            if not prompt_continue():
+                return
+
+class PeakList():
+    def __init__(self, shifts, peakw, amps, cIDs, assignments=dict()):
+        self.shifts = shifts
+        self.peakw = peakw
+        self.amps = amps
+        self.cIDs = cIDs
+        self.assignments = assignments
+
+    def filter_peaks(self, mask):
+        """Filter peak parameters using a boolean mask.
+        
+        Parameters:
+        mask : the boolean mask with which to filter the peaks. Each position should be
+            True to include the peak or False to discard it."""
+        self.shifts = self.shifts[mask]
+        self.peakw = self.peakw[mask]
+        self.amps = self.amps[mask]
+        self.cIDs = self.cIDs[mask]
+
+    def ng_shifts(self):
+        """Get shifts array formatted for nmrglue"""
+        return np.array([(s,) for s in self.shifts])
+
+class Spectrum():
+    def __init__(self, id: str, parent: Stack):
+        self.id = id
+        self.parent = parent
+        self.path = f"{self.parent.path}/{self.id}"
+        self.is_processed = False
+        self.is_peakfit = False
+
+    def process(self, manual_ps=False, overwrite=True, auto_bl=True, manual_bl=False):
+        """Process 1D-NMR fid.
+        Includes LB, ZF, FT, PS, BL, and PPM shift calibration.
+
+        Parameters:
+        manual_ps (False) : Interactively phase-correct and update the phase parameters 
+            for the parent stack.
+        overwrite (True) : True will force overwrite of existing FT-NMR spectra. False 
+            will load an existing FT-NMR spectrum if exists, and skip processing.
+        auto_bl (True) : Perform automatic baseline correction using NMRPipe.
+        manual_bl (False) : Perform interactive baseline correction.
+        """
+        print(f"Processing fid {self.id}.")
+        print("Loading metadata...")
+        dic, _ = ng.bruker.read(self.path)
+        n_scans = dic['acqus']['NS']
+        self.timestamp = datetime.datetime.fromtimestamp(dic['acqus']['DATE'])
+        self.time_elapsed = (self.timestamp - self.parent.timestamp).total_seconds()/3600.
+
+        if os.path.exists(f"{self.path}/ft") and not overwrite:
+            print(f"Loading existing processed spectrum for fid {self.id}.")
+            self.dic, self.data = ng.fileio.pipe.read(f"{self.path}/ft") # Load a previously processed spectrum
+            self.data = self.data.real
+            self.uc = ng.pipe.make_uc(self.dic, self.data, dim=0)
+            self.ppm = self.uc.ppm_scale()
+            self.is_processed = True
+            return
+
+        print("Processing spectrum with NMRPipe...")
+        self.dic, self.data = pipe_process(self.parent.expt, f'{self.path}')  # Convert, LB, ZF, FT
+
+        print("Performing phase correction...")
+        self.dic, self.data = ng.process.pipe_proc.ps(self.dic, self.data, p0=self.parent.p0, p1=self.parent.p1)
+        # if sum(self.data) < 0:
+        #     self.dic, self.data = ng.process.pipe_proc.ps(self.dic, self.data, p0=180, p1=0) # Flip if below axis
+        if manual_ps:
+            p0, p1 = ng.process.proc_autophase.manual_ps(self.data, notebook=False)
+            self.dic, self.data = ng.process.pipe_proc.ps(self.dic, self.data, p0=p0, p1=p1)
+            self.parent.p0 = p0
+            self.parent.p1 = p1
+
+        print("Normalizing spectrum intensity...")
+        self.dic, self.data = ng.process.pipe_proc.mult(self.dic, self.data, r=n_scans, inv=True) 
+        self.uc = ng.pipe.make_uc(self.dic, self.data, dim=0)
+        self.ppm = self.uc.ppm_scale()
+
+        if auto_bl:
+            print("Performing baseline correction using NMRPipe...")
+            self.dic, self.data = pipe_bl(self.dic, self.data)  
+        if manual_bl:
+            print("Performing interactive baseline correction...")
+            nodes = np.arange(min(self.ppm), max(self.ppm), 0.4)
+            baseline_corrector = Baseline(self.ppm, self.data, nodes, 11, nr=0.1)
+            plt.show()
+            bl = baseline_corrector.get_baseline()
+            self.data = np.float32(self.data) - np.float32(bl)
+
+        print("Calibrating PPM shift...")
+        self.calibrate()
+
+        print("Writing processed FT spectrum...")
+        ng.fileio.pipe.write(f"{self.path}/ft", self.dic, self.data, overwrite=True)
+        self.is_processed = True
+        print(f"Done processing fid {self.id}.")
+
+    def calibrate(self, update_ft=False):
+        if self.parent.cf == 0:
+            return
+        ppm_range = max(self.ppm) - min(self.ppm)
+        np = self.data.shape[0]
+        shift = self.parent.cf * (np / ppm_range)
+        self.dic, self.data = ng.process.pipe_proc.ls(self.dic, self.data, shift, sw=False)
+        self.uc = ng.pipe.make_uc(self.dic, self.data, dim=0)
+        self.ppm = self.uc.ppm_scale()
+        if update_ft:
+            ng.fileio.pipe.write(f"{self.path}/ft", self.dic, self.data, overwrite=True)
+
+    def plot(self, yys=[], ppm_bounds=None, show=True, ax=None, **kwargs):
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        if ppm_bounds == None:
+            ppm_bounds = self.parent.ppm_bounds
+        ax.plot(self.ppm, self.data, lw=0.5, **kwargs)
+        for yy in yys:
+            ax.plot(self.ppm, yy, lw=0.5)
+        ax.set_xlim(*ppm_bounds)
+        if show:
+            plt.show()
+
+    def plot_with_labels(self, label_x, labels, yys=[], ppm_bounds=None, label_y=None, **kwargs):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        self.plot(yys=yys, ppm_bounds=ppm_bounds, show=False, ax=ax)
+        label_ppm = self.ppm[label_x]
+        if label_y is None:
+            label_y = self.data[label_x]
+        ax.plot(label_ppm, label_y, ls='', marker='*', **kwargs)
+        for ci, xi, yi in zip(labels, label_ppm, label_y):
+            ax.annotate(ci, (xi,yi), textcoords='offset points', xytext=(0,10), ha='center')
         plt.show()
 
-    # --------------------------- ASSIGN PEAKS TO COMPOUNDS ----------------------------
-    if peak_method == 'guess':
+    def ppm_to_float_span(self, xx):
+        """Convert a distance in PPM to a distance in points (float representation)."""
+        return abs(self.uc.f(0, unit='ppm') - self.uc.f(xx, unit='ppm')) # convert PPM scale to index
+    
+    def ppm_to_int_span(self, xx):
+        """Convert a distance in PPM to a distance in points (integer representation)."""
+        return int(self.ppm_to_float_span(xx)) # convert PPM scale to index # convert PPM scale to index
+    
+    def ppm_to_float(self, xx):
+        """Convert a chemical shift in PPM to float representation."""
+        return self.uc.f(xx, unit='ppm')
+    
+    def ppm_to_int(self, xx):
+        return int(self.ppm_to_float(xx))
+    
+    def float_to_ppm(self, yy): 
+        """Convert a chemical shift in float or integer representation to PPM."""
+        return self.uc.ppm(yy) # convert index to PPM shift
+    
+    def float_to_ppm_span(self, yy):
+        """Convert a distance in points (float or integer representation) to PPM."""
+        return abs(self.uc.ppm(0) - self.uc.ppm(yy))
+
+    def peak_pick_sg(self, plot=True):
+        """Use Savitzky-Golay method to detect both fine and coarse peaks.
+        
+        TODO: tune for 13C
+        
+        Parameters:
+        plot : whether to plot the SG second derivative with found peaks
+        """
+        if self.parent.isotope.id == '1H':
+            noise_bounds = (self.ppm_to_float(12), self.ppm_to_float(8))
+            coarse, cpeakw = self.sg_findpeaks(101, 2, prominence_sg=5, prominence_fid=5, noise_bounds=noise_bounds, plot=plot)
+            fine, fpeakw = self.sg_findpeaks(11, 2, prominence_sg=8, prominence_fid=12, noise_bounds=noise_bounds, plot=plot)
+        # elif isotope == '13C': # TODO: OPTIMIZE FOR 13C
+        #     nr = (int(uc.f(160, unit="ppm")), int(uc.f(130, unit="ppm")))
+        #     coarse_peaks = list(sg_peakpick(data, 31, 3, r=2, nr=nr))
+        #     fine_peaks = list(sg_peakpick(data, 11, 2, r=5, nr=nr))
+        all_peaks = fine + coarse
+        all_widths = fpeakw + cpeakw
+        shifts = np.array(all_peaks)
+        peakw = np.array([(pkw,) for pkw in all_widths])
+        amps = np.array([self.data.real[a] for a in fine] + [0.5*self.data.real[a] for a in coarse])
+        _, cIDs = cluster_peaks(self.peaklist.ng_shifts(), self.parent.isotope.fit_cluster_msep)
+        cIDs = np.array(cIDs)
+        return PeakList(shifts, peakw, amps, cIDs)
+
+    def peaks_from_reference(self):
+        """Set peaks using reference shifts from cfg_ISOTOPE.txt."""
+        assignments = collections.defaultdict(list)
+        shifts = []
+        for cpshift, cpd in self.parent.refpeaks.itertuples(index=False, name=None):
+            cpshift = int(self.ppm_to_int(cpshift))
+            assignments[cpd].append(cpshift)
+            shifts.append(cpshift)
+        shifts = np.array(shifts)
+        peakw = np.array([(self.ppm_to_float_span(0.025),) for _ in shifts])
+        amps = np.array([self.data.real[sh] for sh in shifts])
+        _, cIDs = cluster_peaks(self.peaklist.ng_shifts(), self.parent.isotope.fit_cluster_msep)
+        cIDs = np.array(cIDs)
+        return PeakList(shifts, peakw, amps, cIDs, assignments=assignments)
+
+    def peak_pick_ng(self, r=6):
+        """Pick peaks using the nmrglue.analysis.peakpick.pick function.
+        
+        Parameters:
+        r : the number of noise standard deviations at which to set the peak detection
+            threshold.
+        
+        Other parameters are defined in isotopes.json.
+        """
+        msep = self.parent.isotope.peak_pick_msep
+        pthres = r*rmse(self.data[(self.ppm <= 160) & (self.ppm >= 130)])
+        shifts_tup, cIDs, peakw, amps = ng.analysis.peakpick.pick( # Find peaks
+            self.data, pthres=pthres, msep=(self.ppm_to_int_span(msep),),
+            algorithm='thres-fast', est_params=True, lineshapes=['l'],
+            cluster=True, c_ndil=self.ppm_to_int_span(0.3), table=False
+        )
+        peaklist = PeakList(
+            np.array([s[0] for s in shifts_tup]), # shifts
+            np.array(peakw),
+            np.array(amps),
+            np.array(cIDs)
+        )
+        return peaklist
+
+    def assign_peaks(self, shifts, cIDs):
+        """Assign peaks to clusters using picked peaks, reference shifts, and isotope assignment params."""
         # Prepare arrays and constants for use within the loop
-        refsh = pd.read_csv(f"cfg_{isotope}.txt", sep='\t', names=['Shift', 'Compound']) # Shift | Compound
-        refpks = np.array([p2i(v) for _, v in refsh['Shift'].items()])
+        isotope = self.parent.isotope
+        refshifts = np.array([self.ppm_to_float(v) for v in self.parent.refpeaks["Shift"].to_numpy()])
         assignments = collections.defaultdict(list) # dict to store compound assignments
-        display_window = p2f_interval(ISOTOPE_PARAMS[isotope]['assignment_display_window'])
+        rev_assignments = dict() # for UI-select
+        display_window = self.ppm_to_float_span(isotope.assignment_display_window)
+        cluster_tolerance = self.ppm_to_float_span(isotope.assignment_cluster_msep)
 
         # Assign compound to peaks by proximity to reference shifts, handling collisions
         # Iterate: cluster ID
         for cid in np.unique(cIDs):
             subpeaks = shifts[cIDs == cid] # detected peaks w/in cluster
-            clb = subpeaks.min() - cluster_msep # calculate cluster bounds
-            cub = subpeaks.max() + cluster_msep
+            clb = subpeaks.min() - cluster_tolerance # calculate cluster bounds
+            cub = subpeaks.max() + cluster_tolerance
 
             # Determine which reference peaks fall within cluster bounds
-            close_refpks = [i for i, xx in enumerate(refpks) if xx > clb and xx < cub]
+            close_refpks = [i for i, xx in enumerate(refshifts) if xx > clb and xx < cub]
 
             # Assign peaks to compounds; skip clusters with no nearby reference shifts
             if len(close_refpks) == 1:
                 # If only one matched ref. peak, assign all cluster sub-peaks to that compound
-                assignments[refsh.at[close_refpks[0], 'Compound']].extend(subpeaks)
+                cpd = self.parent.refpeaks.at[close_refpks[0], 'Compound']
+                assignments[cpd].extend(subpeaks)
+                rev_assignments.update({pk: cpd for pk in subpeaks})
             elif len(close_refpks) > 1: # Collision!
                 # If multiple ref. peaks, manually assign sub-peaks in plot window
-                colliding_refs = refsh.loc[close_refpks, :]
+                colliding_refs = self.parent.refpeaks.loc[close_refpks, :]
                 print(f"Cluster {cid} assigned to {len(close_refpks)} conflicting reference peaks.")
-                print("In the plot, find the contributions from each " \
-                        "peak using the reference shifts listed:")
-                with pd.option_context(
-                        'display.max_rows', None, 'display.max_columns', None):
-                    print(colliding_refs)
-                for cpd in np.unique(colliding_refs['Compound']):
-                    while True:
-                        plot_with_labels(
-                            ppm, [data.real], subpeaks, range(len(subpeaks)),
-                            ppm_bounds=(i2p(min(subpeaks) - display_window),
-                                        i2p(max(subpeaks) + display_window))
-                        )
-                        raw_text = input(f"Subpeak contributions of {cpd}: ")
-                        try:
-                            indices = [int(i) for i in raw_text.strip().split()]
-                            break
-                        except ValueError:
-                            print("Invalid assignments.")
-                    if len(indices) > 0:
-                        assignments[cpd].extend(subpeaks[indices])
+                print("In the plot, find the contributions from each peak using the reference shifts listed.")
+                ppm_bounds = (
+                    self.float_to_ppm(min(subpeaks) - display_window), 
+                    self.float_to_ppm(max(subpeaks) + display_window)
+                )
+                to_update = {}
+                ConflictWindow(self.ppm, self.data, ppm_bounds, cid, subpeaks, colliding_refs, to_update)
+                for cpd, pks in to_update.items():
+                    assignments[cpd].extend(pks)
+                    rev_assignments.update({pk: cpd for pk in pks})
 
-    if len(assignments) == 0:
-        print("No reference peaks detected; exit.")
-        return {}, []
+        return assignments, rev_assignments
 
-    # Filter out excluded data and prepare data structures for curve-fitting
-    all_cpds = []
-    used_pks = []
-    for cpd, apks in assignments.items():
-        if len(apks) > 0:
-            all_cpds.append(cpd)
-            used_pks.extend(apks)
-    all_cpds = np.array(all_cpds)
-    mask = np.isin(shifts, used_pks)
-    shifts = shifts[mask]
-    peakw = np.array(peakw)[mask]
-    amps = amps[mask]
-    shifts_tup = shifts_tup[mask]
-    cIDs = cIDs[mask]
-
-    # --------------------------- CURVE-FIT PEAKS IN WINDOWS ---------------------------
-    # Retreive reasonable curve-fitting parameter bounds for isotope
-    ppm_delta = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_ppm_delta'])
-    fwhm_min = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_fwhm_min'])
-    fwhm_max = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_fwhm_max'])
-    cluster_sep = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_cluster_msep'])
-    fit_reach = p2f_interval(ISOTOPE_PARAMS[isotope]['fit_reach'])
-    if cv == 'sl':
-        amps = []
-        amp_bounds = []
-        for x in shifts:
-            delp = 0.209*0.6
-            maxb = data[(ppm < (i2p(x) + delp)) & (ppm > (i2p(x) - delp))].max()
-            amps.append(maxb)
-            amp_bounds.append((0.05, 1.2*maxb))
-        amps = np.array(amps)
-        amp_bounds = np.array(amp_bounds)
-    else:
-        amps = np.array([data.real[int(a)] for a in shifts], dtype=np.float64)
-        amp_bounds = np.array([(0.05, 1.2*a) for a in amps])
-
-    # Define start parameters and bounds for each peak
-    if cv == 'v':
-        cparams = np.array([((a, b[0], b[0]),) for a, b in zip(shifts, peakw)])
-        cbounds = []
-        for par in cparams:
-            cbounds.append(((
-                (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
-                (0., p2f_interval(fwhm_max)), # gauss bounds
-                (0., p2f_interval(fwhm_max)), # lorentz bounds
-            ),))
-    elif cv == 'l':
-        cparams = np.array([((a, b[0]),) for a, b in zip(shifts, peakw)])
-        cbounds = []
-        for par in cparams:
-            cbounds.append(((
-                (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
-                (0., fwhm_max), # lorentz bounds
-            ),))
-    elif cv == 'sl':
-        # Custom split lorentzian function. Split peaks have identical parameters.
-        cparams = np.array([((a, b[0], p2f_interval(0.209)),) for a, b in zip(shifts, peakw)])
-        cbounds = []
-        for par in cparams:
-            cbounds.append(((
-                    (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
-                    (0., p2f_interval(fwhm_max)), # lorentz bounds
-                    (p2f_interval(0.208), p2f_interval(0.210)),   # J-constant bounds
-                ),))
-        cv = split_lorentz_fwhm()
-    cbounds = np.array(cbounds)
-    rIDs = np.array([1 for _ in shifts_tup])
-
-    # Prepare arrays and constants for use within the loop
-    curve_params = [cparams, amps, cbounds, amp_bounds, shifts_tup, rIDs]
-    fit_params = np.zeros_like(cparams) # array for fit result, curve shift + FWHM
-    fit_amps = np.zeros_like(amps)      # array for fit result, curve amplitudes
-
-    # Calculate curve fitting windows and iterate for curve fit
-    n_fitwd, fitwd = cluster_peaks(shifts_tup, cluster_sep)
-    for wid in range(n_fitwd):
-        mask = (fitwd == wid)
-        fit_args = [pset[mask] for pset in curve_params]
+    def define_curveshape(self, cv):
+        """Define curve fitting parameters for curveshapes.
         
-        # slice region from +/- <cluster_reach> for curve-fitting
-        lb = min(shifts[mask]) - cluster_sep # 0.5*cluster_sep
-        ub = max(shifts[mask]) + cluster_sep # 0.5*cluster_sep
-        _, ndata = ng.process.pipe_proc.ext(dic, data, x1=lb, xn=ub)
-
-        # Shift peak parameters into slice and perform curve fit
-        fit_args[4] = shift_params(lb, fit_args[4])[0]  # Shift ppm shift
-        fit_args[0] = shift_params(lb, *fit_args[0])    # Shift VP params
-        fit_args[2] = shift_params(lb, *fit_args[2])    # Shift VP param bounds
-        nparams, namps, _ = ng.analysis.linesh.fit_spectrum(
-            ndata, 
-            [cv],
-            *fit_args,
-            p2i_interval(fit_reach), 
-            False, 
-            verb=False,
-            maxfev=1000000,
-        )
-        nparams = shift_params(-1*lb, *np.array(nparams)) # rescale result to full PPM axis
-
-        # Deposit curve-fit parameters
-        fit_params[mask] = np.array(nparams)
-        fit_amps[mask] = np.array(namps)
-
-    ## Prepare constants and arrays for plotting and integration
-    resolution = CURVE_FIT_RESOLUTION
-    scale = resolution/data.shape[0]
-    sppm = np.linspace(ppm[0], ppm[-1], num=resolution)
-    rppm = np.linspace(ppm[0], ppm[-1], num=data.shape[0])
-    residuals = np.copy(data)
-
-    # -------------- INTEGRATE, PLOT FIT PEAKS WITH COMPOUND ASSIGNMENTS ---------------
-    signals = {}
-    curve = np.zeros((resolution,))
-    if plot:
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(ppm, data.real, lw=0.5, zorder=2)
-
-    # Simulate, integrate, and plot curve for each compound
-    for cpd in all_cpds:
-        # Select peaks belonging to compound
-        include = np.isin(shifts, assignments[cpd])
-        idxs = shifts[include]
-
-        for i, pset in enumerate(fit_params[include]):
-            print(cpd, i, ':', *[scale*e for e in pset], fit_amps[include][i])
-
-        # Simulate spectrum with fit parameters
-        sim_smooth = ng.analysis.linesh.sim_NDregion( # Simulate spectrum in high-resolution
-            (resolution,), 
-            [cv], 
-            scale*fit_params[include], 
-            fit_amps[include],
-        )
-
-        # Integrate curve, store result, and add to overall signal
-        areacurve = -1*np.trapz(sim_smooth, x=sppm)
-        signals[cpd] = areacurve
-        curve += sim_smooth
-
-        # Plot simulated curve and annotated peak summits; update residual
-        if plot:
-            color = next(ax._get_lines.prop_cycler)['color']
-            ax.plot(sppm, sim_smooth, lw=1, color=color, zorder=4)
-            ax.plot(ppm[idxs], fit_amps[include], ls='', marker='*', color=color, zorder=5)
-            for xx, yy in zip(ppm[idxs], fit_amps[include]):
-                ax.annotate(cpd, (xx,yy), textcoords='offset points',
-                    xytext=(0,10), ha='center', zorder=6)
-            sim_native = ng.analysis.linesh.sim_NDregion( # Simulate spectrum in native resolution
-                (data.shape[0],), 
-                [cv], 
-                fit_params[include], 
-                fit_amps[include],
-            )
-            residuals -= sim_native
-
-    # Plot simulated signal + residual and show plot
-    if plot:
-        ax.plot(sppm, curve, lw=0.5, color='k', zorder=3)
-        ax.plot(rppm, residuals, lw=0.5, color='gray', zorder=1)
-        ax.set_xlim(*plot_bounds)
-        plt.show()
-
-    # Return curve integrations and simulated spectrum
-    return signals, curve
-
-def ridge_trace(dic, data, wr=0.01, plot=True):
-    """Simple function to get the heights of reference peaks in a spectrum.
-    Takes the maximum signal within window of each peak. Does not functionally
-    trace ridge across spectra; cannot handle drifting chemical shifts, eg. due
-    to pH changes. Shift must remain within window of reference throughout time
-    course.
-
-    Parameters:
-    dic -- "universal" dictionary for spectrum
-    data -- data vector for spectrum
-    wr -- window radius, distance from reference shift to include in window
-
-    Returns a dictionary containing the amplitude of each peak.
-    """
-    uc = ng.pipe.make_uc(dic, data, dim=0)
-    isotope = dic["FDF2LABEL"]
-    def p2i(xx): return int(uc.f(xx, unit='ppm'))
-
-    signals = {}
-    shifts = []
-    amps = []
-    cpds = []
-    with open(f"cfg_{isotope}.txt", 'r') as rf:
-        for line in rf:
-            fields = line.strip().split('\t', 1)
-            shift = float(fields[0])
-            cpd = fields[1]
-            bounds = (p2i(shift-wr), p2i(shift+wr))
-            peak = f"{fields[1]} {shift}"
-            amplitude = max(data[bounds[1]:bounds[0]])
-            signals[peak] = amplitude
-            shifts.append(shift)
-            cpds.append(cpd)
-            amps.append(amplitude)
-    if plot:
-        plot_bounds = ISOTOPE_PARAMS[isotope]['plot_bounds']
-        plot_with_labels(uc.ppm_scale(), [data], [p2i(s) for s in shifts],
-            [str(s) for s in shifts], ppm_bounds=plot_bounds, yopt=amps)
-        plot_with_labels(uc.ppm_scale(), [data], [p2i(s) for s in shifts],
-            [c for c in cpds], ppm_bounds=plot_bounds, yopt=amps, lw=2)
-
-    return signals
-
-def process_trace(loc, item, cf, ps, overwrite=OVERWRITE, man_ps=False):
-    """Process a single 1D 13C-NMR trace.
-
-    Parameters:
-    loc -- path to folder containing traces
-    item -- ID of trace to process
-    cf -- correction factor for ppm shift
-    ps -- list with the default p0, p1 values for phase correction
-    overwrite -- whether to process each spectrum. If False, reads the existing
-        "ft" file that has already been processed.
-    man_ps -- whether to prompt for manual phase correction
-
-    Returns:
-    ppm --  list of ppm values
-    trace -- list of signal intensities
-    timestamp --  timestamp of trace, calculated from acquisition data
-    signals -- integrated signals (or raw signals) of compounds calculated from peak fit
-    n_scans -- number of scans for spectrum
-    curve -- simulated spectrum (or raw spectrum)
-    """
-
-    dic, _ = ng.bruker.read(f"{loc}/{item}")  # GET BRUKER PARAMS
-    n_scans = dic['acqus']['NS']
-    isotope = dic['acqus']['NUC1']
-    timestamp = datetime.datetime.fromtimestamp(dic['acqus']['DATE'])
-
-    if os.path.exists(f"{loc}/{item}/ft") and not overwrite:
-        dic, data = ng.fileio.pipe.read(f"{loc}/{item}/ft") # Load a previously processed spectrum
-    else:
-        dic, data = pipe_process(isotope, item)  # Convert, LB, ZF, FT
-
-        dic, data = ng.process.pipe_proc.ps(dic, data, p0=ps[0], p1=ps[1]) # Coarse PS and manual adjustment
-        if sum(data) < 0:
-            dic, data = ng.process.pipe_proc.ps(dic, data, p0=180, p1=0)
-        if man_ps:
-            p0, p1 = ng.process.proc_autophase.manual_ps(data, notebook=False)
-            dic, data = ng.process.pipe_proc.ps(dic, data, p0=p0, p1=p1)
-
-        dic, data = ng.process.pipe_proc.mult(dic, data, r=n_scans, inv=True) # Normalize by number of scans
-
-        # dic, data = pipe_bl(dic, data)  # Baseline correction
-        # if isotope == "1H":
-        #     data = ng.process.proc_bl.baseline_corrector(data, wd=25)
-        # data = np.float32(data)
-
-        # Calibrate PPM shift
-        uc = ng.pipe.make_uc(dic, data, dim=0)
-        ppm = uc.ppm_scale()
-        
-        nodes = np.arange(min(ppm), max(ppm), 0.4)
-        baseline_corrector = Baseline(ppm, data, nodes, 11, nr=0.1)
-        plt.show()
-        bl = baseline_corrector.get_baseline()
-        data = np.float32(data) - np.float32(bl)
-
-        if cf != 0:
-            shift = cf*data.shape[0]/(max(ppm) - min(ppm))
-            dic, data = ng.process.pipe_proc.ls(dic, data, shift, sw=False)
-
-        # Write for future use
-        ng.fileio.pipe.write(f"{loc}/{item}/ft", dic, data, overwrite=True)
-
-    # Pick, fit, and integrate peaks
-    ppm = ng.pipe.make_uc(dic, data, dim=0).ppm_scale()
-    if isotope == "13C":
-        signals, curve = peak_fit(dic, data, r=4, plot=False, vb=True)
-        # signals = ridge_trace(dic, data, plot=True)
-        # curve = data.real
-    else:
-        # Flatten water resonances
-        # ppm_array = np.array(ppm)
-        data = data.copy()
-        data[(ppm > 4.2) & (ppm < 4.9)] = 0
-
-        # Pick peaks and calculate signal
-        signals, curve = peak_fit(dic, data, r=12, sep=30/2*0.005, plot=True, vb=True) # r=4 # sep=30/2*0.001
-        # signals = ridge_trace(dic, data, plot=True)
-        curve = data.real
-
-    return ppm, data.real, timestamp, signals, n_scans, curve
-
-def message(message, verbose):
-    """If in verbose mode, print status message"""
-    if verbose:
-        print(message)
-
-def process_stack(loc, ids, initial=None, iso='13C', vb=True, dry_run=DRY_RUN):
-    """Process entire NMR stack and write to xlsx file.
-
-    Parameters:
-    loc -- path to folder containing traces
-    ids -- list of IDs
-    initial -- ID of initial acquisition, if different from first ID \
-        (to find initial timepoint)
-    vb -- if True, print status messages
-    dry_run -- if True, does not write the Excel file
-    """
-    message("Begin NMR stack process.", vb)
-    if initial == None:
-        initial = ids[0]
-
-    header = [[], []]
-    stack = []
-    curves = []
-
-    ## calibrate and get correction factor ##
-    message("Calibrate autophase and PPM shift...", vb)
-    cf, time0, phases, c_ppm = calibrate_process(loc, ids[0], initial, iso, vb)
-    c_ppm = c_ppm[(c_ppm <= 200) & (c_ppm >= 0)]
-    stack.append(c_ppm)
-
-    ## process all traces ##
-    message("Begin processing " + iso + " traces.", vb)
-    for i, item in enumerate(ids):
-        message(f"Processing file {item}...", vb)
-        # Process spec and chop signal vector
-        ppm, trace, ts, signals, n_scans, curve = process_trace(loc, item, cf, phases)
-        start_index = next(i for i, shift in enumerate(ppm) if shift < 200)
-        idx = (start_index, start_index+len(stack[0]))
-        vector = trace[idx[0]:idx[1]]
-        curves.append(curve)
-
-        # Store data and check for continuity
-        stack.append(vector)
-        delta_t = (ts - time0).total_seconds()/3600.
-        header[0].append(item)
-        header[1].append(delta_t)
-        if i == 0:
-            traj = pd.DataFrame(
-                np.zeros((len(ids), len(signals)+2)),
-                columns=['Time', 'Scans'] + [cpd for cpd in signals])
-        signals['Time'] = delta_t
-        signals['Scans'] = n_scans
-        for cpd, cnc in signals.items():
-            traj.at[i, cpd] = cnc
-        it = iter(stack)
-        the_len = len(next(it))
-        if not all(len(l) == the_len for l in it):
-            print("PPM mismatch. Abort.")
-            return
-
-    stem = loc.split('/')[-1]
-
-    fig = plt.figure(figsize=(15,11))
-    ax = plt.axes(projection='3d')
-    ax.grid(False)
-    if iso == "13C":
-        xrange = ppm.shape[0]
-        xmin = 0
-        xmax = 100
-        lcol = 'indigo'
-    else:
-        xrange = ppm.shape[0]
-        xmin = 0
-        # xmax = 6
-        xmax = 4.4
-        lcol = 'turquoise'
-    pp_array = np.linspace(ppm[0], ppm[-1], num=xrange)
-    plot_ppm = pp_array[(pp_array <= xmax) & (pp_array >= xmin)]
-    verts = []
-    # x = plot_ppm
-    # y = header[1]
-    # X, Y = np.meshgrid(x, y)
-    # print(X)
-    # print(Y)
-    # Z = np.array([cv[(pp_array <= xmax) & (pp_array >= xmin)] for cv in curves])
-    # zmax = max(Z.max(), -1*Z.min())
-    # norm = mpl.colors.CenteredNorm(halfrange=1000)
-    # surf = ax.plot_surface(X, Y, Z, cmap=mpl.cm.coolwarm_r, norm=norm, antialiased=True)
-    for i in range(len(curves)-1, -1, -1):
-        curve = curves[i][(pp_array <= xmax) & (pp_array >= xmin)]
-        ax.plot3D(plot_ppm, [header[1][i] for t in plot_ppm], curve, lw=0.3)
-        verts.append(list(zip(plot_ppm, curve)))
-    poly = mpl.collections.PolyCollection(verts, edgecolors=lcol, linewidths=0.3)
-    poly.set_alpha(0.7)
-    ax.add_collection3d(poly, zs=header[1][::-1], zdir='y')
-    ax.set_xlabel(f"{iso} chemical shift (ppm)")
-    ax.set_xlim3d(xmax, xmin)
-    ax.set_xlim3d(xmin, xmax)
-    ax.set_ylabel("Time (h)")
-    ax.set_ylim3d(0, max(header[1]))
-    ax.set_zlabel("NMR signal (unitless)")
-    ax.set_zlim3d(min([min(cv) for cv in curves]), max([max(cv) for cv in curves]))
-    ax.view_init(elev=-10., azim=-82.)
-    ax.set_proj_type('ortho')
-    ax.set_axis_off()
-    plt.show()
-    plt.close('all')
-
-    ax = traj.plot(x='Time', y=list(traj.columns)[2:], marker='.')
-    ax.set_xlabel("Time (h)")
-    ax.set_ylabel("NMR signal (unitless)")
-    plt.show()
-    plt.close('all')
-
-    ## write excel file ##
-    message("Trace processing complete.", vb)
-    if not dry_run:
-        message("Writing full stack to Excel file.", vb)
-        stack_array = np.array(stack)
-        df = pd.DataFrame(stack_array[1:], columns=stack_array[0], index=header[1])
-        writer = pd.ExcelWriter(f"{loc}/{stem}_{iso}.xlsx", engine='xlsxwriter')
-        df = df.T
-        df.to_excel(writer, sheet_name='trace', startrow=1)
-        wb = writer.book
-        ws = writer.sheets['trace']
-        ws.write(0, 0, 'trace')
-        ws.write(1, 0, 'ppm')
-        for i, item in enumerate(header[0]):
-            ws.write(0, i + 1, item)
-        if os.path.exists(f'{loc}/cfg_{iso}.txt'):
-            # Write reference ppm config
-            message("Writing reference peak config.", vb)
-            cfgsheet = wb.add_worksheet('cfg')
-            with open(f'{loc}/cfg_{iso}.txt', 'r') as rf:
-                for i, line in enumerate(rf):
-                    l = line.strip('\n').split('\t')
-                    cfgsheet.write(i, 0, l[0])
-                    cfgsheet.write(i, 1, l[1])
+        Parameters:
+        cv : string representing curveshape. Supported shapes:
+            - l : Lorentzian
+            - g : Gaussian
+            - v : Voigt (Lorentzian/Gaussian convolution)
+            - gb : Gubmel function (bell shape with skew)
+            - sl : Split Lorentzian
+        """
+        isotope = self.parent.isotope
+        peaklist = self.peaklist
+        ppm_delta = self.ppm_to_float_span(isotope.fit_ppm_delta)
+        fwhm_max = self.ppm_to_float_span(isotope.fit_fwhm_max)
+        if cv == 'sl':
+            # Special case for split Lorentzian
+            amps = []
+            amp_bounds = []
+            for x in self.shifts:
+                delp = 0.209*0.6
+                ppm_range = (self.ppm < (self.float_to_ppm(x) + delp)) \
+                            & (self.ppm > (self.float_to_ppm(x) - delp))
+                maxb = self.data[ppm_range].max()
+                amps.append(maxb)
+                amp_bounds.append((0.05, 1.2*maxb))
+            amps = np.array(amps)
+            amp_bounds = np.array(amp_bounds)
         else:
-            message("Config file not found.", vb)
-        traj.to_excel(writer, sheet_name='area', index=False)
-        writer.save()
-        message(f"Completed successfully. Output: {loc}/{stem}_{iso}.xlsx", vb)
+            # amps = np.array([self.data.real[int(a)] for a in self.shifts], dtype=np.float64)
+            amps = self.peaklist.amps
+            amp_bounds = np.array([(0.05, 1.2*a) for a in amps])
 
-def detect_spectra(iso='13C', init=11):
-    """Returns a list of spectra IDs for the given isotope."""
-    isotopes = iso.split("_")
-    iso_spectra = []
-    dirs = glob.glob('*/')
-    st = [str(y) for y in sorted([int(x[:-1]) for x in dirs if str.isdigit(x[:-1])])]
-    for fn in st:
-        if int(fn) >= int(init):
-            try:
-                dic, data = ng.bruker.read(fn)
-                # for i, label in enumerate(isotopes):
-                #     match = True
-                #     if dic['acqus'][f"NUC{i+1}"] != label:
-                #         match = False
-                # if match:
-                #     iso_spectra.append(fn)
-                udic = ng.bruker.guess_udic(dic, data)
-                if (udic[0]['label'] == iso \
-                        and udic[0]['encoding'] == 'direct' \
-                        and dic['acqus']['PULPROG'] != 'zgpr_llc'):
-                    iso_spectra.append(fn)
-            except OSError:
-                pass
-    return iso_spectra
+        # Define start parameters and bounds for each peak
+        if cv == 'v':
+            cparams = np.array([((a, b[0], b[0]),) for a, b in zip(peaklist.shifts, peaklist.peakw)])
+            cbounds = []
+            for par in cparams:
+                cbounds.append(((
+                    (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
+                    (0., self.ppm_to_float_span(fwhm_max)), # gauss bounds
+                    (0., self.ppm_to_float_span(fwhm_max)), # lorentz bounds
+                ),))
+        elif cv == 'l' or cv == 'g':
+            # Lorentzian function
+            cparams = np.array([((a, b[0]),) for a, b in zip(peaklist.shifts, peaklist.peakw)])
+            cbounds = []
+            for par in cparams:
+                cbounds.append(((
+                    (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
+                    (0., fwhm_max), # lorentz or gauss bounds
+                ),))
+        elif cv == 'gb':
+            # Custom Gumbel function
+            cparams = np.array([((a, -1*b[0]),) for a, b in zip(peaklist.shifts, peaklist.peakw)])
+            cbounds = []
+            for par in cparams:
+                cbounds.append(((
+                    (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
+                    (-1*fwhm_max, 0.), # beta bounds
+                ),))
+            cv = gumbel_hb()
+        elif cv == 'sl':
+            # Custom split lorentzian function. Split peaks have identical parameters.
+            cparams = np.array([((a, b[0], self.ppm_to_float_span(0.209)),) for a, b in zip(peaklist.shifts, peaklist.peakw)])
+            cbounds = []
+            for par in cparams:
+                cbounds.append(((
+                        (par[0][0] - ppm_delta, par[0][0] + ppm_delta),    # shift bounds
+                        (0., self.ppm_to_float_span(fwhm_max)), # lorentz bounds
+                        (self.ppm_to_float_span(0.208), self.ppm_to_float_span(0.210)),   # J-constant bounds
+                    ),))
+            cv = split_lorentz_fwhm()
 
-def main(iso, init):
-    """Call stack processing function."""
-    print("Welcome to NMR processing pipeline.\n")
-    if iso not in ("1H", "13C", "1H_13C"):
-        print("Isotope not recognized.")
+        return cv, cparams, cbounds, amps, amp_bounds
+
+    def curve_fit(self, cv='l'):
+        """Perform curve fitting in windows."""
+        cv, cparams, cbounds, amps, amp_bounds = self.define_curveshape(cv)
+        self.cv = cv
+        shifts_tup = self.peaklist.ng_shifts()
+        isotope = self.parent.isotope
+        cluster_sep = self.ppm_to_float_span(isotope.fit_cluster_msep)
+        fit_reach = self.ppm_to_float_span(isotope.fit_reach)
+        cbounds = np.array(cbounds)
+        rIDs = np.array([1 for _ in shifts_tup])
+
+        # Prepare arrays and constants for use within the loop
+        curve_params = [cparams, amps, cbounds, amp_bounds, shifts_tup, rIDs]
+        fit_params = np.zeros_like(cparams)      # array for fit result, curve shift + FWHM
+        fit_amps = np.zeros_like(amps)      # array for fit result, curve amplitudes
+
+        # Calculate curve fitting windows and iterate for curve fit
+        n_fitwd, fitwd = cluster_peaks(shifts_tup, cluster_sep)
+        for wid in range(n_fitwd):
+            mask = (fitwd == wid)
+            fit_args = [pset[mask] for pset in curve_params]
+            
+            # slice region from +/- <cluster_reach> for curve-fitting
+            lb = min(self.peaklist.shifts[mask]) - cluster_sep # 0.5*cluster_sep
+            ub = max(self.peaklist.shifts[mask]) + cluster_sep # 0.5*cluster_sep
+            _, ndata = ng.process.pipe_proc.ext(self.dic, self.data, x1=lb, xn=ub)
+
+            # Shift peak parameters into slice and perform curve fit
+            fit_args[4] = shift_params(lb, fit_args[4])[0]  # Shift ppm shift
+            fit_args[0] = shift_params(lb, *fit_args[0])    # Shift VP params
+            fit_args[2] = shift_params(lb, *fit_args[2])    # Shift VP param bounds
+            nparams, namps, _ = ng.analysis.linesh.fit_spectrum(
+                ndata, 
+                [cv],
+                *fit_args,
+                self.ppm_to_int_span(fit_reach), 
+                False, 
+                verb=False,
+                maxfev=1000000,
+            )
+            nparams = shift_params(-1*lb, *np.array(nparams)) # rescale result to full PPM axis
+
+            # Deposit curve-fit parameters
+            fit_params[mask] = np.array(nparams)
+            fit_amps[mask] = np.array(namps)
+
+        self.fit_params = fit_params
+        self.fit_amps = fit_amps
+
+    def pack_peaks(self):
+        """Pack parameters into Peak object for manual assignment."""
+        rev_assignments = {}
+        for cpd, pklist in self.peaklist.assignments.items():
+            rev_assignments.update({pk: cpd for pk in pklist})
+        peak_curves = []
+        for sh, pars, amp in zip(self.peaklist.shifts, self.fit_params, self.fit_amps):
+            shift = self.float_to_ppm(pars[0][0])
+            fwhm = self.float_to_ppm_span(pars[0][1])
+            cpd = rev_assignments.get(sh, "Unassigned")
+            peak_curves.append(Peak(self.parent.isotope, shift, amp, l_fwhm=fwhm, cpd=cpd))
+        return peak_curves
+
+    def unpack_peaks(self, ui_peaks):
+        """Unpack parameters from Peak object into nmrglue-compatible array structures."""
+        shifts = []
+        peakw = []
+        amps = []
+        all_cpds = []
+        assignments = collections.defaultdict(list)
+        for pk in ui_peaks:
+            if pk.lw == 0.0 or pk.y == 0.0:
+                continue
+            sh = self.ppm_to_int(pk.get_x())
+            shifts.append(sh)
+            peakw.append((self.ppm_to_float_span(pk.get_lw()),))
+            amps.append(pk.y)
+            assignments[pk.cpd].append(sh)
+            all_cpds.append(pk.cpd)
+        _, cIDs = cluster_peaks([(sh,) for sh in shifts], self.parent.isotope.fit_cluster_msep)
+        self.peaklist = PeakList(np.array(shifts), np.array(peakw), np.array(amps), cIDs, assignments=assignments)
+        self.fit_params = np.array([((a, b[0]),) for a, b in zip(self.peaklist.shifts, self.peaklist.peakw)])
+        self.fit_amps = self.peaklist.amps
+        self.all_cpds = np.array(all_cpds)
+
+    def refine_curves(self):
+        print("Initial peak fit complete. Packing parameters for manual assignment...")
+        peak_curves = self.pack_peaks()
+        print("Begin manual assignment.")
+        w = Window(
+            self.parent.isotope, 
+            peak_curves, 
+            self,
+        ) # edits peak_curves in-place
+        w.display()
+        peak_curves = w.get_peaks()
+        print("Unpacking parameters...")
+        self.unpack_peaks(peak_curves)
+        print("Writing peak parameters...")
+        self.write_peaks(peak_curves)
+
+    def simulate_peaks(self, resolution):
+        """Simulate curve-fit peaks and integrate."""
+        scale = resolution/self.data.shape[0]
+        self.sim_ppm = np.linspace(self.ppm[0], self.ppm[-1], num=resolution)
+        
+        self.sim_params = scale*self.fit_params
+        sim_peaks = []
+        sim_areas = []
+        
+        for params, amps in zip(self.fit_params, self.fit_amps):
+            sim_peak = ng.analysis.linesh.sim_NDregion( # Simulate spectrum in high-resolution
+                (resolution,), 
+                [self.cv], 
+                [scale*params], 
+                [amps],
+            )
+            sim_peaks.append(sim_peak)
+            sim_areas.append(-1*np.trapz(sim_peak, x=self.sim_ppm))
+
+        self.sim_peaks = np.array(sim_peaks)
+        self.sim_areas = np.array(sim_areas)
+        self.sim_curve = np.sum(self.sim_peaks, axis=0)
+
+        self.cpd_areas = {}
+        for cpd, area in zip(self.all_cpds, self.sim_areas):
+            self.cpd_areas.update({
+                cpd: self.cpd_areas.get(cpd, 0.) + area
+            })
+    
+    def write_peaks(self, peak_curves):
+        """Write peak list to FID directory"""
+        peak_records = [pk.to_record() for pk in peak_curves]
+        df = pd.DataFrame(peak_records)
+        df.to_csv(f"{self.path}/peaklist.txt", sep="\t")
+
+    def calculate_residual(self):
+        """Calculate residual from simulated spectrum."""
+        sim_native = ng.analysis.linesh.sim_NDregion( # Simulate spectrum in native resolution
+            (self.data.shape[0],), 
+            [self.cv], 
+            self.fit_params, 
+            self.fit_amps,
+        )
+        self.residuals = self.data - sim_native
+
+    def plot_fit_curves(self):
+        """Plot simulated spectrum and constituent curves."""
+        fig, ax = plt.subplots()
+        self.plot(ax=ax, zorder=2, show=False)
+        cpd_sim_specs = {}
+        cpd_colors = {cpd: next(ax._get_lines.prop_cycler)['color'] for cpd in np.unique(self.all_cpds)}
+        ppm_shifts = [self.float_to_ppm(sh) for sh in self.peaklist.shifts]
+
+        # Plot simulated peaks with annotated summits
+        for cpd, sim_peak, shift, amp in zip(self.all_cpds, self.sim_peaks, ppm_shifts, self.fit_amps):
+            color = cpd_colors[cpd]
+            ax.plot(self.sim_ppm, sim_peak, lw=0.5, color=color, zorder=4)
+            ax.plot(shift, amp, ls='', marker='*', color=color, zorder=5)
+            ax.annotate(cpd, (shift,amp), textcoords='offset points', xytext=(0,10), ha='center', zorder=6)
+            cpd_spec = cpd_sim_specs.get(cpd, np.zeros_like(self.sim_ppm))
+            cpd_sim_specs.update({
+                cpd: cpd_spec + sim_peak
+            })
+
+        # Plot sum curve for each compound
+        for cpd, sim_spec in cpd_sim_specs.items():
+            color = cpd_colors[cpd]
+            ax.plot(self.sim_ppm, sim_spec, lw=1, color=color, zorder=4)
+
+        # Plot total simulated signal + residual and show plot
+        ax.plot(self.sim_ppm, self.sim_curve, lw=0.5, color='k', zorder=3)
+        ax.plot(self.ppm, self.residuals, lw=0.5, color='gray', zorder=1)
+        ax.set_xlim(self.parent.ppm_bounds)
+        plt.show()
+
+    def peak_fit(self, r=6, sep=0.005, peak_method='guess', plot=True, vb=False, cv='l'):
+        """Peak-pick NMR spectrum.
+        Includes peak-picking, peak assignment, and integration functionality. The
+        reference peaks to be fit should be specified in cfg_{isotope}.txt and
+        provided in the directory of the run to be processed.
+
+        Parameters:
+        ppm -- chemical shift axis of the data, in ppm
+        data -- signal axis of the data
+        r -- RMSE noise threshold for peak detection (default: 6)
+        plot -- True (default) to plot fit peaks with cluster labels over the data.
+        vb -- True for verbose mode.
+
+        Returns a dictionary mapping compounds to their peak areas, a curve
+        summing all of the fit peaks, and a list of lists acting as a table of peak data.
+        """
+        print(f"Beginning peak-fitting routine for spectrum {self.id}.")
+        plot_bounds = self.parent.ppm_bounds
+        # plot_bounds_hz = [uc.hz(uc.f(ele, unit='ppm')) for ele in plot_bounds]
+
+        print(f"Performing peak picking subroutine with method {peak_method}...")
+        if peak_method == 'from_cfg':
+            self.peaklist = self.peaks_from_reference()
+        elif peak_method == 'ui_select':
+            self.peaklist = self.peak_pick_sg()
+        elif peak_method == 'guess':
+            self.peaklist = self.peak_pick_ng(r=r)
+
+        if len(self.peaklist.shifts) == 0:
+            # Exit if no peaks detected
+            print("No peaks detected; exit.")
+            return {}, []
+
+        if plot:
+            self.plot_with_labels(self.peaklist.shifts, self.peaklist.cIDs, ppm_bounds=plot_bounds)
+            plt.show()
+
+        if peak_method == 'guess' or peak_method == 'ui_select':
+            print("Performing peak assignment subroutine...")
+            assignments, rev_assignments = self.assign_peaks(self.peaklist.shifts, self.peaklist.cIDs)
+            self.peaklist.assignments = assignments
+
+        if len(assignments) == 0:
+            print("No reference peaks detected; exit.")
+            return {}, []
+
+        print("Filtering peaks...")
+        all_cpds = []
+        used_pks = []
+        for cpd, apks in assignments.items():
+            if len(apks) > 0:
+                all_cpds.append(cpd)
+                used_pks.extend(apks)
+        all_cpds = np.array(all_cpds)
+        self.peaklist.filter_peaks(np.isin(self.peaklist.shifts, used_pks))
+
+        print("Performing curve-fitting subroutine...")
+        self.curve_fit()
+
+        if peak_method == 'ui_select' or peak_method == 'guess':
+            print("Performing interactive curve refinement...")
+            self.refine_curves()
+
+        print("Performing simulation and integration subroutine...")
+        self.simulate_peaks(CURVE_FIT_RESOLUTION)
+        self.calculate_residual()
+        self.is_peakfit = True
+        
+        print("Peak-fitting routine complete.")
+        self.plot_fit_curves()
+
+    def load_peaklist(self):
+        peakdata = pd.read_csv(f"{self.path}/peaklist.txt", sep='\t', index_col=0)
+        peakdata['ppm_i'] = peakdata['ppm'].map(self.ppm_to_int)
+        _, cIDs = cluster_peaks([(sh,) for sh in peakdata['ppm_i']], self.parent.isotope.fit_cluster_msep)
+        assignments = {cpd: seg['ppm'].to_list() for cpd, seg in peakdata.groupby(by='cpd')}
+        self.peaklist = PeakList(
+            peakdata['ppm_i'].to_numpy(), 
+            np.array([(self.ppm_to_float_span(fwhm),) for fwhm in peakdata['fwhm']]), 
+            peakdata['amp'].to_numpy(), 
+            cIDs, 
+            assignments=assignments
+        )
+        self.cv = 'l'
+        self.fit_params = np.array([((a, b[0]),) for a, b in zip(self.peaklist.shifts, self.peaklist.peakw)])
+        self.fit_amps = self.peaklist.amps
+        self.all_cpds = peakdata['cpd'].to_numpy()
+        self.simulate_peaks(CURVE_FIT_RESOLUTION)
+        self.is_peakfit = True
+
+def call_main():
+    """Parse the command line input and create a Stack object."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('datapath', metavar='DATAPATH', help='path to dataset')
+    parser.add_argument('expt', metavar='EXPT', help='experiment string (1H, 13C, or 1H_13C)')
+    parser.add_argument('acq1', metavar='INITIAL', help='index of the initial run FID, for calibration')
+    args = parser.parse_args()
+    if not os.path.exists(args.datapath):
+        print("Not a valid path " + args.datapath)
         return
-    loc = os.getcwd()
-    if INDICES is not None:
-        indices = INDICES
-    else:
-        indices = detect_spectra(iso=iso, init=init)
-    print("Beginning calibration with following parameters:")
-    print("\t- Directory: " + loc)
-    print(f"\t- {iso} spectrum IDs: " + ', '.join(indices))
-    print("\t- Initial timepoint reference: " + init)
-    process_stack(loc, indices, initial=init, iso=iso, vb=True)
-
-def handle_args(args):
-    if len(args) < 1:
-        iso = '13C'
-    elif args[0] in ['-h', '--help']:
-        print("Spectral processing script.")
-        print("===========================")
-        print("Command line args:")
-        print("\t1. Isotope. Supported: 1H, 13C (default), 31P.")
-        print("\t2. Initial spectrum. Timestamp used as t0. Default=11.")
-        return '13C', '11'
-    elif args[0] in ['13C', '1H', '31P', '1H_13C']:
-        iso = args[0]
-    else:
-        try:
-            init = str(int(args[0]))
-        except ValueError:
-            print("Invalid arguments.")
-            return None
-    if len(args) > 1:
-        try:
-            init = str(int(args[1]))
-        except ValueError:
-            print("Invalid arguments.")
-            return None
-    else:
-        init = '11'
-    if len(args) > 2:
-        print("Ignoring excess arguments: " + " ".join(args[2:]))
-    return iso, init
-
+    supported_exp = ['1H', '13C', '1H_13C']
+    if args.expt not in supported_exp:
+        print(f"Unsupported experiment {args.expt}. Supported: {', '.join(supported_exp)}")
+        return
+    if not os.path.exists(f"{args.datapath}/{args.acq1}"):
+        print(f"FID {args.acq1} was not found in the datapath. Please choose a valid FID.")
+        return
+    s = Stack(args.datapath, args.expt, args.acq1)
+    s.calibrate()
+    s.process_fids()
+    s.peakfit_fids()
+    s.write_stack()
+    
 if __name__ == "__main__":
-    main(*handle_args(sys.argv[1:]))
+    call_main()

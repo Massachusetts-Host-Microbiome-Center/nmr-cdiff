@@ -159,7 +159,7 @@ class BaselineNode:
         if not contains:
             self.deselect()
             return
-        print('event contains', self.node.get_center())
+        # print('event contains', self.node.get_center())
         self.press = self.x(), event.xdata
         BaselineNode.lock = self
         self.select()

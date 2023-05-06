@@ -1,10 +1,14 @@
+import collections
 import os
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.widgets as mpw
-import matplotlib.colors as mpc
+import matplotlib.backends.backend_tkagg as tkagg
 import nmrglue as ng
 import numpy as np
+import tkinter as tk
+from tkinter import ttk
+
 
 SCDIR = os.path.dirname(__file__)   # location of script
 
@@ -62,32 +66,45 @@ class Peak:
         self.x = shift    # Voigt curve ppm shift
         self.y = height   # Voigt curve height
         self.lw = l_fwhm  # Voigt curve Lorentzian full-width half maximum
-        self.gw = g_fwhm  # Voigt curve Gaussian full-width half maximum
+        if g_fwhm is not None:
+            self.cv = 'v'
+            self.gw = g_fwhm  # Voigt curve Gaussian full-width half maximum
+        else:
+            self.cv = 'l'
+            self.gw = 0 
         self.cpd = cpd
         self.trace = self.render_trace(resolution=100000)
 
-    def get_x(self):
-        return self.x
+    def get_x(self): return self.x
 
-    def get_y(self):
-        return self.y
+    def get_y(self): return self.y
 
-    def set_x(self, x):
-        self.x = float(x)
+    def get_lw(self): return self.lw
 
-    def set_y(self, y):
-        self.y = float(y)
+    def set_x(self, x): self.update(x=float(x))
+
+    def set_y(self, y): self.update(y=float(y))
+
+    def set_lw(self, lw): self.update(lw=float(lw))
+
+    def set_gw(self, gw): self.update(gw=float(gw))
+
+    def set_cpd(self, cpd): self.cpd = str(cpd)
 
     def get_curve_param_dict(self):
         pars = {
-            'shift': x,
-            'height': y,
-            'l_fwhm': lw,
-            'g_fwhm': gw,
+            'shift': self.x,
+            'height': self.y,
+            'l_fwhm': self.lw,
+            'g_fwhm': self.gw,
         }
 
     def ng_params(self):
-        return [self.x, self.lw, self.gw]
+        if self.cv == 'v':
+            pars = [self.x, self.lw, self.gw]
+        else:
+            pars = [self.x, self.lw]
+        return pars
 
     def ng_params_i(self, res):
         x0 = self.isotope.ppm_min # may need to switch these two
@@ -98,18 +115,20 @@ class Peak:
     def ng_amp(self):
         return [[self.y]]
 
-    def render_trace(self, resolution):
+    def render_trace(self, resolution, update=True):
         params = self.ng_params_i(resolution)
         amps = self.ng_amp()
-        self.trace = ng.analysis.linesh.sim_NDregion(
-            (resolution,), ['v'], params, amps,
+        trace = ng.analysis.linesh.sim_NDregion(
+            (resolution,), [self.cv], params, amps,
         )
-        return self.trace
+        if update:
+            self.trace = trace
+        return trace
 
     def align_peak_to_curve(self):
         if isinstance(self.x, float) and isinstance(self.y, float):
-            self.set_x(x)
-            self.set_y(y)
+            self.set_x(self.x)
+            self.set_y(self.y)
         else:
             typestring = f"{type(self.x)} and {type(self.y)}"
             raise ValueError("invalid types for coordinates: " + typestring)
@@ -119,327 +138,405 @@ class Peak:
             self.__setattr__(k, v)
         self.render_trace(len(self.trace))
 
-class TextBoxObject():
-    def __init__(self, parent, position, label, **kwargs):
-        self.parent = parent
-        self.ax = plt.axes(position)
-        if 'initial' in kwargs:
-            initial = kwargs.pop('initial')
-            if isinstance(initial, float):
-                initial = f"{initial:.4f}"
-        else:
-            initial = ''
-        self.obj = mpw.TextBox(self.ax, label, initial=initial, **kwargs)
-        self.obj.on_submit(self.on_changed)
+    def to_record(self):
+        record = {
+            'cpd': self.cpd,    # compound
+            'cv': self.cv,      # curveshape
+            'ppm': self.x,      # ppm shift
+            'amp': self.y,      # amplitude
+            'fwhm': self.lw,    # Lorentzian FWHM
+        }
+        if self.gw is not None:
+            record['fwhm2'] = self.gw    # Gaussian FWHM
+        return record
 
-    def get_val(self):
-        return self.obj.text
+class FloatText:
+    def __init__(self, master):
+        self.frame = tk.Frame(master)
+        vcmd = (master.register(self.validate))
+        self.entry = tk.Entry(self.frame, validate='all', validatecommand=(vcmd, '%P', '%V'))
+        self.entry.pack()
 
-    def set_text(self, val):
-        if isinstance(val, float):
-            val = f"{val:.4f}"
-        self.obj.set_val(val)
+    def validate(self, value, reason):
+        if reason == 'key':
+            if all(c in '0123456789.+-' for c in value) or value == '':
+                return True
+            else:
+                return False
+        elif reason == 'focusout':
+            try:
+                float(value)
+                return True
+            except:
+                # print("Invalid float!")
+                return False
+        return True
 
-    def on_changed(self, val):
-        self.parent.update(self, val)
-
-    def set_active(self, bool):
-        self.obj.set_active(bool)
-
-    def set_visible(self, bool):
-        self.ax.set_visible(bool)
-
-class RadioButtonsObject():
-    def __init__(self, parent, position, labels):
-        self.parent = parent
-        self.pos_params = position
-        self.ax = plt.axes(self.calc_position(len(labels)))
-        self.map = {l: i for i, l in enumerate(labels)}
-        self.obj = mpw.RadioButtons(self.ax, labels=labels)
-        self.obj.on_clicked(self.on_changed)
-        self.labels = labels
-        self.idx_selected = 0
-
-    def select(self, idx):
-        self.obj.set_active(idx)
-        self.idx_selected = idx
-
-    def calc_position(self, numel):
-        ht_total = min((numel + 1)*self.pos_params[3], 0.6)
-        bottom = self.pos_params[1] - ht_total
-        return [self.pos_params[0], bottom, self.pos_params[2], ht_total]
-
-    def refresh(self, labels):
-        self.obj._active = False
-        self.ax.set_visible(False)
-        self.ax = plt.axes(self.calc_position(len(labels)))
-        self.map = {l: i for i, l in enumerate(labels)}
-        self.obj = mpw.RadioButtons(self.ax, labels=labels)
-        self.obj.on_clicked(self.on_changed)
-        self.labels = labels
-        self.idx_selected = 0
-
-    def get_selected(self):
-        return self.idx_selected
-
-    def get_label(self):
-        return self.obj.value_selected
-
-    def set_label(self, idx, text):
-        self.obj.labels[idx].set_text(text)
-        self.obj.value_selected = text
-
-    def on_changed(self, val):
-        # stupid way to get selected index
-        for i, p in enumerate(self.obj.circles):
-            if mpc.to_rgba(p.get_facecolor(), 0) == mpc.to_rgba(self.obj.activecolor, 0):
-                self.idx_selected = i
-        self.parent.update(self, self.get_selected())
-
-class ButtonObject():
-    def __init__(self, parent, position, label, on_press, active=True, activators=None):
-        self.parent = parent
-        self.ax = plt.axes(position)
-        self.obj = mpw.Button(self.ax, label=label)
-        self.obj.on_clicked(on_press)
-        self.set_active(active)
-        self.activators = activators
-
-    def set_active(self, bool):
-        self.obj.set_active(bool)
-        if bool:
-            self.ax.set_facecolor([i/255. for i in (175, 219, 245)])
-            self.obj.color = [i/255. for i in (175, 219, 245)]
-            self.obj.hovercolor = [i/255. for i in (240, 255, 255)]
-        else:
-            self.ax.set_facecolor([0.85, 0.85, 0.85])
-            self.obj.color = [0.85, 0.85, 0.85]
-            self.obj.hovercolor = [0.95, 0.95, 0.95]
-
-    def check_active(self):
-        if self.activators is not None:
-            activated = True
-            for activator in self.activators:
-                if activator.get_val() == '':
-                    activated = False
-            self.set_active(activated)
-
-    def set_visible(self, bool):
-        self.ax.set_visible(bool)
-
-class SliderObject():
-    def __init__(self, parent, position, label, vallim, valinit=0.5):
-        self.parent = parent
-        self.ax = plt.axes(position)
-        self.obj = mpw.Slider(self.ax, label, *vallim, valinit=valinit)
-
-class SliderTextObject():
-    def __init__(self, parent, slider_position, text_position, label, vallim,
-                 valinit=0.5):
-        self.parent = parent
-        self.val = valinit
-        self.s_ax = plt.axes(slider_position)
-        self.slider = mpw.Slider(self.s_ax, label, *vallim, valinit=valinit)
-        self.t_ax = plt.axes(text_position)
-        self.text = mpw.TextBox(self.t_ax, '', initial=valinit)
-        self.slider.on_changed(self.on_slider_changed)
-        self.text.on_submit(self.on_text_changed)
-
-    def set_val(self, val):
-        self.slider.set_val(val)
-        self.text.set_val(val)
-
-    def on_slider_changed(self, val):
-        if self.val != val:
-            self.val = val
-            self.parent.update(self, self.val)
-            self.text.set_val(f"{val:.4f}")
-
-    def on_text_changed(self, val):
-        fval = float(val)
-        if f"{self.val:8.2f}" != f"{fval:.4f}":
-            self.val = fval
-            self.parent.update(self, self.val)
-            self.slider.set_val(fval)
-
-class PlotWindow():
-    def __init__(self, isotope, peaks, spec):
-        """Initialize plot window.
-        
-        Parameters:
-        -- isotope : Isotope object matching labeled isotope of the NMR spectrum
-        -- peaks : list of Peak objects detected in the spectrum
-        -- spec : 2D array-like: (ppm, trace), currently ignored
-        """
-        self.res = 100000
+class Window():
+    def __init__(self, isotope, peaks, spec): # spec, pack_peaks_fn, unpack_peaks_fn, curve_fit_fn):
+        # Set up plot
+        self.isotope = isotope
         self.peaks = peaks
+        self.res = 100000
+        self.assignments = collections.defaultdict(list)
+        self.fid = spec
+        for pk in peaks:
+            self.assignments[pk.cpd].append(pk)
         if len(peaks) > 0:
             self.active_peak = peaks[0]
         else:
             self.active_peak = None
         self.isotope = isotope
-        self.fig = plt.figure(figsize=(10, 10))
-        self.text_canvas = plt.axes([0, 0, 1, 1])
-        self.plot_ax = plt.axes([0.05, 0.4, 0.65, 0.55])
-        spec = (
-            np.linspace(isotope.ppm_min, isotope.ppm_max, num=20000),
-            sum([peak.render_trace(20000) for peak in peaks])
-        )
+        
+        # self.fig, self.plot_ax = plt.subplots(constrained_layout=True, figsize=(10, 10))
+        self.fig = mpl.figure.Figure()
+        self.plot_ax = self.fig.add_subplot(111)
+        self.plot_ax.set_xlim(left=isotope.ppm_max, right=isotope.ppm_min)
+        
+        simspace = np.linspace(isotope.ppm_min, isotope.ppm_max, num=self.res)
         simspec = sum([peak.render_trace(self.res) for peak in peaks])
-        l1 = self.plot_ax.plot(
-            spec[0], 
-            spec[1], 
-            c='slategray', 
-            lw=2,
-        ) # plot NMR spectrum
-        l2 = self.plot_ax.plot(
-            np.linspace(isotope.ppm_min, isotope.ppm_max, num=self.res), 
+        l1 = self.plot_ax.plot(  # plot NMR spectrum
+            spec.ppm, 
+            spec.data, 
+            c='black', 
+            lw=1,
+            zorder=1,
+        )
+        l2 = self.plot_ax.plot(  # plot simulated spectrum
+            simspace, 
             simspec, 
             c='royalblue', 
             lw=1,
+            zorder=2,
         )
-        l3 = self.plot_ax.plot(
+        self.cpd_simspecs = {}
+        for cpd, peaklist in self.assignments.items():
+            l = self.plot_ax.plot( # plot simulated compound spectrum
+                simspace, 
+                sum([peak.trace for peak in peaklist]), 
+                lw=1, 
+                zorder=3
+            )
+            self.cpd_simspecs[cpd] = Trace(l[0])
+
+        l3 = self.plot_ax.plot(   # plot active peak
             np.linspace(isotope.ppm_min, isotope.ppm_max, num=self.res), 
             self.active_peak.render_trace(self.res),
-            c='darkorange',
+            c='deeppink',
+            lw=1.5,
+            zorder=4,
+        )
+        mask = (spec.ppm < self.isotope.ppm_max) & (spec.ppm > self.isotope.ppm_min)
+        l4 = self.plot_ax.plot(  # plot residuals
+            spec.ppm[mask], 
+            spec.data[mask] - np.flip(sum([peak.render_trace(np.sum(mask), update=False) for peak in peaks])), 
+            c='gray', 
             lw=1,
+            zorder=0,
         )
         self.spec = Trace(l1[0]) # should not be edited
         self.simspec = Trace(l2[0])
         self.overlay = Trace(l3[0])
+        self.residuals = Trace(l4[0])
 
-        self.peak_selector = RadioButtonsObject(self, [0.71, 0.9, 0.25, 0.02], [f"{pk.cpd} {pk.x}" for pk in self.peaks])
-        self.peak_title = self.text_canvas.text(0.375, 0.276, f"Active Peak: {self.peak_selector.get_label()}", ha='center', va='bottom', size='large')
-        self.peak_cpd = TextBoxObject(self, [0.2, 0.225, 0.3, 0.04], "Peak compound ", initial=self.active_peak.cpd)
-        self.peak_x = TextBoxObject(self, [0.2, 0.175, 0.3, 0.04], "Peak ppm shift ", initial=self.active_peak.x)
-        self.peak_y = TextBoxObject(self, [0.2, 0.125, 0.3, 0.04], "Peak amplitude ", initial=self.active_peak.y)
-        self.peak_lw = SliderTextObject(self, [0.2, 0.075, 0.3, 0.04], [0.5, 0.075, 0.08, 0.04], "Peak Lorentzian FWHM ", [0., 2.], valinit=self.active_peak.lw)
-        self.peak_gw = SliderTextObject(self, [0.2, 0.025, 0.3, 0.04], [0.5, 0.025, 0.08, 0.04], "Peak Gaussian FWHM ", [0., 2.], valinit=self.active_peak.gw)
-        self.add_peak = ButtonObject(self, [0.91, 0.9, 0.05, 0.04], "+", self.open_add_dialogue)
-        self.remove_peak = ButtonObject(self, [0.85, 0.9, 0.05, 0.04], "–", self.open_remove_dialogue)
-        cdialogue = TextBoxObject(self, [0.8, 0.125, 0.16, 0.04], "Peak compound ")
-        sdialogue = TextBoxObject(self, [0.8, 0.075, 0.16, 0.04], "Chemical shift ")
-        self.add_dialogue_elements = {
-            'title': self.text_canvas.text(0.835, 0.175, 'Add Peak', ha='center', va='bottom', size='large'),
-            'cpd': cdialogue,
-            'shift': sdialogue,
-            'cancel': ButtonObject(self, [0.71, 0.025, 0.07, 0.04], "Cancel", self.clear_add_dialogue),
-            'submit': ButtonObject(self, [0.89, 0.025, 0.07, 0.04], "Submit", self.submit_add_dialogue, active=False, activators=[cdialogue, sdialogue]),
+        # Set up window
+        self.root = tk.Tk()
+        self.root.geometry("1280x800")
+        self.root.title("Manual Peak Fitting Subroutine")
+        self.root.config(bg="skyblue")
+        self.root.columnconfigure(0, weight=1)
+        self.root.columnconfigure(1, weight=3)
+        self.root.rowconfigure(0, weight=1)
+
+        # Create frame for plot
+        self.plot_frame = tk.Frame(self.root)
+        self.plot_frame.grid(row=0, column=1, padx=5, pady=5, sticky=tk.E+tk.W+tk.N+tk.S)
+        self.canvas = tkagg.FigureCanvasTkAgg(self.fig, master=self.plot_frame)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.toolbar = tkagg.NavigationToolbar2Tk(self.canvas, self.plot_frame)
+        self.toolbar.update()
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Create frames for contents
+        self.options_frame = tk.Frame(self.root)
+        self.options_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.E+tk.W+tk.N+tk.S)
+        self.options_frame.columnconfigure(0, weight=1)
+        self.options_frame.rowconfigure(0, weight=1)
+        self.options_frame.rowconfigure(1, weight=3)
+
+        # Initialize peak selector
+        self.selector_frame = tk.Frame(self.options_frame)
+        self.selector_frame.grid(row=0, column=0, padx=5, pady=5)
+
+        self.sel_label = tk.Label(self.selector_frame, text="Active Peak")
+        self.sel_label.grid(row=0, column=0)
+        self.selector = ttk.Combobox(
+            self.selector_frame,
+        )
+        self.update_selector()
+        self.selector.bind("<<ComboboxSelected>>", self.select_callback)
+        # selector.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.selector.grid(row=0, column=1)
+
+        self.fit_button = tk.Button(self.selector_frame, text="Curve Fit", command=self.refit_peaks)
+        self.fit_button.grid(row=2, column=0)
+        self.fit_progress = tk.Label(self.selector_frame, text="Fitting peaks...")
+        self.fit_progress.grid(row=2, column=1)
+        self.fit_progress.grid_forget()
+
+        self.selector_frame.columnconfigure(0, weight=1)
+        self.selector_frame.columnconfigure(1, weight=1)
+        self.selector_frame.rowconfigure(0, weight=1)
+        self.selector_frame.rowconfigure(1, weight=1)
+        self.selector_frame.rowconfigure(2, weight=1)
+
+        # sel_scroll = tk.Scrollbar(selector_frame, orient=tk.VERTICAL)
+        # sel_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        # sel_scroll['command'] = selector.yview
+
+        # Initialize dialogues
+        self.dialogue_frame = tk.Frame(self.options_frame)
+        self.dialogue_frame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.E+tk.W+tk.N+tk.S)
+        self.dialogue_nb = ttk.Notebook(self.dialogue_frame)
+        self.edit_frame = tk.Frame(self.dialogue_nb)
+        self.add_frame = tk.Frame(self.dialogue_nb)
+        self.rem_frame = tk.Frame(self.dialogue_nb)
+        self.dialogue_nb.add(self.edit_frame, text="Edit Peak")
+        self.dialogue_nb.add(self.add_frame, text="Add Peak")
+        self.dialogue_nb.add(self.rem_frame, text="Remove Peak")
+        # dialogue_nb.pack()
+
+        # Edit dialogue
+        self.edit_title = tk.Label(self.edit_frame, text="Compound, Shift")
+        self.edit_title.grid(row=0, column=0, columnspan=2)
+        self.edit_var = [tk.StringVar() for i in range(4)]
+        self.edit_elements = {
+            'Compound': tk.Entry(self.edit_frame),
+            'Shift (ppm)': FloatText(self.edit_frame),
+            'Amplitude': FloatText(self.edit_frame),
+            'Lorentzian FWHM (ppm)': FloatText(self.edit_frame),
         }
-        self.remove_dialogue_elements = {
-            'title': self.text_canvas.text(0.835, 0.1, 'Remove Selected Peak?', ha='center', va='bottom', size='large'),
-            'cancel': ButtonObject(self, [0.71, 0.025, 0.07, 0.04], "Cancel", self.clear_remove_dialogue),
-            'submit': ButtonObject(self, [0.89, 0.025, 0.07, 0.04], "Submit", self.submit_remove_dialogue),
-        }
-        self.clear_add_dialogue(None)
-        self.clear_remove_dialogue(None)
-
-        self.plot_ax.set_xlim(left=isotope.ppm_max, right=isotope.ppm_min)
-        ylim = self.plot_ax.get_ylim()
-
-    def populate_panel(self, pk):
-        self.peak_title.set_text(f"Active Peak: {self.peak_selector.get_label()}")
-        self.peak_cpd.set_text(pk.cpd)
-        self.peak_x.set_text(pk.x)
-        self.peak_y.set_text(pk.y)
-        self.peak_lw.set_val(pk.lw)
-        self.peak_gw.set_val(pk.gw)
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-
-    def refresh_labels(self):
-        pk = self.active_peak
-        i = self.peak_selector.get_selected()
-        self.peak_selector.set_label(i, f"{pk.cpd} {pk.x}")
-        self.peak_title.set_text(f"Active Peak: {self.peak_selector.get_label()}")
-
-    def update(self, widget, val):
-        if widget is self.peak_selector:
-            pk = self.peaks[val]
-            self.active_peak = None # prevents the following setters from updating the PlotWindow
-            self.populate_panel(pk)
-            self.active_peak = pk
-            self.overlay.set(ydata=self.active_peak.trace)
-        elif widget is self.add_dialogue_elements['cpd'] or widget is self.add_dialogue_elements['shift']:
-            self.add_dialogue_elements['submit'].check_active()
-        elif self.active_peak is not None:
-            if widget is self.peak_cpd:
-                self.active_peak.update(cpd=val)
-                self.refresh_labels()
+        for i, (k, v) in enumerate(self.edit_elements.items()):
+            tk.Label(self.edit_frame, text=k).grid(row=i+1, column=0, sticky=tk.E)
+            if i == 0:
+                v.grid(row=1, column=1, sticky=tk.W)
+                v.config(textvariable=self.edit_var[0])
             else:
-                if widget is self.peak_x:
-                    self.active_peak.update(x=float(val))
-                    self.refresh_labels()
-                elif widget is self.peak_y:
-                    self.active_peak.update(y=float(val))
-                elif widget is self.peak_lw:
-                    self.active_peak.update(lw=val)
-                elif widget is self.peak_gw:
-                    self.active_peak.update(gw=val)
-                self.overlay.set(ydata=self.active_peak.trace)
-                self.simspec.set(ydata=sum([peak.render_trace(self.res) for peak in self.peaks]))
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+                v.frame.grid(row=i+1, column=1, sticky=tk.W)
+                v.entry.config(textvariable=self.edit_var[i])
+        self.edit_elements['Compound'].bind("<FocusOut>", self.edit_cpd_callback)
+        self.edit_elements['Shift (ppm)'].entry.bind("<FocusOut>", self.edit_shift_callback)
+        self.edit_elements['Amplitude'].entry.bind("<FocusOut>", self.edit_amp_callback)
+        self.edit_elements['Lorentzian FWHM (ppm)'].entry.bind("<FocusOut>", self.edit_lw_callback)
+        self.select_callback(None)
+        self.edit_frame.columnconfigure(0, weight=1)
+        self.edit_frame.columnconfigure(1, weight=1)
 
-    def open_add_dialogue(self, arg):
-        self.clear_remove_dialogue(None)
-        for k, ele in self.add_dialogue_elements.items():
-            if k in ['cpd', 'shift']:
-                ele.set_text('')
-            if k == 'submit':
-                ele.check_active()
-            elif k != 'title':
-                ele.set_active(True)
-            ele.set_visible(True)
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        # Add dialogue
+        self.add_var = [tk.StringVar(), tk.StringVar()]
+        self.add_title = tk.Label(self.add_frame, text="Add Peak")
+        self.add_title.grid(row=0, column=0, columnspan=2)
+        tk.Label(self.add_frame, text="Compound").grid(row=1, column=0, sticky=tk.E)
+        self.add_cpd = tk.Entry(self.add_frame, textvariable=self.add_var[0])
+        self.add_cpd.grid(row=1, column=1, sticky=tk.W)
+        tk.Label(self.add_frame, text="Shift (ppm)").grid(row=2, column=0, sticky=tk.E)
+        self.add_shift = FloatText(self.add_frame)
+        self.add_shift.frame.grid(row=2, column=1, sticky=tk.W)
+        self.add_shift.entry.config(textvariable=self.add_var[1])
+        self.add_submit = tk.Button(self.add_frame, text="Submit", command=self.add_button_callback)
+        self.add_submit.grid(row=3, column=0, columnspan=2)
+        self.add_frame.columnconfigure(0, weight=1)
+        self.add_frame.columnconfigure(1, weight=1)
 
-    def clear_add_dialogue(self, arg):
-        for k, ele in self.add_dialogue_elements.items():
-            if k in ['cpd', 'shift']:
-                ele.set_text('')
-            if k != 'title':
-                ele.set_active(False)
-            ele.set_visible(False)
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        # Remove dialogue
+        self.remove_title = tk.Label(self.rem_frame, text="Remove Active Peak")
+        self.remove_title.grid(row=0, column=0)
+        self.remove_submit = tk.Button(self.rem_frame, text="Submit", command=self.remove_button_callback)
+        self.remove_submit.grid(row=1, column=0)
+        self.dialogue_nb.pack(fill=tk.BOTH, expand=True)
+        self.rem_frame.columnconfigure(0, weight=1)
 
-    def submit_add_dialogue(self, arg):
-        shiftstring = self.add_dialogue_elements['shift'].get_val()
-        cpd = self.add_dialogue_elements['cpd'].get_val()
-        if shiftstring != '' and cpd != '':
-            shift = float(shiftstring)
-            height = self.spec.y(shift)
+    def display(self):
+        self.root.mainloop()
+
+    def get_peaks(self):
+        return self.peaks
+
+    def update_cpd_simspec(self, cpd):
+        if cpd not in self.cpd_simspecs:
+            l = self.plot_ax.plot(
+                np.linspace(self.isotope.ppm_min, self.isotope.ppm_max, num=self.res),
+                sum([peak.trace for peak in self.peaks]),
+                lw=1, 
+                zorder=2
+            )
+            self.cpd_simspecs[cpd] = Trace(l[0])
+        elif cpd in self.assignments and len(self.assignments.get(cpd, [])) > 0:
+            self.cpd_simspecs[cpd].set(ydata=sum([pk.trace for pk in self.assignments[cpd]]))
+        else:
+            trace = self.cpd_simspecs.pop(cpd)
+            trace.line.remove()
+
+    def update_plot(self):
+        if self.active_peak is not None:
+            self.overlay.set(ydata=self.active_peak.trace)
+            self.simspec.set(ydata=sum([peak.render_trace(self.res) for peak in self.peaks]))
+            ppm = self.spec.get_line().get_xdata()
+            mask = (ppm < self.isotope.ppm_max) & (ppm > self.isotope.ppm_min)
+            trace = self.spec.get_line().get_ydata()[mask]
+            sim2 = sum([peak.render_trace(len(trace), update=False) for peak in self.peaks])
+            self.residuals.set(ydata=(trace - np.flip(sim2)))
+            self.update_cpd_simspec(self.active_peak.cpd)
+            self.canvas.draw()
+            self.canvas.flush_events()
+
+    def update_selector(self, initial_selected=None):
+        """Update selector fields and optionally select initial peak."""
+        self.selector.config(values=[f"{peak.cpd} {peak.x}" for peak in self.peaks])
+        if initial_selected is not None:
+            self.selector.current(newindex=initial_selected)
+        else:
+            self.selector.current(newindex=0)
+        self.update_plot()
+
+    def select_callback(self, event):
+        """Callback for peak selector; gets the current peak.
+        TODO: populate edit panel.
+        """
+        selected_idx = self.selector.current()
+        self.active_peak = self.peaks[selected_idx]
+        self.edit_title.config(text=f"Active Peak: {self.active_peak.cpd} {self.active_peak.x}")
+        self.edit_var[0].set(self.active_peak.cpd)
+        self.edit_var[1].set(str(self.active_peak.get_x()))
+        self.edit_var[2].set(str(self.active_peak.get_y()))
+        self.edit_var[3].set(str(self.active_peak.get_lw()))
+        self.update_plot()
+
+    def refit_peaks(self):
+        self.fit_button["state"] = "disabled"
+        idx = self.peaks.index(self.active_peak)
+        self.fid.unpack_peaks(self.peaks)
+        self.fit_progress.grid(row=2, column=1) # Notify progress during curve fitting
+        self.fid.curve_fit()
+        self.peaks = self.fid.pack_peaks()
+        self.assignments = collections.defaultdict(list)
+        for pk in self.peaks:
+            self.assignments[pk.cpd].append(pk)
+        if len(self.peaks) > 0:
+            self.active_peak = self.peaks[0]
+        else:
+            self.active_peak = None
+        for cpd in self.assignments:
+            self.update_cpd_simspec(cpd)
+        self.update_plot()
+        self.update_selector(0)
+        self.select_callback(None)
+        self.fit_progress.grid_forget()
+        self.fit_button["state"] = "normal"
+
+
+    def edit_cpd_callback(self, event):
+        """TODO: callback for edit peak compound entry:
+        - update peak compound variable
+        - update edit box title
+        - update dropdown entry
+        """
+        if self.active_peak is not None:
+            oldcpd = self.active_peak.cpd
+            val = self.edit_elements["Compound"].get()
+            self.active_peak.set_cpd(val)
+            self.assignments[oldcpd].remove(self.active_peak)
+            self.assignments[val].append(self.active_peak)
+            self.update_cpd_simspec(oldcpd)
+            self.update_selector(self.peaks.index(self.active_peak))
+            self.edit_title.config(text=f"Active Peak: {self.active_peak.cpd} {self.active_peak.x}")
+            self.update_plot()
+
+    def edit_shift_callback(self, event):
+        """TODO: callback for edit peak shift entry:
+        - check for float
+        - update peak shift variable
+        - update edit box title
+        - update dropdown entry
+        """
+        if self.active_peak is not None:
+            try:
+                val = float(self.edit_var[1].get())
+                apk = self.active_peak
+                apk.set_x(val)
+                self.update_selector(self.peaks.index(apk))
+                self.edit_title.config(text=f"Active Peak: {apk.cpd} {apk.x}")
+                self.update_plot()
+            except ValueError:
+                pass
+
+    def edit_amp_callback(self, event):
+        """Change peak Amplitude."""
+        if self.active_peak is not None:
+            try:
+                val = float(self.edit_var[2].get())
+                self.active_peak.set_y(val)
+                self.update_plot()
+            except ValueError:
+                pass
+
+    def edit_lw_callback(self, event):
+        """TODO: callback for edit peak L-FWHM entry:
+        - check for float
+        - update peak lw variable
+        """
+        if self.active_peak is not None:
+            try:
+                val = float(self.edit_var[3].get())
+                self.active_peak.set_lw(val)
+                self.update_plot()
+            except ValueError:
+                pass
+
+    def add_button_callback(self):
+        """TODO: callback for add peak button:
+        - validate compound and shift not empty
+        - check shift for float
+        - store cpd and shift, clear entries
+        - make new peak with default values
+        - add peak to peaklist
+        - update assignments and residual
+        - update dropdown
+        - select new peak in dropdown
+        """
+        cpd = self.add_var[0].get()
+        try:
+            shift = float(self.add_var[1].get())
+        except ValueError:
+            return
+        self.add_var[0].set('')
+        self.add_var[1].set('')
+        if cpd != '':
+            height = 100 #self.spec.y(shift)
             newpeak = Peak(self.isotope, shift, height,
-                           l_fwhm=0.5, g_fwhm=0.5, cpd=cpd)
-            self.clear_add_dialogue(arg)
+                           l_fwhm=0.5, cpd=cpd)
             self.peaks.append(newpeak)
-            self.peak_selector.refresh([f"{pk.cpd} {pk.x}" for pk in self.peaks])
-            self.peak_selector.select(len(self.peaks) - 1)
+            self.assignments[newpeak.cpd].append(newpeak)
+            self.update_selector(len(self.peaks) - 1)
+            self.select_callback(None)
+            self.update_plot()
 
-    def open_remove_dialogue(self, arg):
-        self.clear_add_dialogue(None)
-        for k, ele in self.remove_dialogue_elements.items():
-            if k != 'title':
-                ele.set_active(True)
-            ele.set_visible(True)
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-
-    def clear_remove_dialogue(self, arg):
-        for k, ele in self.remove_dialogue_elements.items():
-            if k != 'title':
-                ele.set_active(False)
-            ele.set_visible(False)
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-
-    def submit_remove_dialogue(self, arg):
-        self.clear_remove_dialogue(arg)
-        selected = self.peak_selector.get_selected()
-        self.peaks.pop(selected) # bye bye!
-        self.peak_selector.refresh([f"{pk.cpd} {pk.x}" for pk in self.peaks])
-        self.peak_selector.select(min(selected, len(self.peaks) - 1))
+    def remove_button_callback(self):
+        """TODO: callback for remove peak button:
+        - remove peak from peaklist
+        - update assignments and residual
+        - update dropdown
+        - select next peak using formula
+        """
+        if len(self.peaks) > 1:
+            rpk = self.active_peak
+            peak_idx = self.peaks.index(rpk)
+            self.peaks.remove(rpk)
+            self.assignments[rpk.cpd].remove(rpk)
+            self.update_selector(min(peak_idx, len(self.peaks) - 1))
+            self.select_callback(None)
+            self.update_plot()
 
 if __name__ == "__main__":
 
@@ -456,10 +553,11 @@ if __name__ == "__main__":
             long_test_peaks.append(pk)
 
     test_peaks = [
-        Peak(iso, 25.9762, 200., l_fwhm=0.5, g_fwhm=0.5, cpd="Acetate"),
-        Peak(iso, 18.78, 200., l_fwhm=0.6, g_fwhm=0.6, cpd="Alanine"),
-        Peak(iso, 53.425, 200., l_fwhm=0.4, g_fwhm=0.4, cpd="Alanine"),
+        Peak(iso, 25.9762, 200., l_fwhm=0.5, cpd="Acetate"), # g_fwhm=0.5, 
+        Peak(iso, 18.78, 200., l_fwhm=0.6, cpd="Alanine"), # g_fwhm=0.6, 
+        Peak(iso, 53.425, 200., l_fwhm=0.4, cpd="Alanine"), # g_fwhm=0.4, 
     ]
 
-    a = PlotWindow(iso, long_test_peaks, None)
-    plt.show()
+    t = Window(iso, test_peaks, None)
+    # a = PlotWindow(iso, long_test_peaks, None)
+    # plt.show()

@@ -1,0 +1,28 @@
+{
+    "1H": {
+        "name": "Proton",
+        "fit_ppm_delta": 0.05, 
+        "fit_fwhm_max": 0.1, 
+        "fit_fwhm_min": 0.001,
+        "peak_pick_msep": 0.001,
+        "ppm_min": 0.0,
+        "ppm_max": 12.0,
+        "assignment_display_window": 1.0,   
+        "assignment_cluster_msep": 0.1, 
+        "fit_cluster_msep": 0.5,
+        "fit_reach": 0.5 
+    },
+    "13C": {
+        "name": "Carbon-13",
+        "fit_ppm_delta": 5.0,
+        "fit_fwhm_max": 0.5,
+        "fit_fwhm_min": 0.01,
+        "peak_pick_msep": 0.01,
+        "ppm_min": 0.0,
+        "ppm_max": 200.0,
+        "assignment_display_window": 8,
+        "assignment_cluster_msep": 0.5,
+        "fit_cluster_msep": 10,
+        "fit_reach": 8
+    }
+}
