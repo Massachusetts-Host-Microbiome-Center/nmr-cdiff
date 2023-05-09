@@ -1,6 +1,6 @@
 #!/bin/csh
 
-bruk2pipe -in ./$1/fid \
+bruk2pipe -in $1/fid \
   -bad 0.0 -ext -aswap -AMX -decim 552 -dspfvs 20 -grpdly 68.0126800537109  \
   -xN             16384  \
   -xT              8192  \
@@ -15,3 +15,4 @@ bruk2pipe -in ./$1/fid \
 | nmrPipe -fn ZF -zf 3 \
 | nmrPipe -fn FT \
 #| nmrPipe -fn POLY -auto
+sleep 1
