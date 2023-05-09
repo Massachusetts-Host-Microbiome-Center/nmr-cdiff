@@ -97,8 +97,8 @@ def synchronizers(runs, stretch=True, plot=False):
         first run will be the reference to which the other runs are shifted.
     stretch -- boolean flag to normalize the time scales by metabolic rate
 
-    Returns a dictionary mapping each run base-name to a linear function that
-        transforms a time vector.
+    Generates linear functions that transform the time vector for each run,
+        using the first run as the basis.
     """
     if plot:
         xx = np.linspace(0, 36, num=36*10)

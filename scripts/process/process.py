@@ -5,7 +5,7 @@
  - Use python 3.8+ for best results
  - See /nmr-cdiff/venv/requirements.txt for dependencies
 
-Copyright 2021 Massachusetts Host-Microbiome Center
+Copyright 2021-2022 Massachusetts Host-Microbiome Center
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

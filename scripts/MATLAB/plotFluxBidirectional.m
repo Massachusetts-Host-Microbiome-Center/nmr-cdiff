@@ -1,6 +1,6 @@
 function plotFluxBidirectional (stem, snin, snout)
 % Stacked area plot, showing proportions of flux for a metabolite.
-% SEE Fig. 2B-E
+% SEE Fig. 3a
 %
 % Parameters:
 %  - stem is the filename stem of the excel spreadsheet

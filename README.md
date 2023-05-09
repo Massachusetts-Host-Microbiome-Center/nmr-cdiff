@@ -1,5 +1,5 @@
 # nmr-cdiff
-Supporting scripts and data for the analysis of real-time metabolism using <sup>13</sup>C NMR spectra of live _C. difficile_ cell cultures. [Pre-print available at bioRxiv.](https://doi.org/10.1101/2022.06.13.495811)
+Supporting scripts and data for the analysis of real-time metabolism using <sup>13</sup>C NMR spectra of live _C. difficile_ cell cultures, [as published in Nature Chemical Biology (https://doi.org/10.1038/s41589-023-01275-9).](https://doi.org/10.1038/s41589-023-01275-9)
 
 ## Folder structure:
 > [data](data) - datasets, including the updated `icdf843` metbolic model and the dFBA parameters  

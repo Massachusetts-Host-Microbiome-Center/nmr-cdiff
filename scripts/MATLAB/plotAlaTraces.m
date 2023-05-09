@@ -1,6 +1,6 @@
 function plotAlaTraces (fn, sns, cmap, outf)
 % Plots NMR traces of the alpha carbon alanine peaks, with splitting lines.
-% SEE Fig. 5
+% SEE Fig. 5a,c
 %
 % Parameters:
 % - fn : the filename of the spreadsheet
