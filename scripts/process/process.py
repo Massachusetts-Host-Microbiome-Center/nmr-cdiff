@@ -226,6 +226,7 @@ class Stack():
 
     def detect_spectra(self, acq1):
         """Returns a list of spectra IDs for the given isotope."""
+        print(f"Inferring {self.expt} spectra (this may take a minute)...", end=None)
         iso_spectra = []
         subdirs = [os.path.basename(dir) for dir in glob.iglob(f"{self.path}/*") if os.path.isdir(dir)]
         sorted_fids = sorted([int(dir) for dir in subdirs if str.isdigit(dir)])
@@ -239,6 +240,7 @@ class Stack():
                     iso_spectra.append(fn)
             except OSError:
                 pass
+        print("Done.")
         return iso_spectra
 
     def read_calibration(self):
@@ -281,7 +283,7 @@ class Stack():
         self.spectra[spec_id] = fid
         self.write_calibration()
 
-    def process_fids(self, overwrite=True, auto_bl=True, manual_bl=False):
+    def process_fids(self, overwrite=False, auto_bl=True, manual_bl=False):
         for spec_id in self.ordered_fids:
             if spec_id in self.spectra:
                 spec = self.spectra[spec_id]
@@ -751,6 +753,7 @@ class Spectrum():
             fit_args[4] = shift_params(lb, fit_args[4])[0]  # Shift ppm shift
             fit_args[0] = shift_params(lb, *fit_args[0])    # Shift VP params
             fit_args[2] = shift_params(lb, *fit_args[2])    # Shift VP param bounds
+            maxfev = 200000
             nparams, namps, _ = ng.analysis.linesh.fit_spectrum(
                 ndata, 
                 [cv],
@@ -758,7 +761,7 @@ class Spectrum():
                 self.ppm_to_int_span(fit_reach), 
                 False, 
                 verb=False,
-                maxfev=1000000,
+                maxfev=200000,
             )
             nparams = shift_params(-1*lb, *np.array(nparams)) # rescale result to full PPM axis
 
