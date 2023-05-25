@@ -40,19 +40,10 @@ import scipy
 
 from man_bl import Baseline
 from lineshapes_addon import split_lorentz_fwhm, gumbel_hb
-from ui import Isotope, Peak, Window
-from sandbox import ConflictWindow, CalibrateWindow
+from ui import Peak, PeakFitWindow, ConflictWindow, CalibrateWindow
 
 SCDIR = os.path.dirname(__file__)   # location of script
 CURVE_FIT_RESOLUTION = 2**19
-
-DRY_RUN = False  # In a dry run, no Excel file is written after processing
-OVERWRITE = True  # Whether to overwrite existing FT spectra
-INDICES = None  # FID indices. None to auto-detect. Otherwise must be list of strings.
-# INDICES = [str(3*i) for i in range(68, 69)]
-# INDICES = ['43'] #, '23']
-# INDICES = ["bmse000402_1"]
-# INDICES = ['91'] #, '14', '15']
 
 isotope_params = ["id", "name", "fit_ppm_delta", "fit_fwhm_max", "fit_fwhm_min",
                   "peak_pick_msep", "ppm_min", "ppm_max", "assignment_display_window",
@@ -135,14 +126,14 @@ def to_stream(dic, data):
 def pipe_process(expt, fid):
     """Process Bruker FID using NMRPipe and load using nmrglue."""
     pipe_output = subprocess.run(
-        ["csh", f"{SCDIR}/proc_{expt}.com", fid],
+        ["csh", f"{SCDIR}/pipe/proc_{expt}.com", fid],
         stdout=subprocess.PIPE)
     return ng.fileio.pipe.read(pipe_output.stdout)
 
 def pipe_bl(dic, data):
     """Perform baseline correction using NMRPipe."""
     pipe_output = subprocess.run(
-        ["csh", f"{SCDIR}/bl.com"],
+        ["csh", f"{SCDIR}/pipe/bl.com"],
         input=to_stream(dic, data),
         stdout=subprocess.PIPE)
     return ng.fileio.pipe.read(pipe_output.stdout)
@@ -182,13 +173,14 @@ def sg_findpeaks(spec, window_size, poly_order, prominence_sg=2, prominence_fid=
     amps = np.array(signal[[int(pk) for pk in pks]])
     pks = pks[amps > err_f]
     pkw = pkw[amps > err_f]
-    x = np.array(range(len(signal), 0, -1))
+    # x = np.array(range(len(signal), 0, -1))
+    x = spec.ppm
 
     # Plot found peaks
     if plot:
         fd0 = scipy.signal.savgol_filter(signal, window_size, poly_order, deriv=0)
         pklabels = list(range(pks.shape[0]))
-        spec.plot_with_labels([10*window_size*fd2, fd0], pks, pklabels, ppm_bounds=(max(x), min(x)))
+        spec.plot_with_labels(pks, pklabels, yys=[10*window_size*fd2, fd0], ppm_bounds=(max(x), min(x)))
 
     return list(pks), list(pkw)
 
@@ -248,9 +240,12 @@ class Stack():
         with open(f"{self.path}/calibrate_{self.expt}.txt", "r") as rf:
             rf.readline()
             values = rf.readline().strip('\n').split('\t')
-            self.p0 = values[0]
-            self.p1 = values[1]
-            self.cf = values[2]
+            self.p0 = float(values[0])
+            self.p1 = float(values[1])
+            self.cf = float(values[2])
+            print(f"P0: {self.p0}")
+            print(f"P1: {self.p1}")
+            print(f"CF: {self.cf}")
 
     def write_calibration(self):
         print("Writing new calibration parameters")
@@ -283,7 +278,8 @@ class Stack():
         self.spectra[spec_id] = fid
         self.write_calibration()
 
-    def process_fids(self, overwrite=False, auto_bl=True, manual_bl=False):
+    def process_fids(self, overwrite=False, auto_bl=True, manual_bl=False, 
+                     manual_ps=False):
         for spec_id in self.ordered_fids:
             if spec_id in self.spectra:
                 spec = self.spectra[spec_id]
@@ -292,7 +288,7 @@ class Stack():
             else:
                 spec = Spectrum(spec_id, self)
             try:
-                spec.process(manual_ps=False, overwrite=overwrite, auto_bl=auto_bl, 
+                spec.process(manual_ps=manual_ps, overwrite=overwrite, auto_bl=auto_bl, 
                                     manual_bl=manual_bl)
                 self.spectra[spec_id] = spec
             except Exception as err:
@@ -346,14 +342,16 @@ class Stack():
 
         if self.refpeaks is not None:
             print("Writing reference shifts...")
-            self.refpeaks.to_excel(writer, sheet_name='cfg')
+            self.refpeaks.to_excel(writer, sheet_name='cfg', index=False, header=False)
         else:
             print("No config loaded, will not write reference shifts.")
 
         if len(areas) > 0:
             print("Writing peak table...")
             df = pd.DataFrame(areas, index=areas_index)
-            df.to_excel(writer, sheet_name='area')
+            df.to_excel(writer, sheet_name='area', index_label="Time")
+            ws = writer.sheets['area']
+            ws.write(0, 0, 'Time')
         else:
             print("No peak-fit spectra, will not right integrals table.")
 
@@ -361,7 +359,7 @@ class Stack():
         writer.save()
         print(f"Done. Written to {savepath}.")
 
-    def peakfit_fids(self, overwrite=False):
+    def peakfit_fids(self, overwrite=False, method="guess"):
         print("Beginning peak fitting procedure for the stack.")
         for spec_id in self.ordered_fids:
             spec = self.spectra[spec_id]
@@ -373,7 +371,7 @@ class Stack():
                 spec.load_peaklist()
                 continue
             try:
-                spec.peak_fit()
+                spec.peak_fit(peak_method=method)
             except Exception as err:
                 print(f"There was an error during the peak fitting of fid {spec_id}:")
                 print(Exception, err, '\n')
@@ -452,8 +450,8 @@ class Spectrum():
         if manual_ps:
             p0, p1 = ng.process.proc_autophase.manual_ps(self.data, notebook=False)
             self.dic, self.data = ng.process.pipe_proc.ps(self.dic, self.data, p0=p0, p1=p1)
-            self.parent.p0 = p0
-            self.parent.p1 = p1
+            self.parent.p0 += p0
+            self.parent.p1 += p1
 
         print("Normalizing spectrum intensity...")
         self.dic, self.data = ng.process.pipe_proc.mult(self.dic, self.data, r=n_scans, inv=True) 
@@ -548,9 +546,9 @@ class Spectrum():
         plot : whether to plot the SG second derivative with found peaks
         """
         if self.parent.isotope.id == '1H':
-            noise_bounds = (self.ppm_to_float(12), self.ppm_to_float(8))
-            coarse, cpeakw = self.sg_findpeaks(101, 2, prominence_sg=5, prominence_fid=5, noise_bounds=noise_bounds, plot=plot)
-            fine, fpeakw = self.sg_findpeaks(11, 2, prominence_sg=8, prominence_fid=12, noise_bounds=noise_bounds, plot=plot)
+            noise_bounds = (self.ppm_to_int(12), self.ppm_to_int(8))
+            coarse, cpeakw = sg_findpeaks(self, 101, 2, prominence_sg=5, prominence_fid=5, noise_bounds=noise_bounds, plot=plot)
+            fine, fpeakw = sg_findpeaks(self, 11, 2, prominence_sg=8, prominence_fid=12, noise_bounds=noise_bounds, plot=plot)
         # elif isotope == '13C': # TODO: OPTIMIZE FOR 13C
         #     nr = (int(uc.f(160, unit="ppm")), int(uc.f(130, unit="ppm")))
         #     coarse_peaks = list(sg_peakpick(data, 31, 3, r=2, nr=nr))
@@ -560,7 +558,7 @@ class Spectrum():
         shifts = np.array(all_peaks)
         peakw = np.array([(pkw,) for pkw in all_widths])
         amps = np.array([self.data.real[a] for a in fine] + [0.5*self.data.real[a] for a in coarse])
-        _, cIDs = cluster_peaks(self.peaklist.ng_shifts(), self.parent.isotope.fit_cluster_msep)
+        _, cIDs = cluster_peaks([(sh,) for sh in shifts], self.ppm_to_float_span(self.parent.isotope.fit_cluster_msep))
         cIDs = np.array(cIDs)
         return PeakList(shifts, peakw, amps, cIDs)
 
@@ -575,7 +573,7 @@ class Spectrum():
         shifts = np.array(shifts)
         peakw = np.array([(self.ppm_to_float_span(0.025),) for _ in shifts])
         amps = np.array([self.data.real[sh] for sh in shifts])
-        _, cIDs = cluster_peaks(self.peaklist.ng_shifts(), self.parent.isotope.fit_cluster_msep)
+        _, cIDs = cluster_peaks(self.peaklist.ng_shifts(), self.ppm_to_float_span(self.parent.isotope.fit_cluster_msep))
         cIDs = np.array(cIDs)
         return PeakList(shifts, peakw, amps, cIDs, assignments=assignments)
 
@@ -811,7 +809,7 @@ class Spectrum():
         print("Initial peak fit complete. Packing parameters for manual assignment...")
         peak_curves = self.pack_peaks()
         print("Begin manual assignment.")
-        w = Window(
+        w = PeakFitWindow(
             self.parent.isotope, 
             peak_curves, 
             self,
@@ -898,7 +896,7 @@ class Spectrum():
         ax.set_xlim(self.parent.ppm_bounds)
         plt.show()
 
-    def peak_fit(self, r=6, sep=0.005, peak_method='guess', plot=True, vb=False, cv='l'):
+    def peak_fit(self, r=12, sep=0.005, peak_method='guess', plot=True, vb=False, cv='l'):
         """Peak-pick NMR spectrum.
         Includes peak-picking, peak assignment, and integration functionality. The
         reference peaks to be fit should be specified in cfg_{isotope}.txt and

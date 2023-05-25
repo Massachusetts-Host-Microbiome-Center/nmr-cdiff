@@ -45,6 +45,15 @@ cmap = {
     "white": [255, 255, 255], # 19. white
     "Acetate13C": [0, 0, 0],
     "AcetateNA": [100, 100, 100],
+    "Threonine": [28, 18, 195],
+    "Propionate": [253, 0, 80],
+    "n-Propanol": [24, 173, 0],
+    "2-hydroxybutyrate": [162, 62, 0],
+    "2-aminobutyrate": [74, 153, 255],
+    "Valine": [0, 0, 0],
+    "Isoleucine": [0, 0, 0],
+    "Isobutyrate": [0, 0, 0],
+    "2-methylbutyrate": [0, 0, 0]
 }
 
 def get_cmap():

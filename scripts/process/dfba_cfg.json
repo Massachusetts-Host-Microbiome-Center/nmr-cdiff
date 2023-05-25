@@ -1,0 +1,217 @@
+{
+    "method": "fba",
+    "model_file": "/Users/aj286/repos/nmr-cdiff/data/icdf843.json",
+    "objective_function": "ATP_sink",
+    "tmax_hours": 36,
+    "solutions_per_hour": 5,
+    "dry_run": false,
+    "stretch": false,
+    "nmr_substrates": [
+        {
+            "name": "Glucose",
+            "label": "13CGlc",
+            "model_id": "glc",
+            "concentration": 27.78,
+            "curve": "logistic_C_r",
+            "standards": "/Users/aj286/repos/nmr-cdiff/data/standards/13CGlc_standards",
+            "experiments": [
+                "/Volumes/cctm/apavao/NMR/20210519_13CGlc",
+                "/Volumes/cctm/apavao/NMR/20201224_13CGlc",
+                "/Volumes/cctm/apavao/NMR/20221013_13CGlc"
+            ],
+            "products": {
+                "Acetate": {
+                    "model_id": "ac",
+                    "curve": "logistic"
+                },
+                "Alanine": {
+                    "model_id": "alaL",
+                    "curve": "logistic"
+                },
+                "Ethanol": {
+                    "model_id": "eto",
+                    "curve": "logistic"
+                },
+                "Butyrate": {
+                    "model_id": "but",
+                    "curve": "logistic"
+                }
+            },
+            "plot_ticks": {
+                "start": 0,
+                "stop": 30,
+                "major_step": 10,
+                "minor_step": 1
+            }
+        },
+        {
+            "name": "Leucine",
+            "label": "13CLeu",
+            "model_id": "leuL",
+            "concentration": 7.63,
+            "curve": "logistic_r",
+            "experiments": [
+                "/Volumes/cctm/apavao/NMR/20210322_13CLeu",
+                "/Volumes/cctm/apavao/NMR/20221021_13CLeu",
+                "/Volumes/cctm/apavao/NMR/20221028_13CLeu"
+            ],
+            "products": {
+                "Isocaproate": {
+                    "model_id": "isocap",
+                    "scale": 0.633,
+                    "curve": "logistic"
+                },
+                "Isovalerate": {
+                    "model_id": "ival",
+                    "scale": 0.367,
+                    "curve": "logistic"
+                },
+                "Valine": {
+                    "model_id": "valL",
+                    "scale": 0.170,
+                    "curve": "logistic"
+                },
+                "Isobutyrate": {
+                    "model_id": "isobuta",
+                    "scale": 0.170,
+                    "curve": "logistic"
+                },
+                "Isoleucine": {
+                    "model_id": "ileL",
+                    "scale": 0.3,
+                    "curve": "logistic"
+                },
+                "2-methylbutyrate": {
+                    "model_id": "2mbut",
+                    "scale": 0.3,
+                    "curve": "logistic"
+                }
+            },
+            "plot_ticks": {
+                "start": 0,
+                "stop": 8,
+                "major_step": 1,
+                "minor_step": 0.5
+            }
+        },
+        {
+            "name": "Proline",
+            "label": "13CPro",
+            "model_id": "proL",
+            "concentration": 6.96,
+            "curve": "logistic_r",
+            "experiments": [
+                "/Volumes/cctm/apavao/NMR/20220708_13CPro",
+                "/Volumes/cctm/apavao/NMR/20221111_13CPro",
+                "/Volumes/cctm/apavao/NMR/20221118_13CPro"
+            ],
+            "products": {
+                "5-aminovalerate": {
+                    "model_id": "5apn",
+                    "scale": 1.0,
+                    "curve": "logistic"
+                }
+            },
+            "plot_ticks": {
+                "start": 0,
+                "stop": 7,
+                "major_step": 1,
+                "minor_step": 0.5
+            }
+        },
+        {
+            "name": "Acetate13C",
+            "label": "13CAc",
+            "model_id": "acoa",
+            "concentration": 9.451,
+            "curve": "logistic",
+            "experiments": [
+                "/Volumes/cctm/apavao/NMR/20221130_13CAc",
+                "/Volumes/cctm/apavao/NMR/20221131_13CAc"
+            ],
+            "products": {
+                "Acetate": {
+                    "model_id": "ac",
+                    "scale": 0.5,
+                    "curve": "logistic"
+                }
+            }
+        },
+        {
+            "name": "Threonine",
+            "label": "13CThr",
+            "model_id": "thrL",
+            "concentration": 15.0,
+            "curve": "logistic_r",
+            "standards": "/Users/aj286/repos/nmr-cdiff/data/standards/13CThr_standards",
+            "experiments": [
+                "/Volumes/cctm/apavao/NMR/20230113_13CThr",
+                "/Volumes/cctm/apavao/NMR/20230121_13CThr",
+                "/Volumes/cctm/apavao/NMR/20230331_13CThr"
+            ],
+            "products": {
+                "2-aminobutyrate": {
+                    "model_id": "2abut",
+                    "curve": "logistic_sum"
+                },
+                "2-hydroxybutyrate": {
+                    "model_id": "2hbut",
+                    "curve": "logistic"
+                },
+                "Propionate": {
+                    "model_id": "ppa",
+                    "curve": "logistic_sum"
+                },
+                "n-Propanol": {
+                    "model_id": "ppoh",
+                    "curve": "logistic"
+                },
+                "Butyrate": {
+                    "model_id": "but",
+                    "curve": "logistic"
+                }
+            },
+            "plot_ticks": {
+                "start": 0,
+                "stop": 15,
+                "major_step": 5,
+                "minor_step": 1
+            }
+        }
+    ],
+    "tracked_reactions": [
+        "ID_233",
+        "ID_53",
+        "ID_280",
+        "ID_326",
+        "RNF-Complex",
+        "ID_336",
+        "ID_366",
+        "ICCoA-DHG-EB",
+        "ID_314",
+        "ID_383",
+        "BUK",
+        "HydEB",
+        "ATP_sink",
+        "ATPsynth4_1",
+        "ID_575",
+        "ID_469",
+        "ID_146",
+        "ID_321",
+        "ID_252",
+        "ID_407",
+        "ID_582",
+        "ID_1",
+        "Ex_biomass",
+        "Sec_exopoly"
+    ],
+    "tracked_metabolites": [
+        "alaL",
+        "gluL",
+        "atp",
+        "pyr",
+        "nh3",
+        "datp",
+        "fru16bp"
+    ]
+}

@@ -31,19 +31,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from process import main as process
-
-SUBSTRATE = 'Glucose'
-
 carbons = {
     'Glucose': 6,
     'Butyrate': 3,
     'Alanine': 2,
     'Ethanol': 2,
     'Acetate': 1,
+    'Threonine': 3,
+    '2-aminobutyrate': 3,
+    '2-hydroxybutyrate': 3,
+    'Propionate': 2,
+    'n-Propanol': 3,
 }
 
-def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
+def compute_standard_curves(filepath=None, substrate="Glucose", plot=True, plot_confint=False):
     """Calcualte standard curve regressions from standard solutions.
     Returns dict of scale factors transforming substrate concentration to
     product concentration.
@@ -63,10 +64,6 @@ def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
         filepath = os.getcwd() # path to working directory
     basename = os.path.basename(filepath) # current run name
 
-    # Process standard curve spectra, will be written to an excel file
-    if not os.path.exists(f'{filepath}/{basename}_13C.xlsx'):
-        process('13C', '1')
-
     # Load "area" sheet of excel file
     areas = pd.read_excel(
         f'{filepath}/{basename}_13C.xlsx', sheet_name='area',
@@ -81,8 +78,8 @@ def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
 
     # Normalize concentration/area
     norm = conc/areas
-    norm_products = norm[[c for c in norm.columns if c != SUBSTRATE]]
-    M = np.array(norm[SUBSTRATE])[:, np.newaxis]
+    norm_products = norm[[c for c in norm.columns if c != substrate]]
+    M = np.array(norm[substrate])[:, np.newaxis]
 
     # Linear regression of each compound's area with respect to glucose
     scale_factors = dict() # Linear regression slopes to return
@@ -90,12 +87,16 @@ def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
     if plot:
         plt.rc('font', **{'family':'sans-serif','sans-serif':['Arial'],
                'size':12})
-        shape = int(np.ceil(np.sqrt(norm_products.shape[1])))
-        fig, axs = plt.subplots(nrows=shape, ncols=shape, figsize=(15,11))
+        shape = int(np.ceil(norm_products.shape[1]/2))
+        fig, axs = plt.subplots(nrows=2, ncols=shape, figsize=(7.5*shape,11))
 
     for i, c in enumerate(norm_products.columns):
         # Filter out nan values and low signal
-        mask = (~np.isnan(norm_products[c])) & (areas[c]/carbons[c] > 15)
+        if '13CThr' in filepath:
+            threshold = 35
+        else:
+            threshold = 15
+        mask = (~np.isnan(norm_products[c])) & (areas[c]/carbons[c] > threshold)
         A = np.array(norm_products[c])[mask]
         M_f = M[mask, :]
 
@@ -104,6 +105,8 @@ def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
         slope = slope[0]
         ssr = ssr[0]
         scale_factors[c] = slope
+        if c == "2-hydroxybutyrate":
+            scale_factors["2-aminobutyrate"] = slope
 
         # Calculate and report statistics
         ser = np.sqrt(ssr/(np.sum(mask) - 2))
@@ -118,7 +121,7 @@ def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
         # Plot result
         if plot:
             ax = axs[i // shape, i % shape]
-            xmax = 1.1*max(norm.loc[~np.isnan(norm_products[c]), SUBSTRATE])
+            xmax = 1.1*max(norm.loc[~np.isnan(norm_products[c]), substrate])
             if plot_confint:
                 pars = {'color':'k', 'ls':':', 'lw':0.5, 'alpha':0.1}
                 ax.fill_between(
@@ -127,12 +130,12 @@ def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
                 )
             ax.plot((0, xmax), (0, slope*xmax), lw=1, color='k')
             im = ax.scatter(
-                np.array(norm[SUBSTRATE])[mask], A, marker='o', edgecolors='w',
+                np.array(norm[substrate])[mask], A, marker='o', edgecolors='w',
                 cmap='rainbow_r', c=(areas[c]/carbons[c])[mask],
                 facecolors=areas[c][mask], linewidths=0.5
             )
             ax.scatter(
-                np.array(norm[SUBSTRATE])[~mask],
+                np.array(norm[substrate])[~mask],
                 np.array(norm_products[c])[~mask], marker='x', facecolors='k',
                 linewidths=1
             )
@@ -142,13 +145,14 @@ def compute_standard_curves(filepath=None, plot=True, plot_confint=False):
             plt.setp(ax.spines.values(), linewidth=1)
             ax.set_title(c, size=14, weight='bold')
             ax.set_xlabel(
-                f'[{SUBSTRATE}]/Integrated {SUBSTRATE} signal (mM/a.u.)',
+                f'[{substrate}]/Integrated {substrate} signal (mM/a.u.)',
             )
             ax.set_ylabel(f'[{c}]/Integrated {c} signal (mM/a.u.)')
             labs = f"$y = {slope:.2f}*x$\n$R^2 = {rsquared:.3f}$"
             ax.text(xmax*0.75, slope*xmax*0.75, labs, ha='left', va='top')
 
     if plot:
+        plt.tight_layout()
         plt.savefig(f"{filepath}/{basename}_standards.svg")
         plt.close()
 

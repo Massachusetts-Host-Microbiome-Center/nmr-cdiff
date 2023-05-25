@@ -33,7 +33,6 @@ import pandas as pd
 import scipy
 
 from curveshapes import logi_c, inv_logi_c
-from process import main as process
 
 def calculate_5p(filepath, plot=False):
     """Calculate x value when logistic reaches min/max 5 percent."""

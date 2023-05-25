@@ -1,0 +1,68 @@
+{
+    "13CGlc": {
+        "name": "Glucose",
+        "label": "13CGlc",
+        "concentration": 27.78,
+        "consumed": false,
+        "plot_ticks": {
+            "start": 0,
+            "stop": 30,
+            "major_step": 10,
+            "minor_step": 1
+        }
+    },
+    "13CPro": {
+        "name": "Proline",
+        "label": "13CPro",
+        "concentration": 6.96,
+        "consumed": true,
+        "products": {
+            "5-aminovalerate": 1.0
+        },
+        "plot_ticks": {
+            "start": 0,
+            "stop": 7,
+            "major_step": 1,
+            "minor_step": 0.5
+        }
+    },
+    "13CLeu": {
+        "name": "Leucine",
+        "label": "13CLeu",
+        "concentration": 7.63,
+        "consumed": true,
+        "products": {
+            "Isocaproate": 0.633,
+            "Isovalerate": 0.367,
+            "Isobutyrate": 0.170,
+            "2-methylbutyrate": 0.3
+        },
+        "plot_ticks": {
+            "start": 0,
+            "stop": 8,
+            "major_step": 1,
+            "minor_step": 0.5
+        }
+    },
+    "13CAc": {
+        "name": "Acetate13C",
+        "label": "13CAc",
+        "concentration": 13.445,
+        "consumed": true,
+        "products": {
+            "AcetateNA": 0.5
+        }
+    },
+    "13CThr": {
+        "name": "Threonine",
+        "label": "13CThr",
+        "concentration": 15.0,
+        "consumed": true,
+        "plot_ticks": {
+            "start": 0,
+            "stop": 15,
+            "major_step": 5,
+            "minor_step": 1
+        }
+    }
+}

@@ -23,7 +23,9 @@ Copyright 2022 Massachusetts Host-Microbiome Center
    limitations under the License.
 
 """
+import argparse
 from collections import defaultdict
+import json
 import os
 import sys
 
@@ -34,7 +36,8 @@ import numpy as np
 import openpyxl as xl
 import pandas as pd
 
-from curveshapes import LogisticSet
+from curveshapes import Metabolite, LogisticSet
+from standard_curves import compute_standard_curves
 from synchronize import synchronizers
 from trajectories import fit_trajectories
 from get_color import get_cmap
@@ -49,120 +52,101 @@ METHODS = {
     'pfba': cb.flux_analysis.pfba,
 }
 
-## Objective function for dFBA simulations
-# objective_function = 'ATP_sink'
-# objective_function = 'Ex_biomass'
-objective_function = 'Sec_exopoly'
+class MetaboliteCollection:
+    def __init__(self):
+        self.name_map = {}
+        self.id_map = {}
 
-## Arguments to dFBA function. Edit these to modify behavior.
-dFBA_kwargs = {
-    'modelfile': MODEL_PATH, # string filepath to model
-    't_max': 36, # end of simulated timecourse, in hours
-    'resolution': 5, # number of solutions per hour in simulated timecourse
-    'obj': objective_function, # Objective function, change above
-}
+    def new(self, met_id, met_name, substrate_name, scale):
+        if (met_name not in self.name_map) and (met_id not in self.id_map):
+            met = Metabolite(met_id, met_name)
+            self.name_map[met.name] = met
+            self.id_map[met.id] = met
+        else:
+            met = self.get_by_id(met_id)
+        met.set_substrate_scale(substrate_name, scale)
 
-## Identifiers of reactions to track
-tracked_reactions = [
-    "ID_233", # 1. Phosphoglycerate kinase
-    "ID_53",  # 2. PFOR
-    "ID_280", # 3. Ac Kinase
-    "ID_326", # 4. WLP
-    "RNF-Complex", # 5. RNF
-    "ID_336", # 6. ALT
-    "ID_366",  # 7. isovalerate kinase
-    "ICCoA-DHG-EB",  # 8. Red Leu
-    "ID_314",  # 9. Pro Red
-    "ID_383",  # 10. EtOH dehydrogenase
-    "BUK",     # 11. Butyrate kinase
-    "HydEB",   # 12. electron-bifurcating hydrogenase
-    "ATP_sink", # 13. ATP objective
-    "ATPsynth4_1", # 14. ATP synthase
-    "ID_575", # 15. GDH
-    "ID_469", # 16. Cys gamma-lyase
-    "ID_146", # 17. Ox Ile
-    "ID_321", # 18. Ox Val
-    "ID_252", # 19. pyruvate kinase (ADP)
-    "ID_407", # pyruvate kinase (UDP)
-    "ID_582", # pyruvate kinase (CDP)
-    "ID_1",   # pyruvate kinase (IDP)
-    "Ex_biomass",
-    "Sec_exopoly",
-]
+    def get(self, met_id):
+        return self.get_by_id(met_id)
 
-## Identifiers of metabolites to track (i.e. compute reaction flux fractions)
-tracked_metabolites = [
-    "alaL", #L-alanine
-    "gluL", #L-glutamate
-    "atp",  #ATP
-    "pyr",  #Pyruvate
-    "nh3",  #Ammonia
-    "datp",
-    "fru16bp",
-]
+    def get_by_id(self, met_id):
+        if met_id in self.id_map:
+            return self.id_map[met_id]
+        else:
+            raise ValueError(f"Collection does not contain metabolite {met_id}.")
+        
+    def get_by_name(self, name):
+        if name in self.name_map:
+            return self.name_map[name]
+        else:
+            raise ValueError(f"Collection does not contain metabolite {name}.")
+        
+    def get_values(self):
+        return self.id_map.values()
+    
+    def get_ids(self):
+        return self.id_map.keys()
 
-## Map names to metabolite identifiers, add to this as new datasets are included
-metmap = {
-    'Glucose': 'glc',
-    'Acetate': 'ac',
-    'Alanine': 'alaL',
-    'Ethanol': 'eto',
-    'Butyrate': 'but',
-    'Proline': 'proL',
-    'Leucine': 'leuL',
-    'Isovalerate': 'ival',
-    'Isocaproate': 'isocap',
-    'Valine': 'valL',
-    'Isobutyrate': 'isobuta',
-    'Isoleucine': 'ileL',
-    '2-methylbutyrate': '2mbut',
-    'Acetate13C': 'acoa',
-    'AcetateNA': 'gly',
-}
+    def get_items(self):
+        return self.id_map.items()
+    
+    def pop(self, mid):
+        item = self.id_map.pop(mid)
+        self.name_map.pop(item.name)
+        return item
 
-namemap = {
-    'Glucose': 'beta-D-glucose',
-    'Acetate': 'acetate',
-    'Alanine': 'L-alanine',
-    'Ethanol': 'ethanol',
-    'Butyrate': 'Butyrate',
-    'Proline': 'L-proline',
-    'Leucine': 'L-leucine',
-    'Isovalerate': 'Isovalerate',
-    'Isocaproate': 'Isocaproate',
-    'Valine': 'L-valine',
-    'Isobutyrate': 'isobutyric acid',
-    'Isoleucine': 'L-isoleucine',
-    '2-methylbutyrate': '2-Methylbutyric acid',
-    'Acetate13C': 'acetyl-CoA',
-    'AcetateNA': 'glycine',
-}
+class Substrate():
+    def __init__(self, name, label, model_id, concentration, curve, experiments, products,
+                 product_ids, product_curves, from_standards, plot_ticks=None):
+        self.name = name
+        self.label = label
+        self.model_id = model_id
+        self.experiments = experiments
+        self.cx = concentration
+        self.curve = curve
+        self.products = products
+        self.product_ids = product_ids
+        self.product_curves = product_curves
+        self.from_standards = from_standards
+        self.plot_ticks = plot_ticks
 
-substrate_map = {
-    'Glucose': [
-        'Glucose',
-        'Acetate',
-        'Alanine',
-        'Ethanol',
-        'Butyrate',
-    ],
-    'Leucine': [
-        'Leucine',
-        'Isovalerate',
-        'Isocaproate',
-    ],
-    'Proline': [
-        'Proline',
-        '5-aminovalerate',
-    ],
-    'Acetate13C': [
-        'Acetate13C',
-        'AcetateNA',
-    ]
-}
-
-## Whether to stretch (True) or just shift (False) timecourse during normalization
-stretch = False
+    @classmethod
+    def from_json(cls, jobj, metabolite_collection: MetaboliteCollection):
+        required_fields = ["name", "label", "model_id", "concentration", "curve", 
+                           "experiments", "products"]
+        positional_args = []
+        try:
+            substrate_name = jobj["name"]
+            for field in required_fields:
+                positional_args.append(jobj.pop(field))
+        except KeyError:
+            print(f"Field {field} missing for substrate {substrate_name}.")
+            raise
+        products = positional_args.pop(6)
+        product_ids = {k: v["model_id"] for k, v in products.items()}
+        product_curves = {k: v["curve"] for k, v in products.items()}
+        from_standards = ("standards" in jobj)
+        if from_standards:
+            fpath = jobj.pop("standards")
+            product_scale = compute_standard_curves(filepath=fpath, substrate=substrate_name)
+        else:
+            try:
+                product_scale = {k: v['scale'] for k, v in products.items()}
+            except KeyError:
+                print("Expected field \"scale\" for all products of metabolite " \
+                      + f"{substrate_name} where path to standards file was not proveded, " \
+                      + "but at least one \"scale\" field was missing.")
+                print("Please provide either scale fields or a standards field.")
+                raise
+        metabolite_collection.new(positional_args[2], substrate_name, substrate_name, 1.)
+        for metname, metdata in products.items():
+            metabolite_collection.new(metdata["model_id"], metname, substrate_name, product_scale[metname])
+        return cls(*positional_args, product_scale, product_ids, product_curves, from_standards, **jobj)
+    
+    def metmap(self):
+        met_dict = {self.name: self.model_id}
+        met_dict.update({k: v for k, v in self.product_ids.items()})
+        return met_dict
 
 def set_bounds(model, rid, lower=0., upper=1000., update=True):
     """Set upper and lower flux bounds for a reaction.
@@ -213,7 +197,7 @@ def update_uptake_bounds(model, t, met, params, update=True):
         set_bounds(model, 'Sec_but', lower=exch_l, upper=exch_u, update=update)
         set_bounds(model, 'ID_326', lower=exch_l, upper=exch_u, update=update)
     # Ignore data from 1H spectra
-    elif met in ['gly', 'acoa']:
+    elif met in ['acoa']:
         pass
     # Update bounds for products
     else:
@@ -254,6 +238,7 @@ def areaplot(df, dl, du, t_max=48, ylabel='flux (mol/gDW/h)'):
     ax.set_ylabel(ylabel, fontsize=30, fontweight='bold')
     plt.xticks(ax.get_xticks(), weight='bold')
     plt.yticks(ax.get_yticks(), weight='bold')
+    plt.legend()
     plt.show()
 
 def niceplot(df, t_max=48, ylabel='flux (mol/gDW/h)'):
@@ -276,10 +261,11 @@ def niceplot(df, t_max=48, ylabel='flux (mol/gDW/h)'):
     ax.set_ylabel(ylabel, fontsize=30, fontweight='bold')
     plt.xticks(ax.get_xticks(), weight='bold')
     plt.yticks(ax.get_yticks(), weight='bold')
-    plt.title("dFBA (10/h), ATP, WLP > 8h")
+    # plt.title("dFBA (10/h), ATP, WLP > 8h")
+    plt.legend()
     plt.show()
 
-def areaplot2(t, params):
+def areaplot2(t, substrates, params: MetaboliteCollection):
     """Plot lines with shaded confidence interval.
 
     Parameters:
@@ -290,29 +276,21 @@ def areaplot2(t, params):
     ylabel -- y-axis label
     """
     cmap = get_cmap()
-    for substrate, products in substrate_map.items():
-        f = plt.figure(figsize=(2.5, 2), constrained_layout=True)
-        ax = plt.axes()
-        for met in products:
-            ser = params[met].get_sol(t)[0]
-            _, _, lb, ub = params[met].get_bounds(t)
-            color = cmap[met]
-            ax.plot(t, ser, '-', label=met, lw=2, c=color)
-            color = color + (0.2,)
-            ax.fill_between(t, lb, ub, color=color)
+    figmap = {}
+    for substrate in substrates:
+        figmap[substrate.name] = plt.figure(figsize=(2.5, 2), constrained_layout=True)
+        ax = figmap[substrate.name].add_subplot(111)
         afont = {'fontname': 'Arial', 'size': 7}
         ax.set_xlabel("Time (h)", **afont)
         ax.set_ylabel("Estimated Concentration (mM)", **afont)
         ax.set_xlim((0, 36))
-        if substrate == "Glucose":
-            ax.set_yticks([0, 10, 20, 30])
-            ax.set_yticks(list(range(-2, 31)), minor=True)
-        elif substrate == "Proline":
-            ax.set_yticks([0, 1, 2, 3, 4, 5, 6, 7])
-            ax.set_yticks(list(np.arange(-0.5, 8, 0.5)), minor=True)
-        elif substrate == "Leucine":
-            ax.set_yticks([0, 1, 2, 3, 4, 5, 6, 7, 8])
-            ax.set_yticks(list(np.arange(-0.5, 9, 0.5)), minor=True)
+        if substrate.plot_ticks is not None:
+            start = substrate.plot_ticks["start"]
+            stop = substrate.plot_ticks["stop"]
+            major = substrate.plot_ticks["major_step"]
+            minor = substrate.plot_ticks["minor_step"]
+            ax.set_yticks(np.arange(start, stop+major, major))
+            ax.set_yticks(np.arange(start, stop+minor, minor), minor=True)
         ax.set_xticks([0, 12, 24, 36])
         ax.set_xticks(list(range(37)), minor=True)
         ax.set_xticklabels(ax.get_xticks(), **afont)
@@ -320,7 +298,20 @@ def areaplot2(t, params):
         ax.xaxis.set_tick_params(width=0.5)
         ax.yaxis.set_tick_params(width=0.5)
         plt.setp(ax.spines.values(), linewidth=0.5)
-        plt.show()
+    for cpdset in params.get_values():
+        for substrate_name, curveset in cpdset.logistic_sets.items():
+            f = figmap[substrate_name]
+            ax = f.get_axes()[0]
+            ser = curveset.get_sol(t)[0]
+            _, _, lb, ub = curveset.get_bounds(t)
+            color = cmap[cpdset.name]
+            ax.plot(t, ser, '-', label=cpdset.name, lw=2, c=color)
+            color = color + (0.2,)
+            ax.fill_between(t, lb, ub, color=color)
+    plt.show()
+    # for sub, fig in figmap.items():
+    #     plt.figure(fig.number)
+    #     plt.show()
 
 def load_model(modelfile, objective):
     """Load model and set constraints."""
@@ -338,13 +329,12 @@ def load_model(modelfile, objective):
         if rxn.id in ['Ex_valL', 'Ex_ileL']:
             rxn.upper_bound=0
     model.reactions.Ex_glc.upper_bound=0
-    model.reactions.Ex_thrL.upper_bound = 0
     model.reactions.Ex_cysL.upper_bound = 1000
     return model
 
-def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False, 
-              tracked_mets=["alaL", "gluL"], modelfile=MODEL_PATH,
-              t_max=48, resolution=1, obj="ATP_sink", dry_run=False):
+def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_method, substrates, 
+              fva_run=False, tracked_reactions=[], tracked_metabolites=[], 
+              tmax_hours=48, solutions_per_hour=1, dry_run=False):
     """Main function to compute dFBA solutions.
     Computes successive static FBA solutions and plots the estimated metabolite
     concentrations, uptake rates, and tracked reaction fluxes.
@@ -363,29 +353,32 @@ def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False,
     dry_run -- True to avoid writing output to file (default False)
     """
     print(f"""dFBA log: Begin dFBA analysis with sheet, endpoint
-          {t_max} hours, and resolution {resolution}.""")
+          {tmax_hours} hours, and resolution {solutions_per_hour}.""")
     print(f"Using method {fba_method}.")
     if dry_run:
         print("Dry run, will not write results.")
     # Load metabolic model and logistic fit specs #
     print('dFBA log: loading model and specsheet...')
-    model = load_model(modelfile, obj)
+    model = load_model(model_file, objective_function)
+    model.solver = 'glpk'
     
     # Set up logistic parameters and time scale
-    params = {mi: params[mn] for mn, mi in metmap.items() if mn in params}
-    ts_array = np.linspace(0, t_max, num=t_max*resolution+1)
+    ts_array = np.linspace(0, tmax_hours, num=tmax_hours*solutions_per_hour+1)
     timecourse = list(ts_array)
-    for mi, param_set in params.items():
+    for mi, param_set in params.get_items():
         param_set.eval(ts_array)
-    for mi in "valL", "isobuta":
-        params[mi].tshift(params["isocap"].halfmax())
+
+    # Special-case adjustments for certain metabolites
+    params.pop("5apn")
+    for mi in "valL", "isobuta": # Remove these 4 lines if we get Val and Ile runs
+        params.get_by_id(mi).tshift("Leucine", params.get_by_id("isocap").halfmax("Leucine"))
     for mi in "ileL", "2mbut":
-        params[mi].tshift(params["proL"].halfmax())
+        params.get_by_id(mi).tshift("Leucine", params.get_by_id("proL").halfmax("Proline"))
     
     # Initialize data structure for tracked metabolites
     propdata = dict()
     propmets = []
-    for mi in tracked_mets:
+    for mi in tracked_metabolites:
         if model.metabolites.has_id(mi + "_c"):
             propdata[mi] = {
                 'rxns_in': set([]),
@@ -403,9 +396,9 @@ def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False,
             print(f"'{mi}_c' is not a valid metabolite.")
 
     # Initialize results dataframes
-    mnames = [model.metabolites.get_by_id(mn + '_c').name for mn in params]
+    mnames = [model.metabolites.get_by_id(mi + '_c').name for mi in params.get_ids()]
     results = [pd.DataFrame(0., index=timecourse, columns=mnames) for _ in range(6)]
-    rnames = [model.reactions.get_by_id(ri).name for ri in tracked_rxns]
+    rnames = [model.reactions.get_by_id(ri).name for ri in tracked_reactions]
     rxnflux = pd.DataFrame(0., index=timecourse, columns=rnames)
     if fva_run:
         rxnf_ub = pd.DataFrame(0., index=timecourse, columns=rnames)
@@ -418,33 +411,31 @@ def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False,
     # Simulate static solutions over timecourse
     for i, t in enumerate(timecourse):
         # Update exchange flux bounds for each constrained metabolite
-        for j, mi in enumerate(params):
+        for j, (mi, curveset) in enumerate(params.get_items()):
             ## Calculate and set exchange constraints ##
-            fbounds = update_uptake_bounds(model, t, mi, params[mi])
+            fbounds = update_uptake_bounds(model, t, mi, curveset)
             mn = model.metabolites.get_by_id(mi + '_c').name
 
             ## Record exchange constraints ##
-            if not (obj == "ATP_sink" and mi == 'glc'):
+            if not (objective_function == "ATP_sink" and mi == 'glc'):
                 for k, df in enumerate(results):
                     df.at[t, mn] = fbounds[k]
 
             ## Calculate glucose uptake constraint ##
-            if obj == "ATP_sink" and mi in ['ac', 'eto', 'but', 'alaL']:
-                for k, df in enumerate(results):
+            if objective_function == "ATP_sink" and mi in ['ac', 'eto', 'but', 'alaL']:
+                signal, _, exch, _ = curveset.get_sol(t, substrate="Glucose")
+                exch_l, exch_u, signal_l, signal_u = curveset.get_bounds(t, substrate="Glucose")
+                gbounds = [exch, exch_l, exch_u, signal, signal_l, signal_u]
+                for df, bound in zip(results, gbounds):
                     if mi == 'but':
-                        df.at[t, 'beta-D-glucose'] += fbounds[k]
+                        df.at[t, 'beta-D-glucose'] += bound
                     else:
-                        df.at[t, 'beta-D-glucose'] += 0.5*fbounds[k]
+                        df.at[t, 'beta-D-glucose'] += 0.5*bound
 
         ## Set glucose uptake constraint ##
-        if obj == "ATP_sink":
+        if objective_function == "ATP_sink":
             set_bounds(model, "Ex_glc", lower=results[1].at[t, 'beta-D-glucose'],
                        upper=results[2].at[t, 'beta-D-glucose'], update=True)
-
-        ## Add natural abundance acetate allowance to secretion constraint ##
-        lower, upper = model.reactions.Sec_ac.bounds
-        set_bounds(model, "Sec_ac", lower=lower+results[1].at[t, 'glycine'],
-                   upper=upper+results[2].at[t, 'glycine'], update=True)
 
         ## Get flux solution(s) and populate arrays ##
         sol = fba_method(model)
@@ -458,10 +449,10 @@ def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False,
             fullflux_ub.loc[t, :] = sol_v['maximum']
         if i % 10 == 0:
             print(f'dFBA log: Time = {t}  (cycle {i+1}) \tFBA solution: ' \
-                  f'{sol.fluxes[obj]}')
-        if sol.fluxes[obj] < 0.0001:
+                  f'{sol.fluxes[objective_function]}')
+        if sol.fluxes[objective_function] < 0.0001:
             print(f'dFBA log: infeasible solution on cycle {i}.')
-        for ri in tracked_rxns:
+        for ri in tracked_reactions:
             rn = model.reactions.get_by_id(ri).name
             rxnflux.at[t, rn] = sol.fluxes[ri]
             if fva_run:
@@ -535,11 +526,8 @@ def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False,
     print(f'Complete after {i} cycles ({t} hours). Final flux: '\
           f' {sol.fluxes["Ex_biomass"]}')
     areaplot(results[0], results[1], results[2], ylabel='flux (mM/h)')
-    plt.show()
     areaplot(results[3], results[4], results[5], ylabel='normalized signal')
-    plt.show()
     niceplot(rxnflux)
-    plt.show()
 
     ## Write run results ##
     if not dry_run:
@@ -631,57 +619,69 @@ def dfba_main(params, tracked_rxns, fba_method=METHODS['fba'], fva_run=False,
     if not dry_run:
         writer.close()
 
-def handle_args(args):
-    """Parse command line call and run dFBA function."""
-    if len(args) < 1:
-        print("Please provide a FBA method to use. Options: " +
-              ", ".join(METHODS))
-        return
-    elif len(args) < 2:
-        print("Please provide a FBA method and paths to at least one dataset.")
-        return
-    method = args.pop(0)
-    fva_run = False
+def read_and_validate_cfg(cfg_filepath):
+    with open(cfg_filepath, "r") as rf:
+        cfg = json.loads(rf.read())
+    required_fields = ["method", "model", "objective_function", "nmr_substrates"]
+    for field in required_fields:
+        try:
+            val = cfg[field]
+        except KeyError:
+            print(f"JSON config missing required field {field}.")
+    return cfg
+
+def run_from_cfg(cfg_filepath):
+    """Parse dFBA arguments from JSON config"""
+    cfg = read_and_validate_cfg(cfg_filepath)
+    params = MetaboliteCollection()
+    substrates = [Substrate.from_json(s, params) for s in cfg.pop("nmr_substrates")]
+    all_experiments = {}
+    for substrate in substrates:
+        all_experiments.update({exp: substrate for exp in substrate.experiments})
+
+    method = cfg.pop("method")
     if method == 'fva':
-        sim_fun = METHODS['fba']
+        fba_method = METHODS['fba']
         fva_run = True
     elif method in METHODS:
-        sim_fun = METHODS[method]
+        fba_method = METHODS[method]
+        fva_run = False
     else:
         print(f"Unsupported FBA method {method}. Please select one of "
                 + ", ".join(METHODS))
         return
-    dirs = [fp.rstrip('/') for fp in args]
-    params = defaultdict(LogisticSet)
-    runcount = dict()
-    for i, tscale in enumerate(synchronizers(dirs, stretch=stretch, \
-            plot=False)):
-        filepath = dirs[i]
-        curves, errors, substrate = fit_trajectories(filepath, tscale=tscale, plot=True)
-        runcount[substrate] = runcount.get(substrate, 0) + 1
+    sync_functions = synchronizers(
+        [path for path in all_experiments], 
+        stretch=cfg.pop("stretch", False), 
+        plot=False
+    )
+    for tscale, (exp, substrate) in zip(sync_functions, all_experiments.items()):
+        curves, errors = fit_trajectories(exp, substrate, tscale=tscale, plot=True)
         for met, pset in curves.items(): # update LogisticSet of metabolite
-            params[met].add_curve(pset, errors[met])
-    t_max = dFBA_kwargs['t_max']
-    t_num = dFBA_kwargs['t_max']*dFBA_kwargs['resolution']
+            params.get_by_name(met).add_curve(substrate.name, pset, errors[met])
     print("=========")
     print("dFBA run average curveshapes.")
     print("---------")
-    for substrate, nruns in runcount.items():
-        for met in substrate_map[substrate]:
-            params[met].set_runcount(nruns)
-    for met, curveset in params.items():
-        print(met)
-        param_names = ["L", "k", "x0"]
-        if met in ["Glucose", "Leucine", "Proline"]:
-            param_names.append("C")
-        curveset.display_avg_coeffs(param_names)
-    areaplot2(np.linspace(0, t_max, num=t_num), params)
-    dfba_main(
-        params, tracked_reactions, fba_method=sim_fun, fva_run=fva_run,
-        **dFBA_kwargs, tracked_mets=tracked_metabolites
-    )
+    for substrate in substrates:
+        for met in substrate.metmap():
+            params.get_by_name(met).set_runcount(substrate.name, len(substrate.experiments))
+    for mid, curveset in params.get_items():
+        print(mid)
+        curveset.display_avg_coeffs()
+    t_max = cfg["tmax_hours"]
+    t_num = t_max*cfg["solutions_per_hour"] + 1
+    areaplot2(np.linspace(0, t_max, num=t_num), substrates, params)
+    dfba_main(params, fva_run=fva_run, fba_method=fba_method, substrates=substrates, **cfg)
+
+def handle_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('cfgpath', metavar='CONFIG', help='path to dFBA config file')
+    args = parser.parse_args()
+    if not os.path.exists(args.cfgpath):
+        print("Not a valid path " + args.cfgpath)
+        return
+    run_from_cfg(args.cfgpath)
 
 if __name__ == "__main__":
     """Handle command line call"""
-    handle_args(sys.argv[1:])
-    
+    handle_args()    
