@@ -65,18 +65,39 @@ One short unprocessed NMR run and two processed runs are included in the [test d
 We will process the glucose run and simulate dFBA. For convenience, we have included `cfg_13C.txt` and `cfg_1H.txt` in the run directory, which contain reference chemical shifts for the substrate and expected products. For each substrate, these files must be prepared before processing is run.
 
 ## Processing the NMR runs (15 minutes per run)
-### Load process.py and create a Stack object
+### The Stack object
 We will begin by processing the NMR datasets using the [process.py](scripts/process/process.py) script. Navigate to the directory containing the python scripts, and start an interactive python session.  
 ```
 cd nmr-cdiff/scripts/process
 python3
 ```
-Now, we will import the Stack class and create a Stack object for our NMR run. This will serve as the basis for our processing functions. When we create the Stack object, we will need to specify the filepath of the run, as well as the isotope and the spectrum FID to use as the timestamp anchor.
+Now, we will import the Stack class from process.py and create a Stack object for our NMR run. This will serve as the basis for our processing functions. When we create the Stack object, we will need to specify the filepath of the run, as well as the isotope and the spectrum FID to use as the timestamp anchor.
 ```
 from process import Stack
 s = Stack("nmr-cdiff/data/test/20210519_13CGlc", "13C", "52")
 ```
-This will create a stack object for our test glucose run, and specify that we want to process the 13C spectra with FID number 52 as our anchor.
+This will create a stack object for our test glucose run, and specify that we want to process the 13C spectra with FID number 52 as our anchor.  
+
+Our `Stack` object `s` has several useful attributes and methods that we will use:  
+Attributes:  
+* `s.refpeaks` : a pandas dataframe that stores the reference peaks from `cfg_13C.txt`. You can manually load a new config with the line `s.refpeaks = s.load_cfg()`.  
+* `s.ordered_fids` : a list of strings, representing the names of the FIDs to be included in the Stack. Set this manually if automatic FID detection fails.  
+* `s.spectra` : a dictionary mapping the FIDs' string labels to Spectrum objects. For example, to access FID \#23, use `spec = s.spectra["23"]`. This dictionary is populated by `s.process_fids()`.  
+
+Methods:  
+* `s.calibrate()` : a method that finds calibration parameters for processing. This method must be run before `process_fids()`.  
+* `s.process_fids()` : this function process all FIDs in a Stack. The processing function `process_fids` has several keyword arguments that affect the function's behavior:  
+    * `man_ps` : whether to perform manual phase correction for each spectrum (default: `False`).  
+    * `auto_bl` : whether to use NMRPipe's automatic baseline correction (default: `True`, recommended for 13C spectra).  
+    * `man_bl` : whether to use the in-house manual baseline correction with draggable nodes and spline fit (default: `False`, recommended for 1H\[13Ced\] spectra).  
+    * `overwrite` : whether to force overwrite of existing processed spectra (default: `False`).  
+* `s.peakfit_fids()` : a method to perform peak-picking and curve fitting on all spectra in the Stack. In addition to the following keyword arguments, this function can pass any additioal keyword arguments to `spec.peak_fit()`.
+    * `overwrite` : whether to force overwrite of existing fit peaks (default: `False`).
+    * `method` : the method to use for finding peaks. Supported: `"ng_pick"` (default): use nmrglue's peak-picking algorithm, recommended for 13C; `"sg_pick"`: use in-house Savitsky-Golay filtering algorithm, recommended for 1H\[13Ced\].  
+* `s.ridgetrace_fids()` : an alternative to `peakfit_fids`, this method tracks amplitude rather than peak area for all peaks specified in `refpeaks`. 
+* `s.write_stack()` : write the processed spectra, reference peaks, and/or compound-designated peak areas to an Excel spreadsheet. This can be thought of as "exporting" the processed Stack.
+    * `suffix` : a suffix to add to the end of the filename, which is helpful if different versions are desired.
+    * `from_ridges` : whether to populate the "areas" tab with the `ridgetrace_fids` output instead of the `peakfit_fids` output (default: `False`).
 
 ### Find the calibration parameters
 Let's first find some calibration parameters to make processing go faster. We will need to run our Stack's `calibrate` method.
@@ -84,58 +105,41 @@ Let's first find some calibration parameters to make processing go faster. We wi
 s.calibrate()
 ```
 1. You will first be prompted for phase correction.  
-    <img width="752" alt="Phasing_unphased" src="https://user-images.githubusercontent.com/29278926/174334460-d3786f90-8032-415b-8d8c-f78a4e68eea2.png">  
-    Slide the p0 and p1 bars until the spectrum is well-phased.  
-
-    <img width="752" alt="Phasing_phased" src="https://user-images.githubusercontent.com/29278926/174334459-bed1879d-a99d-4533-90dc-30688a1cb535.png">  
+    1. First, find the ppm shift of the **right-most** peak using the cursor on the plot. Next, slide the **pivot** slider to match this value.  
+    2. Adjust the **p0** slider until the **right-most** peak is well-phased.  
+    3. Adjust the **p1** slider until the **left-most** peak is well-phased.  
+    4. Adjust **p0** and **p1** slightly until all peaks are well-phased.  
 
     Press the "Set Phases" button, and close the window. For this spectrum, **p0=70.3** and **p1=99.9** were appropriate values.  
 
-2. Next, you will be prompted to calibrate the reference shift.
-    - Find a well-separated peak in the reference 13C spectrum of Glucose. The peak at **72.405 ppm** appears suitable in [this reference spectrum from HMDB](https://hmdb.ca/spectra/nmr_one_d/166522). Type this in the field for the reference peak.
-    - Next, find the corresponding peak in the spectrum, which may be slightly shifted from 72.405 ppm. Use the zoom tool to locate the peak and cursor to find the chemical shift at the center of the peak. Enter this experimental chemical shift and click Submit.  
-
-        <img width="752" alt="Calib1" src="https://user-images.githubusercontent.com/29278926/174334449-7f676cb0-5b16-4b1f-a443-c6777a0fb844.png">  
+1. Next, you will be prompted to calibrate the reference shift.
+    1. Find a well-separated peak in the reference 13C spectrum of Glucose. The peak at **72.405 ppm** appears suitable in [this reference spectrum from HMDB](https://hmdb.ca/spectra/nmr_one_d/166522). Type this in the field for the reference peak.
+    1. Next, find the corresponding peak in the spectrum, which may be slightly shifted from 72.405 ppm. Use the zoom tool to locate the peak and cursor to find the chemical shift at the center of the peak. Enter this experimental chemical shift and click Submit.  
 
 These parameters will be stored to aid with processing each remaining spectrum in the run. Additionally, they will be saved so that if you exit the python session and create a new Stack for this run, the stored parameters will be loaded.
 
 ### Process the 13C spectra
-Processing will now begin, and should be rather quick. The processing function `process_fids` has several keyword arguments that affect the function's behavior:
-* `man_ps` : whether to perform manual phase correction for each spectrum (default: `False`).
-* `auto_bl` : whether to use NMRPipe's automatic baseline correction (default: `True`, recommended for 13C spectra).
-* `man_bl` : whether to use the in-house manual baseline correction with draggable nodes and spline fit (default: `False`, recommended for 1H\[13Ced\] spectra).
-* `overwrite` : whether to force overwrite of existing processed spectra (default: `False`).
-
-Run `process_fids`:
+Processing will now begin, and should be rather quick. Run `process_fids`:
 ```
 s.process_fids()
 ```
-This should be entirely automated, and will likely take less than a minute.
+Unless you have set `man_ps=True` or `man_bl=True`, this should be entirely automated, and will likely take less than a minute. Use `man_ps=True` to adjust the phase correction of each spectrum individually as described above, recommended if the phase deviates throughout the course of the run. Use `man_bl=True` for spectra where the NMRPipe baseline correction fails, especially for 1H\[13Ced\] spectra. For `man_bl=True`, adjust the nodes for the spline fit by removing or dragging nodes not on the baseline. Note: ensure that the order of the nodes is maintained as you drag them. Also, adding new nodes may cause unexpected behavior as this function has not been thoroughly tested.
 
 ### Peak-fit the 13C spectra
 Now, we will fit curves to the NMR peaks:
 ```
 s.peakfit_fids()
 ```
-* `overwrite` : whether to force overwrite of existing fit peaks (default: `False`).
 
-1. The phase correction window will appear. Adjust the phase correction as before if necessary and close the window.  
-3. At times, manual peak assignment may be required if peaks are close to each other. If this is the case, a plot will show where each peak is labeled by a numbered index.In the terminal window, the conflicting reference shifts will be listed.  
+1. The peak-picking algorithm will automatically find peaks in the spectrum. At times, manual peak assignment may be required if peaks are close to each other. If this is the case, a pop-up window will show where each peak is labeled by a numbered index. In the right panel, the conflicting reference shifts will be listed. Make note of which peaks belong to which compounds. In the right panel, list the indices belonging to each compound, separated by spaces. Click Submit.  
+1. The program will next perform curve-fitting on the found peaks. If this is taking too long, it may be beneficial to interrupt the processing and try this spectrum again with different values of `r` or `sep` passed to `peakfit_fids`.  
+1. After automatic peak picking and fitting is completed for each spectrum, the spectrum will be plotted with the curve-fit and peak assignments overlaid. Advanced users may wish to inspect this spectrum for proper curve-fitting and add, remove, or adjust curves as needed. Use the "Edit Peak" tab to select and modify the parameters of existing peaks, the "Add Peak" tab to add a new peak, and the "Remove Peak" tab to remove the active peak.  
 
-    <img width="643" alt="Splitting1" src="https://user-images.githubusercontent.com/29278926/174334468-1e93f9aa-3a62-4e6e-ad95-8811a0c9f4a1.png">  
+    In the plot window, the real spectrum is drawn in black, the simulated spectrum in blue, and the residuals in gray. The active peak is highlighted in red. The contributions of individual compounds are also plotted in different colors.  
 
-    Make note of which peaks belong to which compounds and close the window. Then, in the command line window, list the indices belonging to each compound separated by whitespace.  
-    
-    <img width="752" alt="Splitting2" src="https://user-images.githubusercontent.com/29278926/174335504-d02fb9b9-7108-4635-a8da-23e6b7b2d5dc.png">  
+    When selecting peaks or performing actions, it may take a few seconds for the active peak to update in the plot. Please be patient; if it's taking too long, try selecting different peaks in the dropdown to force an update.  
 
-6. The SciPy routines executing the peak-fitting may occasionally print warnings. These can be ignored.  
-7. After peak picking and fitting is completed for each spectrum, the spectrum will be plotted with the curve-fit and peak assignments overlaid. Advanced users may wish to inspect this spectrum for proper curve-fitting. If curve-fitting is consistently poor, the parameters `r` and `sep` may be adjusted in the calls to `peak_fit` and `prominent` in `process.py`.  
-
-    <img width="752" alt="Proc1" src="https://user-images.githubusercontent.com/29278926/174334464-0e00b470-0a18-4633-b916-d4572986e90b.png">  
-
-When processing is finished, the spectrum stacks will be plotted and trajectories the peaks in `cfg_13C.txt` will be displayed. Next, the processed output will be written to `20210519_13CGlc_13C.xlsx`.
-
-<img width="752" alt="Proc2" src="https://user-images.githubusercontent.com/29278926/174334465-a8c58721-27aa-4bd5-872a-f06f8aa73d1b.png">
+    If you have made modifications to the peaks, press the "Curve Fit" button before closing out to ensure that the curves form an optimal solution set.
 
 ### Process the 1H spectra
 Now, run the processing script for the 1H spectra.
