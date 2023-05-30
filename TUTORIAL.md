@@ -49,6 +49,11 @@ Make sure all requirements are satisfied in the "Installation" and "Dependencies
     source env/bin/activate.csh
     python3 -m pip install -r requirements.txt
     ```
+    Now, you have all the dependencies for this repository installed in the virtual environment `env`. Now that the environment is set up, you do not need to run the above code again. However, when you start a session, you must activate the virtual environment as follows:
+    ```
+    csh
+    source nmr-cdiff/etc/env/bin/activate.csh 
+    ```       
 
 ### Test data
 
@@ -57,22 +62,27 @@ One short unprocessed NMR run and two processed runs are included in the [test d
  - [20210322_13CLeu](data/test/20210322_13CLeu) : a short processed leucine run  
  - [20220421_13CGlc_standards](data/test/20220421_13CGlc_standards) : a processed dataset of standard solutions supporting the dFBA analyses
 
-We will process the glucose run and simulate dFBA. For convenience, we have included `cfg_13C.txt` and `cfg_1H.txt` in the run directory, which contain reference chemical shifts for the substrate and expected products. For each substrate, these files must be prepared before `process.py` is run.
+We will process the glucose run and simulate dFBA. For convenience, we have included `cfg_13C.txt` and `cfg_1H.txt` in the run directory, which contain reference chemical shifts for the substrate and expected products. For each substrate, these files must be prepared before processing is run.
 
 ## Processing the NMR runs (15 minutes per run)
-### Execute process.py
-We will begin by processing the NMR datasets using the [process.py](scripts/process/process.py) script. Navigate to the run directory and run the processing script.  
+### Load process.py and create a Stack object
+We will begin by processing the NMR datasets using the [process.py](scripts/process/process.py) script. Navigate to the directory containing the python scripts, and start an interactive python session.  
 ```
-csh
-source nmr-cdiff/etc/env/bin/activate.csh 
-cd nmr-cdiff/data/test/20210519_13CGlc
-python ../../../scripts/process/process.py 13C 52
+cd nmr-cdiff/scripts/process
+python3
 ```
-The program will identify the 13C scans and use scan 52 as the timestamp anchor.
+Now, we will import the Stack class and create a Stack object for our NMR run. This will serve as the basis for our processing functions. When we create the Stack object, we will need to specify the filepath of the run, as well as the isotope and the spectrum FID to use as the timestamp anchor.
+```
+from process import Stack
+s = Stack("nmr-cdiff/data/test/20210519_13CGlc", "13C", "52")
+```
+This will create a stack object for our test glucose run, and specify that we want to process the 13C spectra with FID number 52 as our anchor.
 
 ### Find the calibration parameters
-Let's first find some calibration parameters to make processing go faster. 
-
+Let's first find some calibration parameters to make processing go faster. We will need to run our Stack's `calibrate` method.
+```
+s.calibrate()
+```
 1. You will first be prompted for phase correction.  
     <img width="752" alt="Phasing_unphased" src="https://user-images.githubusercontent.com/29278926/174334460-d3786f90-8032-415b-8d8c-f78a4e68eea2.png">  
     Slide the p0 and p1 bars until the spectrum is well-phased.  
@@ -82,19 +92,32 @@ Let's first find some calibration parameters to make processing go faster.
     Press the "Set Phases" button, and close the window. For this spectrum, **p0=70.3** and **p1=99.9** were appropriate values.  
 
 2. Next, you will be prompted to calibrate the reference shift.
-    - Find a well-separated peak in the reference 13C spectrum of Glucose. The peak at **72.405 ppm** appears suitable in [this reference spectrum from HMDB](https://hmdb.ca/spectra/nmr_one_d/166522).
-    - In the plot that pops up from process.py, find the corresponding peak in the spectrum, which may be slightly shifted from 72.405 ppm. Use the zoom tool to locate the peak and cursor to find the chemical shift at the center of the peak. Write down the chemical shift and close the window.  
+    - Find a well-separated peak in the reference 13C spectrum of Glucose. The peak at **72.405 ppm** appears suitable in [this reference spectrum from HMDB](https://hmdb.ca/spectra/nmr_one_d/166522). Type this in the field for the reference peak.
+    - Next, find the corresponding peak in the spectrum, which may be slightly shifted from 72.405 ppm. Use the zoom tool to locate the peak and cursor to find the chemical shift at the center of the peak. Enter this experimental chemical shift and click Submit.  
 
         <img width="752" alt="Calib1" src="https://user-images.githubusercontent.com/29278926/174334449-7f676cb0-5b16-4b1f-a443-c6777a0fb844.png">  
 
-    - In the command line, type the chemical shift that you just wrote down. Hit return. We found that **69.95 ppm** was the approximate experimental shift for this peak.
-
-        <img width="752" alt="Calib2" src="https://user-images.githubusercontent.com/29278926/174335367-003a83b1-73f0-4e8d-bed6-ec5ff97dde8d.png">
-
-These parameters will be stored to aid with processing each remaining spectrum in the run.
+These parameters will be stored to aid with processing each remaining spectrum in the run. Additionally, they will be saved so that if you exit the python session and create a new Stack for this run, the stored parameters will be loaded.
 
 ### Process the 13C spectra
-Processing will now begin, and should take several minutes. As each spectrum is processed, you will be prompted for input one or more times.  
+Processing will now begin, and should be rather quick. The processing function `process_fids` has several keyword arguments that affect the function's behavior:
+* `man_ps` : whether to perform manual phase correction for each spectrum (default: `False`).
+* `auto_bl` : whether to use NMRPipe's automatic baseline correction (default: `True`, recommended for 13C spectra).
+* `man_bl` : whether to use the in-house manual baseline correction with draggable nodes and spline fit (default: `False`, recommended for 1H\[13Ced\] spectra).
+* `overwrite` : whether to force overwrite of existing processed spectra (default: `False`).
+
+Run `process_fids`:
+```
+s.process_fids()
+```
+This should be entirely automated, and will likely take less than a minute.
+
+### Peak-fit the 13C spectra
+Now, we will fit curves to the NMR peaks:
+```
+s.peakfit_fids()
+```
+* `overwrite` : whether to force overwrite of existing fit peaks (default: `False`).
 
 1. The phase correction window will appear. Adjust the phase correction as before if necessary and close the window.  
 3. At times, manual peak assignment may be required if peaks are close to each other. If this is the case, a plot will show where each peak is labeled by a numbered index.In the terminal window, the conflicting reference shifts will be listed.  
