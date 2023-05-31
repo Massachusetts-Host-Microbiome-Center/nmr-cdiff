@@ -116,7 +116,7 @@ s.calibrate()
     1. Find a well-separated peak in the reference 13C spectrum of Glucose. The peak at **72.405 ppm** appears suitable in [this reference spectrum from HMDB](https://hmdb.ca/spectra/nmr_one_d/166522). Type this in the field for the reference peak.
     1. Next, find the corresponding peak in the spectrum, which may be slightly shifted from 72.405 ppm. Use the zoom tool to locate the peak and cursor to find the chemical shift at the center of the peak. Enter this experimental chemical shift and click Submit.  
 
-These parameters will be stored to aid with processing each remaining spectrum in the run. Additionally, they will be saved so that if you exit the python session and create a new Stack for this run, the stored parameters will be loaded.
+These parameters will be stored to aid with processing each remaining spectrum in the run. Additionally, they will be saved so that if you exit the python session and create a new Stack for this run, the stored parameters will be loaded. To forget these stored parameters, delete calibrate_13C.txt from the run folder.
 
 ### Process the 13C spectra
 Processing will now begin, and should be rather quick. Run `process_fids`:
@@ -132,23 +132,58 @@ s.peakfit_fids()
 ```
 
 1. The peak-picking algorithm will automatically find peaks in the spectrum. At times, manual peak assignment may be required if peaks are close to each other. If this is the case, a pop-up window will show where each peak is labeled by a numbered index. In the right panel, the conflicting reference shifts will be listed. Make note of which peaks belong to which compounds. In the right panel, list the indices belonging to each compound, separated by spaces. Click Submit.  
-1. The program will next perform curve-fitting on the found peaks. If this is taking too long, it may be beneficial to interrupt the processing and try this spectrum again with different values of `r` or `sep` passed to `peakfit_fids`.  
+1. The program will next perform curve-fitting on the found peaks. If this is taking too long, it may be beneficial to interrupt the processing and try running `peakfit_fids` with the `r` keyword argument set to a higher value (default: 8). This will raise the noise threshold for peak detection. It will often need to be set to a higher level for spectra with very high S/N ratio, where noise at the base of the peak will be detected as peaks at low values of `r`.  
 1. After automatic peak picking and fitting is completed for each spectrum, the spectrum will be plotted with the curve-fit and peak assignments overlaid. Advanced users may wish to inspect this spectrum for proper curve-fitting and add, remove, or adjust curves as needed. Use the "Edit Peak" tab to select and modify the parameters of existing peaks, the "Add Peak" tab to add a new peak, and the "Remove Peak" tab to remove the active peak.  
 
     In the plot window, the real spectrum is drawn in black, the simulated spectrum in blue, and the residuals in gray. The active peak is highlighted in red. The contributions of individual compounds are also plotted in different colors.  
 
     When selecting peaks or performing actions, it may take a few seconds for the active peak to update in the plot. Please be patient; if it's taking too long, try selecting different peaks in the dropdown to force an update.  
 
-    If you have made modifications to the peaks, press the "Curve Fit" button before closing out to ensure that the curves form an optimal solution set.
+    If you have made modifications to the peaks, press the "Curve Fit" button before closing out to ensure that the curves form an optimal solution set.  
+    
+1. Once curve fitting is completed for the spectrum, the curve shape parameters will be saved in `peaklist.txt`.
+1. You will be prompted to continue to the next spectrum, or exit the peak-fitting routine without risk. Spectra that have already been processed will be skipped on the next pass of `peakfit_fids` and the parameters will be retained.
 
-### Process the 1H spectra
-Now, run the processing script for the 1H spectra.
+### Troubleshooting the processing routines
+Occasionally, mistakes will be made or adjustments will be necessary in spectra that have already been peak-fit. Thankfully, the object-oriented interface affords the flexibility to make any necessary adjustments.
+* To re-do the entire processing routine, create a new `Stack` object for the run. Calibrate the run and use `s.process_fids(overwrite=True)`.  
+* To re-do the entire peak-fitting routine, create a new `Stack` object for the run. Run the workflow as usual, but use `s.peakfit_fids(overwrite=True)`.  
+* To re-process just one spectrum:
+    ```
+    spec = s.spectra["23"]      # access the Spectrum object for FID 23
+    spec.is_processed = False   # set this flag to False to override the existing processed spectrum
+    spec.process()              # process the spectrum again, can pass new kwargs (manual_ps, auto_bl, manual_bl)
+    ```  
+* To re-do the peak-fitting for just one spectrum (eg. spectrum 23):
+    ```
+    spec = s.spectra["23"]      # access the Spectrum object for FID 23
+    spec.is_peakfit = False     # set this flag to False to override the existing peak-fitting output
+    spec.peak_fit()             # peak-fit the spectrum again, can pass new kwargs (r, sep, peak_method)
+    ```  
+### Writing the processed stack
+Once the 13C spectra are processed and peak-fit, all that remains is to export the data into an Excel spreadsheet that can be read by downstream applications.
 ```
-python ../../../scripts/process/process.py 1H 52
+s.write_stack()
 ```
-Follow the prompts as before. We used p0=155.8, p1=50.2, reference shift=1.9059, experimental shift=1.9046.
 
-<img width="752" alt="Proc3" src="https://user-images.githubusercontent.com/29278926/174334467-2459bbe8-c640-4bff-86c6-a4cff6e99696.png">
+## Process the 1H spectra
+Process the 1H spectra in much the same way.
+```
+s2 = Stack("nmr-cdiff/data/test/20210519_13CGlc", "1H", "52")
+s2.calibrate()
+s2.process_fids()
+```  
+Follow the prompts as before. We used p0=155.8, p1=50.2, reference shift=1.9059, experimental shift=1.9046. If the baseline is not satisfactory, try using `s.process_fids(auto_bl=False, man_bl=True)`.  
+
+The 1H spectra are used to align the time axis based on the production of isocaproate. We look for the isocaproate peak at 0.8642 ppm (0.76 ppm in the 13C-leucine spectra due to peak splitting).
+Because we are not looking to quantify estimated concentrations here, we can use a simple function to trace the amplitude of the peak over time.
+```
+s2.ridgetrace_fids()
+```
+When we write the stack, we must specify that we wish to use this simple ridge-trace output rather than a peak-fitting output.
+```
+s2.write_stack(from_ridges=True)
+```
 
 ### Plotting the runs
 A fully processed run can be plotted as a stack, as seen in Fig. 2a,c,e, using the MATLAB function [`plotStacks.m`](scripts/MATLAB/plotStack.m). This can be accomplished with relative ease using the script [`plot_stack.m`](scripts/MATLAB/call/plot_stack.m). Simply add a case for the run and set the variable `met`. You may also need to add a working filepath using the funciton `addpath`. The script is best run in batch mode from the command line:
@@ -165,20 +200,20 @@ matlab -nodisplay -nodesktop -batch "run('plot_stack.m');exit;"
 Now that the runs are processed, we will simulate dFBA. The dFBA script will perform the following functions:  
 1. Synchronize the NMR runs using the isocaproate trajectory from the 1H spectra.
 2. Estimate concentration curves of the substrates and products using standard solutions.
-    - The standards for glucose are included in the run `20220421_13CGlc_standards` and will be used to create standard curves that estimate relative NMR snesitivity of each compound with respect to glucose.
-    - The expected ratios of isocaproate and isovalerate to leucine were estimated from gas chromatography experiments, and are included directly in  [`trajectories.py`](scripts/process/trajectories.py).
-    - Plots of these curves as seen in Fig. 2b,d,f will be saved in each run folder.
 3. Simulate dFBA using the estimated concentration curves as constraints for exchange fluxes.  
+
+### The dFBA config file
+Before running the dFBA analyses, we must first define parameters for the dFBA and specify paths to all the datasets that will be used. The structure of the file is as follows:
+* `"method"` : the dFBA method to use for simulations (supported: `"fba"`, `"pfba"`, `"loopless"`, or `"fva"`).
+* `"model_file"` : path to the metabolic model file to be used for the simulations. Can be an absolute path, or a relative path with respect to dfba.py.
 
 ### Run the dFBA analyses
 Run the dFBA script, [`dfba.py`](scripts/process/dfba.py):
 ```
-cd ~/nmr-cdiff
-python scripts/process/dfba.py fba data/test/20210519_13CGlc_13C data/test/20210322_13CLeu_13C
+cd nmr-cdiff/scripts/process
+python dfba.py dfba_cfg.json
 ```
-The first argument, `fba`, tells the script that we are computing a standard FBA solution at each time point. Next, we specify the directories containing the runs.
-
-By default, we will only track a defined set of reactions and metabolites. These tracked elements can be modified by editing the `tracked_reactions` and `tracked_metabolites` variables near the top of `dfba.py`.
+The argument is a config file in json format, which specifies the dFBA parameters. This config file is described fully above.
 
 ### dFBA output
 The dFBA program will display some text output and graphs with the simulation results. Output from tracked reactions and metabolites will be written to `data/fluxes.xlsx`, `data/met_fluxes.xlsx`, and `data/<met>flux_in.txt` and `data/<met>flux_out.txt`. These files support MATLAB plotting functions.
