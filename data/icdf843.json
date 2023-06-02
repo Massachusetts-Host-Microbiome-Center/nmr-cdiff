@@ -1681,6 +1681,13 @@
 "formula":"C4H6O3"
 },
 {
+"id":"2obut_e",
+"name":"2-oxobutanoate",
+"compartment":"e",
+"charge":0,
+"formula":"C4H6O3"
+},
+{
 "id":"4s45dhp23do_c",
 "name":"(4S)-4,5-dihydroxypentan-2,3-dione",
 "compartment":"c",
@@ -22162,6 +22169,28 @@
 "name":"2-hydroxybutyrate secretion",
 "metabolites":{
 "2hbut_e":-1
+},
+"lower_bound":0,
+"upper_bound":1000,
+"gene_reaction_rule":""
+},
+{
+"id":"2OBUt",
+"name":"2-oxobutyrate transport via proton symport",
+"metabolites":{
+"2obut_c":-1,
+"2obut_e":1,
+"pmf_c":1
+},
+"lower_bound":-1000,
+"upper_bound":1000,
+"gene_reaction_rule":""
+},
+{
+"id":"Sec_2obut",
+"name":"2-oxobutyrate secretion",
+"metabolites":{
+"2obut_e":-1
 },
 "lower_bound":0,
 "upper_bound":1000,

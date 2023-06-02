@@ -79,6 +79,9 @@ class Metabolite:
         """Return timepoint of maximum flux (logistic half-max)."""
         return self.logistic_sets[substrate].halfmax()
     
+    def avg_x0(self, substrate):
+        return self.logistic_sets[substrate].avg_x0()
+    
     def tshift(self, substrate, t):
         self.logistic_sets[substrate].tshift(t)
 
@@ -145,7 +148,7 @@ class LogisticSet:
         Averages each parameter accross all curves, then evaluates using the
         average coefficient values.
         """
-        avg_ps = np.average(np.array(self.curves), axis=0)
+        avg_ps = np.average(np.array(self.curves), axis=0, keepdims=True)[0]
         avg_es = rss(np.array(self.errors), axis=0)
         avg_sol = eval_fn(x, *avg_ps)
         avg_err = err_fn(x, *avg_ps, *avg_es)
@@ -184,6 +187,9 @@ class LogisticSet:
             return self.time[np.argmin(self.dval)]
         else:
             return self.time[np.argmax(self.dval)]
+        
+    def avg_x0(self):
+        return np.average([ps[2] for ps in self.curves])
 
     def tshift(self, t):
         """Shift all curves' half-max (x0) to t."""

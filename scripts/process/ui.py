@@ -737,8 +737,8 @@ class CalibrateWindow():
     def __init__(self, ppm, data, stack_var):
         self.ppm = ppm
         self.data = data
-        self.refpeaks = [t for t in stack_var.refpeaks.itertuples(index=False, name=None)]
-        self.refshifts = [float(pk[0]) for pk in self.refpeaks]
+        # self.refpeaks = [t for t in stack_var.refpeaks.itertuples(index=False, name=None)]
+        # self.refshifts = [float(pk[0]) for pk in self.refpeaks]
         self.ppm_bounds = stack_var.ppm_bounds
         self.stack_var = stack_var
 

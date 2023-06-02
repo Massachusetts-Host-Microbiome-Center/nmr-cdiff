@@ -272,7 +272,7 @@ class Stack():
         # Process initial FID and calibrate phase and ppm shift
         spec_id = self.ordered_fids[0]
         fid = Spectrum(spec_id, self)
-        fid.process(manual_ps=True)
+        fid.process(manual_ps=True, overwrite=overwrite)
         CalibrateWindow(fid.ppm, fid.data, self)
         fid.calibrate(update_ft=True)
         self.spectra[spec_id] = fid
@@ -298,7 +298,45 @@ class Stack():
                 print("\nAborting process routine.")
                 return
 
-    def write_stack(self, suffix=None):
+    def peakfit_fids(self, overwrite=False, method="ng_pick", **kwargs):
+        print("Beginning peak fitting procedure for the stack.")
+        for spec_id in self.ordered_fids:
+            spec = self.spectra[spec_id]
+            if spec.is_peakfit:
+                print(f"Skipping fid {spec_id}: it is already peak-fit.")
+                continue
+            if not overwrite and os.path.isfile(f"{spec.path}/peaklist.txt"):
+                print(f"Loading existing peaklist for fid {spec_id}.")
+                spec.load_peaklist()
+                continue
+            try:
+                spec.peak_fit(peak_method=method, **kwargs)
+            except Exception as err:
+                print(f"There was an error during the peak fitting of fid {spec_id}:")
+                print(Exception, err, '\n')
+                print(traceback.format_exc())
+                print("\nAborting peak fit routine.")
+                return
+            if not prompt_continue():
+                return
+            
+    def ridgetrace_fids(self, **kwargs):
+        print("Beginning ridge tracing procedure for the stack.")
+        for spec_id in self.ordered_fids:
+            spec = self.spectra[spec_id]
+            if spec.is_ridgetraced:
+                print(f"Skipping fid {spec_id}: it is already peak-fit.")
+                continue
+            try:
+                spec.ridge_trace(**kwargs)
+            except Exception as err:
+                print(f"There was an error during the ridge tracing of fid {spec_id}:")
+                print(Exception, err, '\n')
+                print(traceback.format_exc())
+                print("\nAborting ridge tracing routine.")
+                return
+
+    def write_stack(self, suffix=None, from_ridges=False):
         """Write processed stack to Excel."""
         if suffix is None:
             suffix = ""
@@ -315,9 +353,14 @@ class Stack():
                 spectra.append(spec)
                 vectors.append(spec.data)
                 timestamps.append(spec.time_elapsed)
-            if spec.is_peakfit:
-                areas.append(spec.cpd_areas)
-                areas_index.append(spec.time_elapsed)
+            if from_ridges: 
+                if spec.is_ridgetraced:
+                    areas.append(spec.ridges)
+                    areas_index.append(spec.time_elapsed)
+            else:
+                if spec.is_peakfit:
+                    areas.append(spec.cpd_areas)
+                    areas_index.append(spec.time_elapsed)
         stack_array = np.array(vectors)
         df = pd.DataFrame(stack_array, columns=spectra[0].ppm, index=timestamps)
         print(f"\tCollected {len(spectra)} processed of {len(self.ordered_fids)} total spectra.")
@@ -359,28 +402,6 @@ class Stack():
         writer.save()
         print(f"Done. Written to {savepath}.")
 
-    def peakfit_fids(self, overwrite=False, method="guess"):
-        print("Beginning peak fitting procedure for the stack.")
-        for spec_id in self.ordered_fids:
-            spec = self.spectra[spec_id]
-            if spec.is_peakfit:
-                print(f"Skipping fid {spec_id}: it is already peak-fit.")
-                continue
-            if not overwrite and os.path.isfile(f"{spec.path}/peaklist.txt"):
-                print(f"Loading existing peaklist for fid {spec_id}.")
-                spec.load_peaklist()
-                continue
-            try:
-                spec.peak_fit(peak_method=method)
-            except Exception as err:
-                print(f"There was an error during the peak fitting of fid {spec_id}:")
-                print(Exception, err, '\n')
-                print(traceback.format_exc())
-                print("\nAborting peak fit routine.")
-                return
-            if not prompt_continue():
-                return
-
 class PeakList():
     def __init__(self, shifts, peakw, amps, cIDs, assignments=dict()):
         self.shifts = shifts
@@ -411,6 +432,7 @@ class Spectrum():
         self.path = f"{self.parent.path}/{self.id}"
         self.is_processed = False
         self.is_peakfit = False
+        self.is_ridgetraced = False
 
     def process(self, manual_ps=False, overwrite=True, auto_bl=True, manual_bl=False):
         """Process 1D-NMR fid.
@@ -512,6 +534,34 @@ class Spectrum():
         ax.plot(label_ppm, label_y, ls='', marker='*', **kwargs)
         for ci, xi, yi in zip(labels, label_ppm, label_y):
             ax.annotate(ci, (xi,yi), textcoords='offset points', xytext=(0,10), ha='center')
+        plt.show()
+
+    def get_sigmax(self, center, window_size):
+        ppmax = center + window_size/2.
+        ppmin = center - window_size/2.
+        sigmax = np.max(self.data[(self.ppm > ppmin) & (self.ppm < ppmax)])
+        return sigmax
+
+    def plot_window(self, center, window_size, sigmax=None, r_sigmin=0.05):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        if sigmax is None:
+            sigmax = self.get_sigmax(center, window_size)
+        sigmin = -1*r_sigmin*sigmax
+        ax.plot(self.ppm, self.data, lw=1., color='k')
+        ppmax = center + window_size/2.
+        ppmin = center - window_size/2.
+        ax.set_xlim((ppmax, ppmin))
+        ax.set_ylim((sigmin, sigmax))
+        ax.xaxis.set_tick_params(width=1.)
+        plt.setp(ax.spines.values(), linewidth=1.)
+        ax.get_yaxis().set_ticks([])
+        xticks = [round(tk, 1) for tk in ax.get_xticks()]
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(xticks, fontname='Arial', size=12)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
         plt.show()
 
     def ppm_to_float_span(self, xx):
@@ -896,7 +946,7 @@ class Spectrum():
         ax.set_xlim(self.parent.ppm_bounds)
         plt.show()
 
-    def peak_fit(self, r=12, sep=0.005, peak_method='guess', plot=True, vb=False, cv='l'):
+    def peak_fit(self, r=8, sep=0.005, peak_method='ng_pick', plot=True):
         """Peak-pick NMR spectrum.
         Includes peak-picking, peak assignment, and integration functionality. The
         reference peaks to be fit should be specified in cfg_{isotope}.txt and
@@ -919,9 +969,9 @@ class Spectrum():
         print(f"Performing peak picking subroutine with method {peak_method}...")
         if peak_method == 'from_cfg':
             self.peaklist = self.peaks_from_reference()
-        elif peak_method == 'ui_select':
+        elif peak_method == 'sg_pick':
             self.peaklist = self.peak_pick_sg()
-        elif peak_method == 'guess':
+        elif peak_method == 'ng_pick':
             self.peaklist = self.peak_pick_ng(r=r)
 
         if len(self.peaklist.shifts) == 0:
@@ -933,7 +983,7 @@ class Spectrum():
             self.plot_with_labels(self.peaklist.shifts, self.peaklist.cIDs, ppm_bounds=plot_bounds)
             plt.show()
 
-        if peak_method == 'guess' or peak_method == 'ui_select':
+        if peak_method == 'ng_pick' or peak_method == 'sg_pick':
             print("Performing peak assignment subroutine...")
             assignments, rev_assignments = self.assign_peaks(self.peaklist.shifts, self.peaklist.cIDs)
             self.peaklist.assignments = assignments
@@ -955,7 +1005,7 @@ class Spectrum():
         print("Performing curve-fitting subroutine...")
         self.curve_fit()
 
-        if peak_method == 'ui_select' or peak_method == 'guess':
+        if peak_method == 'sg_pick' or peak_method == 'ng_pick':
             print("Performing interactive curve refinement...")
             self.refine_curves()
 
@@ -966,6 +1016,36 @@ class Spectrum():
         
         print("Peak-fitting routine complete.")
         self.plot_fit_curves()
+
+    def ridge_trace(self, wr=0.01, plot=True):
+        """Simple function to get the heights of reference peaks in a spectrum.
+        Takes the maximum signal within window of each peak. Does not functionally
+        trace ridge across spectra; cannot handle drifting chemical shifts, eg. due
+        to pH changes. Shift must remain within window of reference throughout time
+        course.
+
+        Parameters:
+        wr -- window radius, distance from reference shift to include in window
+
+        Returns a dictionary containing the amplitude of each peak.
+        """
+        signals = {}
+        shifts = []
+        amps = []
+        for i, row in self.parent.refpeaks.iterrows():
+            shift = float(row["Shift"])
+            bounds = (self.ppm_to_int(shift-wr), self.ppm_to_int(shift+wr))
+            peak = f"{row['Compound']} {shift}"
+            amplitude = max(self.data[bounds[1]:bounds[0]])
+            signals[peak] = amplitude
+            shifts.append(shift)
+            amps.append(amplitude)
+        if plot:
+            self.plot_with_labels(np.array([self.ppm_to_int(s) for s in shifts]),
+                [str(s) for s in shifts], label_y=amps, ppm_bounds=(12., 0.))
+
+        self.ridges = signals
+        self.is_ridgetraced = True
 
     def load_peaklist(self):
         peakdata = pd.read_csv(f"{self.path}/peaklist.txt", sep='\t', index_col=0)

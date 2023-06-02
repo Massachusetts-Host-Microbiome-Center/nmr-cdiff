@@ -1,7 +1,8 @@
 {
     "method": "fba",
-    "model_file": "/Users/aj286/repos/nmr-cdiff/data/icdf843.json",
+    "model_file": "../../data/icdf843.json",
     "objective_function": "ATP_sink",
+    "tmin_hours": 0,
     "tmax_hours": 36,
     "solutions_per_hour": 5,
     "dry_run": false,
@@ -13,11 +14,9 @@
             "model_id": "glc",
             "concentration": 27.78,
             "curve": "logistic_C_r",
-            "standards": "/Users/aj286/repos/nmr-cdiff/data/standards/13CGlc_standards",
+            "standards": "../../data/standards/13CGlc_standards",
             "experiments": [
-                "/Volumes/cctm/apavao/NMR/20210519_13CGlc",
-                "/Volumes/cctm/apavao/NMR/20201224_13CGlc",
-                "/Volumes/cctm/apavao/NMR/20221013_13CGlc"
+                "../../data/test/20210519_13CGlc"
             ],
             "products": {
                 "Acetate": {
@@ -51,9 +50,7 @@
             "concentration": 7.63,
             "curve": "logistic_r",
             "experiments": [
-                "/Volumes/cctm/apavao/NMR/20210322_13CLeu",
-                "/Volumes/cctm/apavao/NMR/20221021_13CLeu",
-                "/Volumes/cctm/apavao/NMR/20221028_13CLeu"
+                "../../data/test/20210322_13CLeu"
             ],
             "products": {
                 "Isocaproate": {
@@ -93,90 +90,6 @@
                 "major_step": 1,
                 "minor_step": 0.5
             }
-        },
-        {
-            "name": "Proline",
-            "label": "13CPro",
-            "model_id": "proL",
-            "concentration": 6.96,
-            "curve": "logistic_r",
-            "experiments": [
-                "/Volumes/cctm/apavao/NMR/20220708_13CPro",
-                "/Volumes/cctm/apavao/NMR/20221111_13CPro",
-                "/Volumes/cctm/apavao/NMR/20221118_13CPro"
-            ],
-            "products": {
-                "5-aminovalerate": {
-                    "model_id": "5apn",
-                    "scale": 1.0,
-                    "curve": "logistic"
-                }
-            },
-            "plot_ticks": {
-                "start": 0,
-                "stop": 7,
-                "major_step": 1,
-                "minor_step": 0.5
-            }
-        },
-        {
-            "name": "Acetate13C",
-            "label": "13CAc",
-            "model_id": "acoa",
-            "concentration": 9.451,
-            "curve": "logistic",
-            "experiments": [
-                "/Volumes/cctm/apavao/NMR/20221130_13CAc",
-                "/Volumes/cctm/apavao/NMR/20221131_13CAc"
-            ],
-            "products": {
-                "Acetate": {
-                    "model_id": "ac",
-                    "scale": 0.5,
-                    "curve": "logistic"
-                }
-            }
-        },
-        {
-            "name": "Threonine",
-            "label": "13CThr",
-            "model_id": "thrL",
-            "concentration": 15.0,
-            "curve": "logistic_r",
-            "standards": "/Users/aj286/repos/nmr-cdiff/data/standards/13CThr_standards",
-            "experiments": [
-                "/Volumes/cctm/apavao/NMR/20230113_13CThr",
-                "/Volumes/cctm/apavao/NMR/20230121_13CThr",
-                "/Volumes/cctm/apavao/NMR/20230331_13CThr"
-            ],
-            "products": {
-                "2-aminobutyrate": {
-                    "model_id": "2abut",
-                    "curve": "logistic_sum"
-                },
-                "2-hydroxybutyrate": {
-                    "model_id": "2hbut",
-                    "curve": "logistic"
-                },
-                "Propionate": {
-                    "model_id": "ppa",
-                    "curve": "logistic_sum"
-                },
-                "n-Propanol": {
-                    "model_id": "ppoh",
-                    "curve": "logistic"
-                },
-                "Butyrate": {
-                    "model_id": "but",
-                    "curve": "logistic"
-                }
-            },
-            "plot_ticks": {
-                "start": 0,
-                "stop": 15,
-                "major_step": 5,
-                "minor_step": 1
-            }
         }
     ],
     "tracked_reactions": [
@@ -203,7 +116,15 @@
         "ID_582",
         "ID_1",
         "Ex_biomass",
-        "Sec_exopoly"
+        "Sec_exopoly",
+        "PPAKr",
+        "Sec_ppa",
+        "PPOHDH",
+        "ALT_2abut",
+        "2HBO",
+        "2HBD",
+        "ID_556",
+        "ID_325"
     ],
     "tracked_metabolites": [
         "alaL",

@@ -24,10 +24,9 @@ Copyright 2022 Massachusetts Host-Microbiome Center
 
 """
 import argparse
-from collections import defaultdict
+import datetime
 import json
 import os
-import sys
 
 import cobra as cb
 from matplotlib import pyplot as plt
@@ -36,7 +35,7 @@ import numpy as np
 import openpyxl as xl
 import pandas as pd
 
-from curveshapes import Metabolite, LogisticSet
+from curveshapes import Metabolite
 from standard_curves import compute_standard_curves
 from synchronize import synchronizers
 from trajectories import fit_trajectories
@@ -75,6 +74,13 @@ class MetaboliteCollection:
         else:
             raise ValueError(f"Collection does not contain metabolite {met_id}.")
         
+    def has_id(self, met_id):
+        return met_id in self.id_map
+    
+    def remove_met(self, met_id):
+        if self.has_id(met_id):
+            self.pop(met_id)
+ 
     def get_by_name(self, name):
         if name in self.name_map:
             return self.name_map[name]
@@ -127,7 +133,7 @@ class Substrate():
         product_curves = {k: v["curve"] for k, v in products.items()}
         from_standards = ("standards" in jobj)
         if from_standards:
-            fpath = jobj.pop("standards")
+            fpath = parse_filepath(jobj.pop("standards"))
             product_scale = compute_standard_curves(filepath=fpath, substrate=substrate_name)
         else:
             try:
@@ -185,19 +191,15 @@ def update_uptake_bounds(model, t, met, params, update=True):
     signal, serr, exch, exerr = params.get_sol(t)
     exch_l, exch_u, signal_l, signal_u = params.get_bounds(t)
     # Reverse direction and set bounds for secretion reactions
-    if met in ['glc', 'proL', 'leuL', 'valL', 'ileL']:
+    if met in ['glc', 'proL', 'leuL', 'valL', 'ileL', 'thrL']:
         rid = 'Ex_' + met
         exch, exch_l, exch_u = reverse_flux(exch, exch_l, exch_u)
         if met in ['leuL']:
             set_bounds(model, rid, update=update) # leave leucine unbounded
         else:
             set_bounds(model, rid, lower=exch_l, upper=exch_u, update=update)
-    # Update Wood-Ljungdahl Pathway bounds with butyrate
-    elif met in ['but']:
-        set_bounds(model, 'Sec_but', lower=exch_l, upper=exch_u, update=update)
-        set_bounds(model, 'ID_326', lower=exch_l, upper=exch_u, update=update)
     # Ignore data from 1H spectra
-    elif met in ['acoa']:
+    elif met == 'acoa':
         pass
     # Update bounds for products
     else:
@@ -205,6 +207,14 @@ def update_uptake_bounds(model, t, met, params, update=True):
         lb = max(exch_l, 0) # do not allow reverse flux
         ub = max(exch_u, 0)
         set_bounds(model, rid, lower=lb, upper=ub, update=update)
+    # Update Wood-Ljungdahl Pathway bounds with butyrate
+    if met == 'but':
+        wlp_l, wlp_u, _, _ = params.get_bounds(t, substrate="Glucose")
+        set_bounds(model, 'ID_326', lower=0, upper=max(wlp_u, 0), update=update)
+    # Allow natural abundance acetate from cysteine
+    if met == 'ac':
+        cys_l, cys_u, _, _ = params.get_bounds(t, substrate="Acetate13C")
+        set_bounds(model, 'Ex_cysL', lower=max(cys_l, 0), upper=max(cys_u, 0), update=update)
     return exch, exch_l, exch_u, signal, signal_l, signal_u
 
 def areaplot(df, dl, du, t_max=48, ylabel='flux (mol/gDW/h)'):
@@ -330,10 +340,11 @@ def load_model(modelfile, objective):
             rxn.upper_bound=0
     model.reactions.Ex_glc.upper_bound=0
     model.reactions.Ex_cysL.upper_bound = 1000
+    model.solver = 'glpk'
     return model
 
 def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_method, substrates, 
-              fva_run=False, tracked_reactions=[], tracked_metabolites=[], 
+              fva_run=False, tracked_reactions=[], tracked_metabolites=[], tmin_hours=0,
               tmax_hours=48, solutions_per_hour=1, dry_run=False):
     """Main function to compute dFBA solutions.
     Computes successive static FBA solutions and plots the estimated metabolite
@@ -359,22 +370,30 @@ def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_
         print("Dry run, will not write results.")
     # Load metabolic model and logistic fit specs #
     print('dFBA log: loading model and specsheet...')
-    model = load_model(model_file, objective_function)
-    model.solver = 'glpk'
+    model = load_model(parse_filepath(model_file), objective_function)
     
     # Set up logistic parameters and time scale
-    ts_array = np.linspace(0, tmax_hours, num=tmax_hours*solutions_per_hour+1)
+    nsol = int(round((tmax_hours - tmin_hours)*solutions_per_hour + 1, 0))
+    ts_array = np.linspace(tmin_hours, tmax_hours, num=nsol)
     timecourse = list(ts_array)
     for mi, param_set in params.get_items():
         param_set.eval(ts_array)
 
     # Special-case adjustments for certain metabolites
-    params.pop("5apn")
-    for mi in "valL", "isobuta": # Remove these 4 lines if we get Val and Ile runs
-        params.get_by_id(mi).tshift("Leucine", params.get_by_id("isocap").halfmax("Leucine"))
-    for mi in "ileL", "2mbut":
-        params.get_by_id(mi).tshift("Leucine", params.get_by_id("proL").halfmax("Proline"))
-    
+    params.remove_met("5apn")
+    if params.has_id("Leucine") and params.has_id("valL") and params.has_id("isobuta"):
+        for mi in "valL", "isobuta": # Remove these 4 lines if we get Val and Ile runs
+            params.get_by_id(mi).tshift("Leucine", params.get_by_id("isocap").avg_x0("Leucine"))
+    else:
+        params.remove_met("valL")
+        params.remove_met("isobuta")
+    if params.has_id("Proline") and params.has_id("ileL") and params.has_id("2mbut"):
+        for mi in "ileL", "2mbut":
+            params.get_by_id(mi).tshift("Leucine", params.get_by_id("proL").avg_x0("Proline"))
+    else:
+        params.remove_met("ileL")
+        params.remove_met("2mbut")
+
     # Initialize data structure for tracked metabolites
     propdata = dict()
     propmets = []
@@ -421,6 +440,19 @@ def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_
                 for k, df in enumerate(results):
                     df.at[t, mn] = fbounds[k]
 
+            ## Force butyrate pathways ##
+            #  Ideally, this should be generalized by adding a "reaction" attribute to
+            #  LogisticSet, so that a curve set associated with a particular metabolite
+            #  and substrate can be used to also set bounds on reactions. This would be
+            #  helpful for compounds produced by multiple substrates, where the
+            #  contributing pathways are known, such as with butyrate.
+            if mi == 'but':
+                glc_but_l, glc_but_u, _, _ = curveset.get_bounds(t, substrate="Glucose")
+                set_bounds(model, "ID_325", lower=glc_but_l, upper=glc_but_u, update=True)
+                if "Threonine" in curveset.logistic_sets:
+                    thr_but_l, thr_but_u, _, _ = curveset.get_bounds(t, substrate="Threonine")
+                    set_bounds(model, "2HBD", lower=thr_but_l, upper=thr_but_u, update=True)
+
             ## Calculate glucose uptake constraint ##
             if objective_function == "ATP_sink" and mi in ['ac', 'eto', 'but', 'alaL']:
                 signal, _, exch, _ = curveset.get_sol(t, substrate="Glucose")
@@ -444,6 +476,7 @@ def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_
                 model,
                 fraction_of_optimum=0.995,
                 loopless=False,
+                # loopless=True
             )
             fullflux_lb.loc[t, :] = sol_v['minimum']
             fullflux_ub.loc[t, :] = sol_v['maximum']
@@ -510,7 +543,8 @@ def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_
 
         # FVA takes longer, print at end of each simulation
         if fva_run:
-            print(f"t = {t} simulation complete")
+            now = datetime.datetime.now()
+            print(f"t = {t:.2f} simulation complete ({now:%c})")
 
     ## Adjust flux solution directionality in output for visualization ##
     reverse_ids = ["ID_383", "ID_336", "ID_391", "HydEB"]
@@ -630,6 +664,11 @@ def read_and_validate_cfg(cfg_filepath):
             print(f"JSON config missing required field {field}.")
     return cfg
 
+def parse_filepath(fpath):
+    if not fpath.startswith('/'):
+        return f"{SCDIR}/{fpath}"
+    return fpath
+
 def run_from_cfg(cfg_filepath):
     """Parse dFBA arguments from JSON config"""
     cfg = read_and_validate_cfg(cfg_filepath)
@@ -637,7 +676,7 @@ def run_from_cfg(cfg_filepath):
     substrates = [Substrate.from_json(s, params) for s in cfg.pop("nmr_substrates")]
     all_experiments = {}
     for substrate in substrates:
-        all_experiments.update({exp: substrate for exp in substrate.experiments})
+        all_experiments.update({parse_filepath(exp): substrate for exp in substrate.experiments})
 
     method = cfg.pop("method")
     if method == 'fva':
@@ -668,9 +707,10 @@ def run_from_cfg(cfg_filepath):
     for mid, curveset in params.get_items():
         print(mid)
         curveset.display_avg_coeffs()
+    t_min = cfg["tmin_hours"]
     t_max = cfg["tmax_hours"]
-    t_num = t_max*cfg["solutions_per_hour"] + 1
-    areaplot2(np.linspace(0, t_max, num=t_num), substrates, params)
+    t_num = int(round((t_max-t_min)*cfg["solutions_per_hour"] + 1, 0))
+    areaplot2(np.linspace(t_min, t_max, num=t_num), substrates, params)
     dfba_main(params, fva_run=fva_run, fba_method=fba_method, substrates=substrates, **cfg)
 
 def handle_args():

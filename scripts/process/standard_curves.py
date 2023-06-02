@@ -110,7 +110,7 @@ def compute_standard_curves(filepath=None, substrate="Glucose", plot=True, plot_
 
         # Calculate and report statistics
         ser = np.sqrt(ssr/(np.sum(mask) - 2))
-        sst = np.sum((A - A.mean())**2)
+        sst = A.size * A.var() #np.sum((A - A.mean())**2)
         rsquared = 1 - ssr/sst
         print(c)
         print(f" - Slope: {slope}")
