@@ -41,7 +41,7 @@ from synchronize import synchronizers
 from trajectories import fit_trajectories
 from get_color import get_cmap
 
-SCDIR = os.path.dirname(__file__)   # location of script
+SCDIR = os.path.dirname(os.path.abspath(__file__))   # location of script
 BOLD = xl.styles.Font(bold=True)
 MODEL_PATH = f'{SCDIR}/../../data/icdf843.json'
 METHODS = {
@@ -233,7 +233,7 @@ def areaplot(df, dl, du, t_max=48, ylabel='flux (mol/gDW/h)'):
         xlim=(0, t_max),
         ylim=(0, 1.05*max(ele.to_numpy().max() for ele in [df, dl, du])),
     )
-    for met, ser in df.iteritems():
+    for met, ser in df.items():
         ser.index.name = 'index'
         p = ax.plot(ser.index.to_numpy(), ser.to_numpy(), '-', label=met, lw=5)
         color = matplotlib.colors.to_rgb(p[0].get_color())
@@ -381,13 +381,13 @@ def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_
 
     # Special-case adjustments for certain metabolites
     params.remove_met("5apn")
-    if params.has_id("Leucine") and params.has_id("valL") and params.has_id("isobuta"):
+    if params.has_id("leuL") and params.has_id("valL") and params.has_id("isobuta"):
         for mi in "valL", "isobuta": # Remove these 4 lines if we get Val and Ile runs
             params.get_by_id(mi).tshift("Leucine", params.get_by_id("isocap").avg_x0("Leucine"))
     else:
         params.remove_met("valL")
         params.remove_met("isobuta")
-    if params.has_id("Proline") and params.has_id("ileL") and params.has_id("2mbut"):
+    if params.has_id("proL") and params.has_id("ileL") and params.has_id("2mbut"):
         for mi in "ileL", "2mbut":
             params.get_by_id(mi).tshift("Leucine", params.get_by_id("proL").avg_x0("Proline"))
     else:
@@ -475,8 +475,8 @@ def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_
             sol_v = cb.flux_analysis.flux_variability_analysis(
                 model,
                 fraction_of_optimum=0.995,
-                loopless=False,
-                # loopless=True
+                # loopless=False,
+                loopless=True
             )
             fullflux_lb.loc[t, :] = sol_v['minimum']
             fullflux_ub.loc[t, :] = sol_v['maximum']
@@ -654,7 +654,8 @@ def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_
         writer.close()
 
 def read_and_validate_cfg(cfg_filepath):
-    with open(cfg_filepath, "r") as rf:
+    parsed_path = parse_filepath(cfg_filepath)
+    with open(parsed_path, "r") as rf:
         cfg = json.loads(rf.read())
     required_fields = ["method", "model", "objective_function", "nmr_substrates"]
     for field in required_fields:

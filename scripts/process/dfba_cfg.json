@@ -1,5 +1,5 @@
 {
-    "method": "fba",
+    "method": "fva",
     "model_file": "../../data/icdf843.json",
     "objective_function": "ATP_sink",
     "tmin_hours": 0,
