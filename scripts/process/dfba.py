@@ -202,6 +202,9 @@ def update_uptake_bounds(model, t, met, params, update=True):
     elif met == 'acoa':
         pass
     # Update bounds for products
+    elif met in ['2abut', 'ppa']:
+        rid = 'Sec_' + met
+        set_bounds(model, rid, lower=exch_l, upper=exch_u, update=update)
     else:
         rid = 'Sec_' + met
         lb = max(exch_l, 0) # do not allow reverse flux
