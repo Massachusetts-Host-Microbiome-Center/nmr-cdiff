@@ -1,0 +1,46 @@
+,met_id,name
+0,cpd00200_c0,4MOP [c0]
+1,cpd00231_c0,Dihydrobiopterin [c0]
+2,cpd02090_c0,Glycerophosphoglycerol [c0]
+3,cpd01741_c0,ddca [c0]
+4,cpd11209_c0,N-Acetyl-L-citrulline [c0]
+5,cpd02016_c0,N-Ribosylnicotinamide [c0]
+6,cpd00247_c0,Orotate [c0]
+0,cpd01493,1-methyladenine
+1,cpd19486,16-hydroxypalmitate
+2,cpd03561,2-hydroxybutyrate/2-hydroxyisobutyrate
+3,cpd02305,3-(4-hydroxyphenyl)lactate
+4,cpd00876,3-hydroxyisobutyrate
+5,cpd00489,4-hydroxyphenylacetate sulfate        
+6,cpd01587,5-methylcytosine
+7,cpd01293,5-oxoproline
+8,cpd17826,beta-muricholate
+9,cpd00376,"bilirubin (Z,Z)"
+10,cpd00457,choline phosphate
+11,cpd00250,creatine
+12,cpd15596,dipicolinate
+13,cpd00392,erythritol
+14,cpd11408,gamma-aminobutyrate (GABA)
+15,cpd00451,guanidinoacetate
+16,cpd03300,imidazole lactate
+17,cpd00703,indoleacetate
+18,cpd01394,indolelactate
+19,cpd00308,malonate
+20,cpd01468,methylmalonate (MMA)
+21,cpd00470,N('1)-acetylspermidine
+22,cpd00912,N-acetyl-beta-glucosaminylamine
+23,cpd25519,N-acetylasparagine
+24,cpd00767,N-acetylaspartate (NAA)
+25,cpd02763,N-acetylglucosaminylasparagine
+26,cpd01760,N-acetylglutamine
+27,cpd24478,N-acetylhistidine
+28,cpd27567,N-acetyltryptophan
+29,cpd02012,N-formylmethionine
+30,cpd33454,oleoylcarnitine (C18:1)
+31,cpd07053,picolinate
+32,cpd00323,pipecolate
+33,cpd25264,sphingadienine
+34,cpd00267,sphingosine
+35,cpd32164,tauro-beta-muricholate
+36,cpd03246,taurochenodeoxycholate
+37,cpd17168,tauroursodeoxycholate
