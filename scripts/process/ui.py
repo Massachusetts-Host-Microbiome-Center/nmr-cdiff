@@ -56,7 +56,7 @@ class Trace:
 class Peak:
     """Picked NMR peak"""
     def __init__(self, isotope, shift, height, l_fwhm=None,
-                 g_fwhm=None, cpd=None):
+                 g_fwhm=None, cpd=None, res = 1000000):
         self.isotope = isotope
         self.x = shift    # Voigt curve ppm shift
         self.y = height   # Voigt curve height
@@ -68,7 +68,7 @@ class Peak:
             self.cv = 'l'
             self.gw = 0 
         self.cpd = cpd
-        self.trace = self.render_trace(resolution=100000)
+        self.trace = self.render_trace(resolution=res)
 
     def get_x(self): return self.x
 
@@ -172,7 +172,7 @@ class PeakFitWindow():
         # Set up plot
         self.isotope = isotope
         self.peaks = peaks
-        self.res = 100000
+        self.res = 1000000
         self.assignments = collections.defaultdict(list)
         self.fid = spec
         for pk in peaks:
@@ -780,7 +780,7 @@ class CalibrateWindow():
         self.form_title = tk.Label(self.form_frame, text="PPM Shifts:")
         self.form_title.grid(row=0, column=0, columnspan=3)
         self.form_frame.rowconfigure(0, weight=1)
-        self.reference_form = FloatField(self.form_frame, 1, "Reference Shift")
+        self.reference_form = FloatField(self.form_frame, 1, "Reference Shift\n glucose: 63.549\n mannitol: 65.937")
         self.reference_form.field.bind("<FocusOut>", self.validate_fields_callback)
         self.experimental_form = FloatField(self.form_frame, 2, "Experimental Shift")
         self.experimental_form.field.bind("<FocusOut>", self.validate_fields_callback)

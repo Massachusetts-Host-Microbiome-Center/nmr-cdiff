@@ -36,6 +36,7 @@ class Metabolite:
         self.scale_map = {}
         self.logistic_sets = collections.defaultdict(LogisticSet)
 
+
     @classmethod
     def sum_solutions(cls, solutions):
         val = np.sum(np.array([sol[0] for sol in solutions]), axis=0)
@@ -99,8 +100,13 @@ class Metabolite:
         for substrate, ls in self.logistic_sets.items():
             print(f"Substrate: {substrate}")
             print("="*len(substrate))
-            ls.display_avg_coeffs(prefix="\t")
+            avg_ps, avg_err = ls.display_avg_coeffs(prefix="\t")
             print()
+        return(avg_ps, avg_err)
+            
+            
+
+
 
 class LogisticSet:
     """Class to store coefficients for multiple logistic equations.
@@ -118,6 +124,7 @@ class LogisticSet:
         self.err = None # evaluated errors over time series
         self.dval = None # evaluated derivative over time series
         self.derr = None # evaluated derivative error over time series
+
 
     def add_curve(self, params, errors):
         self.curves.append(params.tolist())
@@ -209,8 +216,13 @@ class LogisticSet:
         """Display average coefficients p/m error. Pass in coefficient names."""
         avg_ps = np.average(np.array(self.curves), axis=0)
         avg_es = rss(np.array(self.errors), axis=0)
+        print("CURVES: ", self.curves)
+        print("AVG ps: ", avg_ps)
+        print("AVG es: ", avg_es)
         for i, (par, err) in enumerate(zip(avg_ps, avg_es)):
             print(f"{prefix}{self.param_names[i]}: {par:.3f} ± {err:.3f}")
+        return(avg_ps, avg_es)
+
 
 def rss(args, axis=None):
     """Calculate the square root of the sum of squares."""

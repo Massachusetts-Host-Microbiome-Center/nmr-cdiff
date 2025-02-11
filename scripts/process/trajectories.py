@@ -100,7 +100,7 @@ def fill_mask(vector, curveshape):
         return [i < idx for i in range(len(vector))]
     
 
-def fit_trajectories(filepath, substrate, init='11', plot=False, tscale=None):
+def fit_trajectories(filepath, isotope, tmax, substrate, sheetname = 'area', init='11', plot=False, tscale=None):
     """Estimate concentration trajectories for HRMAS NMR time series.
 
     Parameters:
@@ -124,14 +124,17 @@ def fit_trajectories(filepath, substrate, init='11', plot=False, tscale=None):
 
     basename = os.path.basename(filepath) # current run name
 
-    print("=========")
-    print(f"Computing logistic trajectories for run {basename}.")
-    print("=========")
+
 
     # Load "area" sheet of excel file
-    fn = f'{filepath}/{basename}_13C.xlsx'
+    fn = f'{filepath}/_{isotope}.xlsx'
+    print("=========")
+    print(f"Computing logistic trajectories for run {fn}.")
+    print("=========")
+
     usecols = ["Time", substrate.name] + [met for met in substrate.products]
-    areas = pd.read_excel(fn, sheet_name='area', engine='openpyxl', usecols=lambda x: x in usecols)
+    areas = pd.read_excel(fn, sheet_name=sheetname, engine='openpyxl', usecols=lambda x: x in usecols)
+    print("Areas: ", areas)
     detected_products = [met for met in substrate.products if met in areas.columns]
     # areas = areas.fillna(0)
 
@@ -139,9 +142,10 @@ def fit_trajectories(filepath, substrate, init='11', plot=False, tscale=None):
     time = areas['Time'].to_numpy()
     if tscale is not None:
         time = tscale(time)
-    mask = (time >= 0) & (time <= 36)
+    mask = (time >= 0) & (time <= tmax)
     time = time[mask]
     areas = areas.loc[mask, :]
+    print("Areas: ", areas)
 
     # Perform logistic fit on products, calculate "gscale" scale factor for experiment
     signals = dict()
@@ -154,6 +158,9 @@ def fit_trajectories(filepath, substrate, init='11', plot=False, tscale=None):
     p0 = curvedata[substrate.curve]["p0"]
     scale_mask = curvedata[substrate.curve]["scale_mask"]
     nan_mask = ~np.isnan(signal)
+    print("Function: ", function)
+    print("Time: ", time[nan_mask])
+    print("Signal: ", signal[nan_mask])
     popt, pcov = scipy.optimize.curve_fit(function, time[nan_mask], signal[nan_mask], p0=p0)
 
     amplitude = np.sum(popt[np.array(scale_mask, dtype=bool)])
@@ -177,7 +184,7 @@ def fit_trajectories(filepath, substrate, init='11', plot=False, tscale=None):
 
     # Get products curves
     for cpd in detected_products:
-        scale = substrate.products[cpd]
+        scale = substrate.product_scale[cpd]
         product_curve = curvedata[substrate.product_curves[cpd]]
         function = product_curve["function"]
         p0 = product_curve["p0"]
@@ -226,7 +233,7 @@ def fit_trajectories(filepath, substrate, init='11', plot=False, tscale=None):
     coeffs.write_coeffs(f"{filepath}/{basename}")
     plot_curves(time, signals, curves, substrate, f"{filepath}/{basename}_pan.svg")
 
-    return curves, curves_err
+    return time, signals, curves, curves_err
 
 def call_fit(args):
     n_args = len(args)
@@ -238,7 +245,7 @@ def call_fit(args):
             filepath = os.getcwd() # path to working directory
         else:
             filepath = args[0]
-        return fit_trajectories(filepath, plot=True, scaled=True)
+        return fit_trajectories(filepath, isotope, plot=True, scaled=True)
 
 def print_coeffs(name, popt):
     print(name)
@@ -249,20 +256,29 @@ def print_coeffs(name, popt):
         print(f" - C : {popt[3]}")
 
 def plot_curves(time, signals, curves, substrate, outpath):
-    fig = plt.figure(figsize=(2.5, 2), constrained_layout=True)
+    print("Plotting")
+    fig = plt.figure(figsize=(5, 5), constrained_layout=True)
     ax = fig.add_subplot(111)
     times = np.linspace(0, 36, num=36*10)
     cmap = get_cmap()
     plt.axhline(ls=':', color=cmap['gray'], linewidth=1, zorder=1)
 
     # Plot substrate
+    max_concentration = 0
     for met, signal in signals.items():
+
         color = cmap[met]
         curve = curves[met]
+        print(met)
+        print("Curve: ", curve)
+
+        print(logi_flex(times, *curve))
         ax.plot(
             times, logi_flex(times, *curve), color=color, lw=1, label=met,
-            zorder=2,
+            zorder=2
         )
+        ax.legend(bbox_to_anchor = [1.01, 1.01])
+        #ax.set_ylim([0, 50])
         im = ax.scatter(
             time, signal, marker='o', color=color, facecolors=color,
             edgecolors='w', linewidths=0.5, sizes=[22 for ele in signal], zorder=3,
@@ -270,10 +286,11 @@ def plot_curves(time, signals, curves, substrate, outpath):
         )
 
     # Format
-    afont = {'fontname': 'Arial', 'size': 7}
+    afont = {'fontname': 'Arial', 'size': 12}
     ax.set_xlabel("Time (h)", **afont)
     ax.set_ylabel("Estimated Concentration (mM)", **afont)
     ax.set_xlim((0, 36))
+    #ax.set_ylim((0, ))
     if substrate.plot_ticks is not None:
         start = substrate.plot_ticks["start"]
         stop = substrate.plot_ticks["stop"]
@@ -281,15 +298,18 @@ def plot_curves(time, signals, curves, substrate, outpath):
         minor = substrate.plot_ticks["minor_step"]
         ax.set_yticks(np.arange(start, stop+major, major))
         ax.set_yticks(np.arange(start, stop+minor, minor), minor=True)
+        ax.legend(bbox_to_anchor = (1.01, 1.01))
     ax.set_xticks([0, 12, 24, 36])
     ax.set_xticks(list(range(37)), minor=True)
     ax.set_xticklabels(ax.get_xticks(), **afont)
     ax.set_yticklabels(ax.get_yticks(), **afont)
     ax.xaxis.set_tick_params(width=0.5)
     ax.yaxis.set_tick_params(width=0.5)
+    
     plt.setp(ax.spines.values(), linewidth=0.5)
     # plt.legend()
     # plt.show()
+    #ax.set_title("Previous run")
     plt.savefig(outpath)
     
 if __name__ == "__main__":

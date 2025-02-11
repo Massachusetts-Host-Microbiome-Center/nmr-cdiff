@@ -39,7 +39,7 @@ def calculate_5p(filepath, plot=False):
     basename = os.path.basename(filepath) # current run name
 
     # Process 1H stack if necessary, will be written to an excel file
-    if not os.path.exists(f'{filepath}/{basename}_1H.xlsx'):
+    if not os.path.exists(f'{filepath}/_1H.xlsx'):
         if basename == '20210519_13CGlc':
             init = '51'
         else:
@@ -48,7 +48,7 @@ def calculate_5p(filepath, plot=False):
 
     # Load "area" sheet of excel file
     areas = pd.read_excel(
-        f'{filepath}/{basename}_1H.xlsx', sheet_name='area',
+        f'{filepath}/_1H.xlsx', sheet_name='area',
         engine='openpyxl', usecols=lambda x: x not in ['Scans'],
     )
     # Identify reference peak and calculate curve fit
