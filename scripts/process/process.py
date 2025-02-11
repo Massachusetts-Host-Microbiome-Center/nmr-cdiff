@@ -37,12 +37,17 @@ import nmrglue as ng
 import numpy as np
 import pandas as pd
 import scipy
+import configparser
+import copy
 
 from man_bl import Baseline
 from lineshapes_addon import split_lorentz_fwhm, gumbel_hb
 from ui import Peak, PeakFitWindow, ConflictWindow, CalibrateWindow
 
-SCDIR = os.path.dirname(__file__)   # location of script
+#SCDIR = os.path.dirname(__file__)   # location of script
+SCDIR = "./"
+print("Filepath: ")
+print(SCDIR)
 CURVE_FIT_RESOLUTION = 2**19
 
 isotope_params = ["id", "name", "fit_ppm_delta", "fit_fwhm_max", "fit_fwhm_min",
@@ -56,10 +61,14 @@ with open(f"{SCDIR}/isotopes.json", "r") as rf:
         isotopes[iso] = Isotope(id=iso, **params)
 
 def match_pulprog(isotope, pulprog):
+    print("Matching: ", isotope)
     if isotope == '1H':
         return pulprog == 'noesypr1d'
     elif isotope == '13C':
         return pulprog == 'zgpg30'
+        #return pulprog == 'noesyprigld1d'
+    elif isotope == "13C_15N":
+        return pulprog == "zgpg30"
     elif isotope == '1H_13C':
         return pulprog == 'hsqcphpr'
     return False
@@ -123,10 +132,12 @@ def to_stream(dic, data):
     datastream = fdata.tobytes() + data.tobytes()
     return datastream
 
-def pipe_process(expt, fid):
+def pipe_process(fid, process_params_filepath):
     """Process Bruker FID using NMRPipe and load using nmrglue."""
+    print("Using parameters: ", process_params_filepath)
+    print("fid: ", str(fid))
     pipe_output = subprocess.run(
-        ["csh", f"{SCDIR}/pipe/proc_{expt}.com", fid],
+        ["csh", process_params_filepath, fid],
         stdout=subprocess.PIPE)
     return ng.fileio.pipe.read(pipe_output.stdout)
 
@@ -184,9 +195,70 @@ def sg_findpeaks(spec, window_size, poly_order, prominence_sg=2, prominence_fid=
 
     return list(pks), list(pkw)
 
+def set_plot_window(ax, window_center, window_size, sigmin, sigmax):
+    """Helper to format NMR spectra plots"""
+    ppmax = window_center + window_size/2.
+    ppmin = window_center - window_size/2.
+    ax.set_xlim((ppmax, ppmin))
+    ax.set_ylim((sigmin, sigmax))
+    ax.xaxis.set_tick_params(width=1.)
+    plt.setp(ax.spines.values(), linewidth=1.)
+    ax.get_yaxis().set_ticks([])
+    xticks = [round(tk, 1) for tk in ax.get_xticks()]
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(xticks, fontname='Arial', size=16)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+
 class Stack():
-    def __init__(self, path: str, expt: str, acq1: str):
-        self.path = path
+    def __init__(self, param_file: str, line_broadening = None, spec_size = None):
+        self.config = configparser.ConfigParser()
+        print("Reading processing parameters from file: ", param_file)
+        if not os.path.exists(param_file):
+            raise FileNotFoundError(param_file)
+        self.config.read(param_file)
+        self.basename = self.config.get('paths', 'project_dir')
+        self.cfg_dir = self.basename + self.config.get('paths', 'cfg_dir')
+        self.cfg_filepath = self.cfg_dir + self.config.get('paths', 'cfg')
+        self.run_dir = self.basename + self.config.get('paths', 'run_dir')
+        self.output_dir = self.basename + "/" + self.config.get('paths', 'output_dir')
+
+        self.expt = self.config.get('data', 'isotope')
+        self.isotope = isotopes[self.expt]
+        self.spectra = {}
+        self.ppm_bounds = (self.isotope.ppm_max, self.isotope.ppm_min)
+        self.refpeaks = self.load_cfg()
+        self.acq1 = self.config.get('data', 'run_start_num')
+        
+        # calibrating parameters
+        self.p0 = 0.
+        self.p1 = 0.
+        self.cf = 0.
+
+        # Detect valid FIDs
+        self.ordered_fids = self.detect_spectra(self.acq1)
+
+
+        # Read in parameters from acquisition file
+        self.process_params_filepath = self.get_acquisition_parameters(line_broadening, spec_size)
+        self.process_params_filepath = self.run_dir + "process_params_" + self.expt + ".com"
+        print(self.process_params_filepath)
+
+        if self.config.has_section('peak_selection'):
+            self.peak_method = self.config.get("peak_selection", 'peak_method')
+            self.r = self.config.getint("peak_selection", 'r')
+            self.manually_refine_curves = self.config.getboolean("peak_selection", 'manually_refine_curves')
+            self.show_curves = self.config.getboolean("peak_selection", 'show_curves')
+            self.prompt_continue = self.config.getboolean('peak_selection', 'prompt_continue')
+
+        
+        print("Path: ", self.run_dir)
+
+    """
+    def __init__(self, path: str, expt: str, acq1: str, process_ending: str):
+        self.full_path = SCDIR + "/" + path
+        self.run_dir = path
         self.basename = os.path.basename(path)
         self.expt = expt
         direct = expt.split('_')[0]
@@ -204,15 +276,85 @@ class Stack():
         # Detect valid FIDs
         self.ordered_fids = self.detect_spectra(self.acq1)
 
+        self.process_ending = process_ending
+        
+        print("Path: ", self.run_dir)
+    """
+    def get_acquisition_parameters(self, line_broadening, spec_size):
+        # get one of the folders identified as the isotope being analyzed
+        i = self.ordered_fids[0]
+
+        df = pd.read_csv(self.run_dir + "/" + str(i) + "/acqus" , sep = "=", index_col = 0)
+        size = int(df.loc['##$TD', :].iloc[0].strip())
+        if spec_size is not None:
+            time = spec_size
+        else:
+            time = size / 2
+        spectral_width = float(df.loc['##$SW_h'].iloc[0].strip())
+        obs_freq = float(df.loc['##$BF1'].iloc[0].strip())
+        decim = float(df.loc['##$DECIM'].iloc[0].strip())
+        grpdly = float(df.loc['##$GRPDLY'].iloc[0].strip())
+        dspfvs = float(df.loc['##$DSPFVS'].iloc[0].strip())
+
+        pulse_program = df.loc['##$PULPROG'].iloc[0].strip()
+        print(pulse_program)
+        if pulse_program == "<noesypr1d>":
+            xcar = 4.656
+        elif pulse_program == "<zgpg30>":
+            xcar = 99.410
+
+        xmode = 'DQD'
+
+        expt = self.expt
+        ndim = 1
+        c_mult = 3.05176e-02
+        if line_broadening is not None:
+            lb = line_broadening
+        else:
+            lb = 1
+        c = 1.0
+        zf = 3
+
+
+
+        # Generate the script with the variables
+        script = f"""#!/bin/csh
+
+bruk2pipe -in $1/fid \\
+  -bad 0.0 -ext -aswap -AMX -decim {decim} -dspfvs {dspfvs} -grpdly {grpdly}  \\
+  -xN              {size}  \\
+  -xT              {time}  \\
+  -xMODE            {xmode}  \\
+  -xSW          {spectral_width}  \\
+  -xOBS         {obs_freq}  \\
+  -xCAR           {xcar}  \\
+  -xLAB             {expt}  \\
+  -ndim               {ndim}  \\
+| nmrPipe -fn MULT -c {c_mult} \\
+| nmrPipe -fn EM -lb {lb} -c {c} \\
+| nmrPipe -fn ZF -zf {zf} \\
+| nmrPipe -fn FT \\
+
+sleep 1"""
+
+        with open(self.run_dir + "/process_params_" + self.expt + ".com", "w") as file:
+            file.write(script)
+        return(self.run_dir + "/process_params_" + self.expt + ".com")
+
+
+
     def load_cfg(self):
         try:
+            print("Attempting to load reference peaks from: ", self.cfg_filepath)
             refpeaks = pd.read_csv(
-                f"{self.path}/cfg_{self.isotope.id}.txt", 
+                self.cfg_filepath, 
                 sep='\t', 
                 names=['Shift', 'Compound']
             )
+            print("Successfully uploaded reference peaks from : ", self.cfg_filepath)
+            print(refpeaks)
         except FileNotFoundError:
-            print("Config file not found, skipping.")
+            raise ValueError("Found no reference peaks at: ", self.cfg_filepath)
             refpeaks = None
         return refpeaks
 
@@ -220,24 +362,30 @@ class Stack():
         """Returns a list of spectra IDs for the given isotope."""
         print(f"Inferring {self.expt} spectra (this may take a minute)...", end=None)
         iso_spectra = []
-        subdirs = [os.path.basename(dir) for dir in glob.iglob(f"{self.path}/*") if os.path.isdir(dir)]
+        print(self.run_dir)
+        subdirs = [os.path.basename(dir) for dir in glob.iglob(f"{self.run_dir}/*") if os.path.isdir(dir)]
+        if len(subdirs) == 0:
+            raise Exception("There are no files detected in your run directory:", self.run_dir)
         sorted_fids = sorted([int(dir) for dir in subdirs if str.isdigit(dir)])
         for fid in sorted_fids:
+            fn = str(fid)
             if fid < int(acq1):
                 continue
             try:
-                fn = str(fid)
-                dic, _ = ng.bruker.read(f"{self.path}/{fn}")
+                print("Trying to detect spectra in: ", f"{self.run_dir}/{fn}")
+                dic, _ = ng.bruker.read(f"{self.run_dir}/{fn}")
                 if match_pulprog(self.expt, dic['acqus']['PULPROG']):
+                    print("Pulse program: ", dic['acqus']['PULPROG'])
                     iso_spectra.append(fn)
             except OSError:
                 pass
         print("Done.")
+        print("Spectra selected: ", iso_spectra)
         return iso_spectra
 
     def read_calibration(self):
         print("Reading existing calibration parameters")
-        with open(f"{self.path}/calibrate_{self.expt}.txt", "r") as rf:
+        with open(f"{self.run_dir}/calibrate_{self.expt}.txt", "r") as rf:
             rf.readline()
             values = rf.readline().strip('\n').split('\t')
             self.p0 = float(values[0])
@@ -249,7 +397,7 @@ class Stack():
 
     def write_calibration(self):
         print("Writing new calibration parameters")
-        with open(f"{self.path}/calibrate_{self.expt}.txt", "w") as wf:
+        with open(f"{self.run_dir}/calibrate_{self.expt}.txt", "w") as wf:
             wf.write("p0\tp1\tcf\n")
             wf.write(f"{self.p0}\t{self.p1}\t{self.cf}\n")
 
@@ -262,10 +410,11 @@ class Stack():
         Returns: ppm correction to calibrate the x axis
         """
         # Get timestamp anchor
-        acq1_dic, _ = ng.bruker.read(f"{self.path}/{self.acq1}")
+        print(f"{self.run_dir}/{self.acq1}")
+        acq1_dic, _ = ng.bruker.read(f"{self.run_dir}/{self.acq1}")
         self.timestamp = datetime.datetime.fromtimestamp(acq1_dic['acqus']['DATE'])
 
-        if not overwrite and os.path.isfile(f"{self.path}/calibrate_{self.expt}.txt"):
+        if not overwrite and os.path.isfile(f"{self.run_dir}/calibrate_{self.expt}.txt"):
             self.read_calibration()
             return
 
@@ -279,9 +428,10 @@ class Stack():
         self.write_calibration()
 
     def process_fids(self, overwrite=False, auto_bl=True, manual_bl=False, 
-                     manual_ps=False):
+                     manual_ps=False, shift_each=False):
+
         for spec_id in self.ordered_fids:
-            if spec_id in self.spectra:
+            if spec_id in self.spectra and not overwrite:
                 spec = self.spectra[spec_id]
                 if spec.is_processed:
                     continue
@@ -289,7 +439,7 @@ class Stack():
                 spec = Spectrum(spec_id, self)
             try:
                 spec.process(manual_ps=manual_ps, overwrite=overwrite, auto_bl=auto_bl, 
-                                    manual_bl=manual_bl)
+                                    manual_bl=manual_bl, shift_each=shift_each)
                 self.spectra[spec_id] = spec
             except Exception as err:
                 print(f"There was an error during the processing of trace {spec_id}:")
@@ -298,30 +448,68 @@ class Stack():
                 print("\nAborting process routine.")
                 return
 
-    def peakfit_fids(self, overwrite=False, method="ng_pick", **kwargs):
-        print("Beginning peak fitting procedure for the stack.")
-        for spec_id in self.ordered_fids:
+    def peakfit_fids(self, overwrite=False, spec_id = None, **kwargs):
+        method = self.peak_method
+        if spec_id is None:
+            print("Beginning peak fitting procedure for the stack.")
+            for spec_id in self.ordered_fids:
+                spec = self.spectra[spec_id]
+                if spec.is_peakfit and not overwrite:
+                    print(f"Skipping fid {spec_id}: it is already peak-fit.")
+                    continue
+                if not overwrite and os.path.isfile(f"{spec.fid_dir}/peaklist.txt"):
+                    print(f"Loading existing peaklist for fid {spec_id}.")
+                    spec.load_peaklist()
+                    continue
+                try:
+                    print("Fitting peak: ", str(spec_id))
+                    spec.peak_fit(peak_method=method, **kwargs)
+                except Exception as err:
+                    print(f"There was an error during the peak fitting of fid {spec_id}:")
+                    print(Exception, err, '\n')
+                    print(traceback.format_exc())
+                    print("\nAborting peak fit routine.")
+                    return
+
+
+                # print areas so far:
+                areas = {}
+                spec_ids = []
+                for spec_id, spec in self.spectra.items():
+                    if spec.is_peakfit:
+                        print(spec_id)
+                        spec_ids.append(spec_id)
+                        for met, value in spec.cpd_areas.items():
+                            if met not in areas:
+                                if len(areas) > 0:
+                                    max_length = [len(i) for i in areas.values()][0]
+                                    areas[met] = ['NA'] * max_length
+                                else:
+                                    areas[met] = []
+                        for met in areas.keys():
+                            if met in spec.cpd_areas.keys():
+                                areas[met].append(spec.cpd_areas[met])
+                            else:
+                                areas[met].append('NA')
+
+                print(areas)
+                print(spec_ids)
+                print("Areas: ", pd.DataFrame(areas, index = spec_ids))
+
+                if self.prompt_continue:
+                    if not prompt_continue():
+                        return
+
+
+
+        else:
             spec = self.spectra[spec_id]
-            if spec.is_peakfit:
-                print(f"Skipping fid {spec_id}: it is already peak-fit.")
-                continue
-            if not overwrite and os.path.isfile(f"{spec.path}/peaklist.txt"):
-                print(f"Loading existing peaklist for fid {spec_id}.")
-                spec.load_peaklist()
-                continue
-            try:
-                spec.peak_fit(peak_method=method, **kwargs)
-            except Exception as err:
-                print(f"There was an error during the peak fitting of fid {spec_id}:")
-                print(Exception, err, '\n')
-                print(traceback.format_exc())
-                print("\nAborting peak fit routine.")
-                return
-            if not prompt_continue():
-                return
+            spec.peak_fit(peak_method=method, **kwargs)
+            return
             
     def ridgetrace_fids(self, **kwargs):
         print("Beginning ridge tracing procedure for the stack.")
+        print("Using parameters: ", self.process_params_filepath)
         for spec_id in self.ordered_fids:
             spec = self.spectra[spec_id]
             if spec.is_ridgetraced:
@@ -337,7 +525,7 @@ class Stack():
                 return
 
     def write_stack(self, suffix=None, from_ridges=False):
-        """Write processed stack to Excel."""
+        """Write processed stack to Excel, including total areas."""
         if suffix is None:
             suffix = ""
         else:
@@ -346,6 +534,7 @@ class Stack():
         vectors = []
         timestamps = []
         areas = []
+        total_areas = []
         areas_index = []
         for spec_id in self.ordered_fids:
             spec = self.spectra[spec_id]
@@ -353,6 +542,7 @@ class Stack():
                 spectra.append(spec)
                 vectors.append(spec.data)
                 timestamps.append(spec.time_elapsed)
+                total_areas.append(spec.total_area)
             if from_ridges: 
                 if spec.is_ridgetraced:
                     areas.append(spec.ridges)
@@ -366,7 +556,7 @@ class Stack():
         print(f"\tCollected {len(spectra)} processed of {len(self.ordered_fids)} total spectra.")
         print(f"\tCollected {len(areas)} peak-fit of {len(self.ordered_fids)} total spectra.")
 
-        savepath = f"{self.path}/{self.basename}_{self.expt}{suffix}.xlsx"
+        savepath =  self.output_dir + "/_" + self.expt + suffix + ".xlsx"
         try:
             writer = pd.ExcelWriter(savepath, engine='xlsxwriter')
             print(f"\tOpened {savepath}.")
@@ -391,16 +581,80 @@ class Stack():
 
         if len(areas) > 0:
             print("Writing peak table...")
-            df = pd.DataFrame(areas, index=areas_index)
+            df = pd.DataFrame(areas, index = self.ordered_fids)
+            df['Total Area'] = total_areas
+            df['Spectrum ID'] = df.index
+            df.index = areas_index
             df.to_excel(writer, sheet_name='area', index_label="Time")
             ws = writer.sheets['area']
+            ws.write(0, 0, 'Time')
+
+        if len(areas) > 0:
+            print("Writing peak table...")
+            df = pd.DataFrame(areas, index = self.ordered_fids)
+            mets = [col for col in df.columns if col not in ["Time", "Scans"]]
+            df[mets] = df[mets].div(total_areas, axis=0)
+            df['Spectrum ID'] = df.index
+            df.index = areas_index
+            df.to_excel(writer, sheet_name='area_percent', index_label="Time")
+            ws = writer.sheets['area_percent']
             ws.write(0, 0, 'Time')
         else:
             print("No peak-fit spectra, will not right integrals table.")
 
         print("Saving file...")
-        writer.save()
+        writer.close()
         print(f"Done. Written to {savepath}.")
+
+    def plot_comparison(self, fid_groups, offsets, colors, window_center, window_size, plot_sem=True, sigmax=None, r_sigmin=0.05):
+        """Plot comparing signals of two conditions within a window.
+        
+        Parameters:
+        fid_groups : list of lists of spectrum IDs for conditions to plot
+        window_center, window_size, window_kwargs: parameters for plotting window
+        """
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        if sigmax is None:
+            sigmax = 0.
+            calc_sigmax = True
+        else:
+            calc_sigmax = False
+        ppmax = window_center + window_size/2.
+        ppmin = window_center - window_size/2.
+            
+        for fids, deltas, color in zip(fid_groups, offsets, colors):
+            vectors = []
+            for i, (id_string, delta) in enumerate(zip(fids, deltas)):
+                spec = self.spectra[id_string] # access Spectrum object
+                if i == 0:
+                    ppm = spec.ppm
+                plot_area = -1*np.trapz(spec.data, x=spec.ppm)
+                vector = ng.process.proc_base.cs(spec.data/plot_area, pts=delta)
+                if not plot_sem:
+                    ax.plot(spec.ppm, vector, lw=1, color=color, alpha=0.5)  # plot replicate
+                vectors.append(vector)
+                if calc_sigmax:
+                    sigmax = max(sigmax, 1.05*spec.get_sigmax(window_center, window_size)/plot_area) # update max signal
+            vec_arr = np.array(vectors)
+            avg = np.mean(vec_arr, axis=0) # calculate average signal for group
+            if plot_sem:
+                sem = np.std(vec_arr, axis=0)/np.sqrt(len(vectors))
+                mask = (ppm <= ppmax+1) & (ppm >= ppmin-1)
+                lb = avg-1.96*sem
+                ub = avg+1.96*sem
+                ax.fill_between(
+                    ppm[mask], 
+                    lb[mask], 
+                    ub[mask], 
+                    color=color,
+                    alpha=0.3
+                )
+            ax.plot(ppm, avg, lw=3., color=color) # plot average
+
+        sigmin = -1*r_sigmin*sigmax
+        set_plot_window(ax, window_center, window_size, sigmin, sigmax)
+        plt.show()
 
 class PeakList():
     def __init__(self, shifts, peakw, amps, cIDs, assignments=dict()):
@@ -429,12 +683,19 @@ class Spectrum():
     def __init__(self, id: str, parent: Stack):
         self.id = id
         self.parent = parent
-        self.path = f"{self.parent.path}/{self.id}"
+        self.fid_dir = f"{self.parent.run_dir}/{self.id}"
+        print("FID dir: ", self.fid_dir)
         self.is_processed = False
         self.is_peakfit = False
         self.is_ridgetraced = False
+        self.process_params_filepath = self.parent.process_params_filepath
+        self.peak_method = self.parent.peak_method
+        self.r = self.parent.r
+        self.manually_refine_curves = self.parent.manually_refine_curves
+        self.show_curves = self.parent.show_curves
+        self.total_area = None
 
-    def process(self, manual_ps=False, overwrite=True, auto_bl=True, manual_bl=False):
+    def process(self, manual_ps=False, overwrite=True, auto_bl=True, manual_bl=False, shift_each=False):
         """Process 1D-NMR fid.
         Includes LB, ZF, FT, PS, BL, and PPM shift calibration.
 
@@ -448,14 +709,15 @@ class Spectrum():
         """
         print(f"Processing fid {self.id}.")
         print("Loading metadata...")
-        dic, _ = ng.bruker.read(self.path)
+        dic, _ = ng.bruker.read(self.fid_dir)
         n_scans = dic['acqus']['NS']
         self.timestamp = datetime.datetime.fromtimestamp(dic['acqus']['DATE'])
         self.time_elapsed = (self.timestamp - self.parent.timestamp).total_seconds()/3600.
+        print("Time elapsed: ", str(self.time_elapsed))
 
-        if os.path.exists(f"{self.path}/ft") and not overwrite:
+        if os.path.exists(f"{self.fid_dir}/ft") and not overwrite:
             print(f"Loading existing processed spectrum for fid {self.id}.")
-            self.dic, self.data = ng.fileio.pipe.read(f"{self.path}/ft") # Load a previously processed spectrum
+            self.dic, self.data = ng.fileio.pipe.read(f"{self.fid_dir}/ft") # Load a previously processed spectrum
             self.data = self.data.real
             self.uc = ng.pipe.make_uc(self.dic, self.data, dim=0)
             self.ppm = self.uc.ppm_scale()
@@ -463,7 +725,7 @@ class Spectrum():
             return
 
         print("Processing spectrum with NMRPipe...")
-        self.dic, self.data = pipe_process(self.parent.expt, f'{self.path}')  # Convert, LB, ZF, FT
+        self.dic, self.data = pipe_process(f'{self.fid_dir}', self.process_params_filepath)  # Convert, LB, ZF, FT
 
         print("Performing phase correction...")
         self.dic, self.data = ng.process.pipe_proc.ps(self.dic, self.data, p0=self.parent.p0, p1=self.parent.p1)
@@ -492,10 +754,12 @@ class Spectrum():
             self.data = np.float32(self.data) - np.float32(bl)
 
         print("Calibrating PPM shift...")
+        if shift_each:
+            CalibrateWindow(self.ppm, self.data, self.parent)
         self.calibrate()
 
         print("Writing processed FT spectrum...")
-        ng.fileio.pipe.write(f"{self.path}/ft", self.dic, self.data, overwrite=True)
+        ng.fileio.pipe.write(f"{self.fid_dir}/ft", self.dic, self.data, overwrite=True)
         self.is_processed = True
         print(f"Done processing fid {self.id}.")
 
@@ -509,7 +773,7 @@ class Spectrum():
         self.uc = ng.pipe.make_uc(self.dic, self.data, dim=0)
         self.ppm = self.uc.ppm_scale()
         if update_ft:
-            ng.fileio.pipe.write(f"{self.path}/ft", self.dic, self.data, overwrite=True)
+            ng.fileio.pipe.write(f"{self.fid_dir}/ft", self.dic, self.data, overwrite=True)
 
     def plot(self, yys=[], ppm_bounds=None, show=True, ax=None, **kwargs):
         if ax is None:
@@ -549,19 +813,7 @@ class Spectrum():
             sigmax = self.get_sigmax(center, window_size)
         sigmin = -1*r_sigmin*sigmax
         ax.plot(self.ppm, self.data, lw=1., color='k')
-        ppmax = center + window_size/2.
-        ppmin = center - window_size/2.
-        ax.set_xlim((ppmax, ppmin))
-        ax.set_ylim((sigmin, sigmax))
-        ax.xaxis.set_tick_params(width=1.)
-        plt.setp(ax.spines.values(), linewidth=1.)
-        ax.get_yaxis().set_ticks([])
-        xticks = [round(tk, 1) for tk in ax.get_xticks()]
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(xticks, fontname='Arial', size=12)
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_visible(False)
+        set_plot_window(ax, center, window_size, sigmin, sigmax)
         plt.show()
 
     def ppm_to_float_span(self, xx):
@@ -636,8 +888,17 @@ class Spectrum():
         
         Other parameters are defined in isotopes.json.
         """
+
         msep = self.parent.isotope.peak_pick_msep
+
         pthres = r*rmse(self.data[(self.ppm <= 160) & (self.ppm >= 130)])
+        
+        # limit ppm window
+        #limited_data = copy.deepcopy(self.data)
+        #if ppm_max is not None and ppm_min is not None:
+        #    ppm_mask = (self.ppm >= ppm_min) & (self.ppm <= ppm_max)
+        #    limited_data = self.data[ppm_mask]
+
         shifts_tup, cIDs, peakw, amps = ng.analysis.peakpick.pick( # Find peaks
             self.data, pthres=pthres, msep=(self.ppm_to_int_span(msep),),
             algorithm='thres-fast', est_params=True, lineshapes=['l'],
@@ -708,6 +969,7 @@ class Spectrum():
         isotope = self.parent.isotope
         peaklist = self.peaklist
         ppm_delta = self.ppm_to_float_span(isotope.fit_ppm_delta)
+
         fwhm_max = self.ppm_to_float_span(isotope.fit_fwhm_max)
         if cv == 'sl':
             # Special case for split Lorentzian
@@ -820,6 +1082,8 @@ class Spectrum():
         self.fit_params = fit_params
         self.fit_amps = fit_amps
 
+
+
     def pack_peaks(self):
         """Pack parameters into Peak object for manual assignment."""
         rev_assignments = {}
@@ -904,7 +1168,7 @@ class Spectrum():
         """Write peak list to FID directory"""
         peak_records = [pk.to_record() for pk in peak_curves]
         df = pd.DataFrame(peak_records)
-        df.to_csv(f"{self.path}/peaklist.txt", sep="\t")
+        df.to_csv(f"{self.fid_dir}/peaklist.txt", sep="\t")
 
     def calculate_residual(self):
         """Calculate residual from simulated spectrum."""
@@ -946,7 +1210,7 @@ class Spectrum():
         ax.set_xlim(self.parent.ppm_bounds)
         plt.show()
 
-    def peak_fit(self, r=8, sep=0.005, peak_method='ng_pick', plot=True):
+    def peak_fit(self,  peak_method='ng_pick', plot=True):
         """Peak-pick NMR spectrum.
         Includes peak-picking, peak assignment, and integration functionality. The
         reference peaks to be fit should be specified in cfg_{isotope}.txt and
@@ -972,14 +1236,14 @@ class Spectrum():
         elif peak_method == 'sg_pick':
             self.peaklist = self.peak_pick_sg()
         elif peak_method == 'ng_pick':
-            self.peaklist = self.peak_pick_ng(r=r)
+            self.peaklist = self.peak_pick_ng(r=self.r)
 
         if len(self.peaklist.shifts) == 0:
             # Exit if no peaks detected
             print("No peaks detected; exit.")
             return {}, []
 
-        if plot:
+        if self.show_curves:
             self.plot_with_labels(self.peaklist.shifts, self.peaklist.cIDs, ppm_bounds=plot_bounds)
             plt.show()
 
@@ -1006,18 +1270,28 @@ class Spectrum():
         self.curve_fit()
 
         if peak_method == 'sg_pick' or peak_method == 'ng_pick':
-            print("Performing interactive curve refinement...")
-            self.refine_curves()
+            if self.manually_refine_curves:
+                print("Performing interactive curve refinement...")
+                self.refine_curves()
+            else:
+                peak_curves = self.pack_peaks()
+                self.unpack_peaks(peak_curves)
+                print("Writing peak parameters...")
+                self.write_peaks(peak_curves)
 
         print("Performing simulation and integration subroutine...")
         self.simulate_peaks(CURVE_FIT_RESOLUTION)
         self.calculate_residual()
         self.is_peakfit = True
         
-        print("Peak-fitting routine complete.")
-        self.plot_fit_curves()
+        if self.show_curves:
+            print("Peak-fitting routine complete.")
+            self.plot_fit_curves()
 
-    def ridge_trace(self, wr=0.01, plot=True):
+        print("Measured areas: ")
+        print(self.cpd_areas)
+
+    def ridge_trace(self, wr=0.01, plot=True, overwrite = False):
         """Simple function to get the heights of reference peaks in a spectrum.
         Takes the maximum signal within window of each peak. Does not functionally
         trace ridge across spectra; cannot handle drifting chemical shifts, eg. due
@@ -1032,6 +1306,7 @@ class Spectrum():
         signals = {}
         shifts = []
         amps = []
+
         for i, row in self.parent.refpeaks.iterrows():
             shift = float(row["Shift"])
             bounds = (self.ppm_to_int(shift-wr), self.ppm_to_int(shift+wr))
@@ -1048,7 +1323,7 @@ class Spectrum():
         self.is_ridgetraced = True
 
     def load_peaklist(self):
-        peakdata = pd.read_csv(f"{self.path}/peaklist.txt", sep='\t', index_col=0)
+        peakdata = pd.read_csv(f"{self.fid_dir}/peaklist.txt", sep='\t', index_col=0)
         peakdata['ppm_i'] = peakdata['ppm'].map(self.ppm_to_int)
         _, cIDs = cluster_peaks([(sh,) for sh in peakdata['ppm_i']], self.parent.isotope.fit_cluster_msep)
         assignments = {cpd: seg['ppm'].to_list() for cpd, seg in peakdata.groupby(by='cpd')}
@@ -1066,28 +1341,79 @@ class Spectrum():
         self.simulate_peaks(CURVE_FIT_RESOLUTION)
         self.is_peakfit = True
 
+def calculate_total_area(stack_instance):
+    """Calculate the total area under the curve for all NMR spectra in the stack instance."""
+    total_area = 0.0  # Initialize total area variable
+
+    # Loop through the spectra in order of keys (string values of integers)
+    areas = {}
+    for i, spec in sorted(stack_instance.spectra.items()):  # Sort keys as integers
+        if spec.is_processed:  # Ensure the spectrum has been processed
+            area = -1 * np.trapz(spec.data, x=spec.ppm)  # Calculate area under the curve
+            spec.total_area = area
+            areas[spec.id] = area
+
+    print(f"Total area under the curve for all NMR spectra: {areas}")
+    return stack_instance  # Return the total area
+
 def call_main():
     """Parse the command line input and create a Stack object."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('datapath', metavar='DATAPATH', help='path to dataset')
-    parser.add_argument('expt', metavar='EXPT', help='experiment string (1H, 13C, or 1H_13C)')
-    parser.add_argument('acq1', metavar='INITIAL', help='index of the initial run FID, for calibration')
+    parser.add_argument('--params_file')
+    parser.add_argument('--calibrate', action = 'store_true')
+    parser.add_argument('--process_n15', action = 'store_true')
+    parser.add_argument('--process_1H', action =  'store_true'  )
+    #parser.add_argument('datapath', metavar='DATAPATH', help='path to dataset')
+    #parser.add_argument('expt', metavar='EXPT', help='experiment string (1H, 13C, or 1H_13C)')
+    #parser.add_argument('acq1', metavar='INITIAL', help='index of the initial run FID, for calibration')
+    
+
     args = parser.parse_args()
-    if not os.path.exists(args.datapath):
-        print("Not a valid path " + args.datapath)
+    if not os.path.exists(args.params_file):
+        print("Not a valid path " + args.params_file)
         return
-    supported_exp = ['1H', '13C', '1H_13C']
-    if args.expt not in supported_exp:
-        print(f"Unsupported experiment {args.expt}. Supported: {', '.join(supported_exp)}")
-        return
-    if not os.path.exists(f"{args.datapath}/{args.acq1}"):
-        print(f"FID {args.acq1} was not found in the datapath. Please choose a valid FID.")
-        return
-    s = Stack(args.datapath, args.expt, args.acq1)
-    s.calibrate()
-    s.process_fids()
-    s.peakfit_fids()
-    s.write_stack()
+    #supported_exp = ['1H', '13C', '1H_13C']
+    #if args.expt not in supported_exp:
+    #    print(f"Unsupported experiment {args.expt}. Supported: {', '.join(supported_exp)}")
+    #    return
+    #if not os.path.exists(f"{args.datapath}/{args.acq1}"):
+    #    print(f"FID {args.acq1} was not found in the datapath. Please choose a valid FID.")
+    #    return
+    process_n15 = "_15N" in args.params_file
+    process_1h = "_1H" in args.params_file
+    process_13c = "_13C" in args.params_file
+    overwrite = False
+    if args.calibrate:
+        overwrite = True
+
+    config = configparser.ConfigParser()
+    config.read(args.params_file)
+    print(args.params_file)
+
+    if process_n15:
+        print("Processing n15")
+        s = Stack(args.params_file, line_broadening = 0.01, spec_size = None)
+        s.calibrate(overwrite = overwrite)
+        s.process_fids(overwrite = False)
+        s = calculate_total_area(s)
+        s.peakfit_fids(overwrite = False)
+        s.write_stack()
+    if process_1h:
+        print("Processing 1H")
+        s = Stack(args.params_file)
+        s.calibrate(overwrite = overwrite)
+        s.process_fids(overwrite = True)
+        s = calculate_total_area(s)
+        s.ridgetrace_fids(overwrite = True)
+        s.write_stack(from_ridges=True)
+    if process_13c and not process_n15:
+        print("Processing 13C")
+        s = Stack(args.params_file)
+        s.calibrate(overwrite = overwrite)
+        s.process_fids(overwrite = False)
+        s = calculate_total_area(s)
+        s.peakfit_fids(overwrite=False)
+        s.write_stack()
     
 if __name__ == "__main__":
     call_main()

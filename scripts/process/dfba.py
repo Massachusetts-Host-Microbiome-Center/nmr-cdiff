@@ -40,10 +40,13 @@ from standard_curves import compute_standard_curves
 from synchronize import synchronizers
 from trajectories import fit_trajectories
 from get_color import get_cmap
+import configparser
+
+
 
 SCDIR = os.path.dirname(os.path.abspath(__file__))   # location of script
 BOLD = xl.styles.Font(bold=True)
-MODEL_PATH = f'{SCDIR}/../../data/icdf843.json'
+#MODEL_PATH = f'{SCDIR}/../data/icdf843.json'
 METHODS = {
     'fba': lambda m: m.optimize(),
     'fva': cb.flux_analysis.flux_variability_analysis,
@@ -102,123 +105,72 @@ class MetaboliteCollection:
         return item
 
 class Substrate():
-    def __init__(self, name, label, model_id, concentration, curve, experiments, products,
-                 product_ids, product_curves, from_standards, plot_ticks=None):
-        self.name = name
-        self.label = label
-        self.model_id = model_id
-        self.experiments = experiments
-        self.cx = concentration
-        self.curve = curve
-        self.products = products
-        self.product_ids = product_ids
-        self.product_curves = product_curves
-        self.from_standards = from_standards
-        self.plot_ticks = plot_ticks
+    def __init__(self, jobj):
+        required_fields = ["name", "label", "model_id", "concentration", "curve", "standard_peaks", "standard_concentrations",
+                           "experiments", "products", "reactions_to_constrain", "normalize_percent"]
 
-    @classmethod
-    def from_json(cls, jobj, metabolite_collection: MetaboliteCollection):
-        required_fields = ["name", "label", "model_id", "concentration", "curve", 
-                           "experiments", "products"]
-        positional_args = []
-        try:
-            substrate_name = jobj["name"]
-            for field in required_fields:
-                positional_args.append(jobj.pop(field))
-        except KeyError:
-            print(f"Field {field} missing for substrate {substrate_name}.")
-            raise
-        products = positional_args.pop(6)
-        product_ids = {k: v["model_id"] for k, v in products.items()}
-        product_curves = {k: v["curve"] for k, v in products.items()}
-        from_standards = ("standards" in jobj)
-        if from_standards:
-            fpath = parse_filepath(jobj.pop("standards"))
-            product_scale = compute_standard_curves(filepath=fpath, substrate=substrate_name)
+        missing_keys = [key for key in required_fields if key not in jobj]
+        if missing_keys:
+            error_message = f"The following keys are missing: {missing_keys}"
+            raise ValueError(error_message)
+
+
+        self.name = jobj['name']
+        self.label = jobj['label']
+        self.model_id = jobj['model_id']
+        self.concentration = jobj['concentration']
+        self.curve = jobj['curve']
+        self.experiments = jobj['experiments']
+        self.products = jobj['products']
+        self.reactions_to_constrain = jobj['reactions_to_constrain']
+        self.fname_standard_peaks = jobj['standard_peaks']
+        self.fname_standard_concentrations = jobj['standard_concentrations']
+        self.plot_ticks = jobj['plot_ticks']
+        self.cx = jobj['concentration']
+        self.from_standards = False
+        self.normalize_percent = jobj['normalize_percent']
+        print(self.fname_standard_peaks)
+        if self.fname_standard_peaks != "None":
+            self.from_standards = True
+
+        
+        self.product_ids = {k: v["model_id"] for k, v in self.products.items()}
+        self.product_curves = {k: v["curve"] for k, v in self.products.items()}
+
+        if self.from_standards:
+            print("Reading standards")
+            fpath = parse_filepath(self.fname_standard_peaks)
+            concentrations = parse_filepath(self.fname_standard_concentrations)
+            
+            num_carbons = {}
+            for product_key, product in self.products.items():
+                num_carbons[product_key] = product['num_carbons']
+            sheetname = "area"
+            if jobj['normalize_percent']:
+                sheetname = "area_percent"
+            self.product_scale = compute_standard_curves(self.fname_standard_peaks, self.fname_standard_concentrations,
+            num_carbons, substrate=self.name, sheetname=sheetname)
+            print("Product scale")
+            print(self.product_scale)
         else:
             try:
-                product_scale = {k: v['scale'] for k, v in products.items()}
+                self.product_scale = {k: v['scale'] for k, v in self.products.items()}
             except KeyError:
                 print("Expected field \"scale\" for all products of metabolite " \
-                      + f"{substrate_name} where path to standards file was not proveded, " \
+                      + f"{self.name} where path to standards file was not proveded, " \
                       + "but at least one \"scale\" field was missing.")
                 print("Please provide either scale fields or a standards field.")
                 raise
-        metabolite_collection.new(positional_args[2], substrate_name, substrate_name, 1.)
-        for metname, metdata in products.items():
-            metabolite_collection.new(metdata["model_id"], metname, substrate_name, product_scale[metname])
-        return cls(*positional_args, product_scale, product_ids, product_curves, from_standards, **jobj)
-    
+
+
+
     def metmap(self):
         met_dict = {self.name: self.model_id}
         met_dict.update({k: v for k, v in self.product_ids.items()})
         return met_dict
 
-def set_bounds(model, rid, lower=0., upper=1000., update=True):
-    """Set upper and lower flux bounds for a reaction.
 
-    Parameters:
-    model -- COBRA model
-    rid -- the ID of the reaction to bound
-    lower -- lower bound value to set (default: 0)
-    upper -- upper bound value to set (default: 1000)
-    update -- whether to set the bounds (default: True)
-    """
-    if update:
-        rxn = model.reactions.get_by_id(rid)
-        rxn.bounds = (lower, upper)
 
-def reverse_flux(flux, lb, ub):
-    """Reverse flux direction and swap upper/lower bounds."""
-    return -1*flux, -1*ub, -1*lb
-
-def update_uptake_bounds(model, t, met, params, update=True):
-    """Calculate and set exchange reaction bounds at timepoint t.
-
-    Parameters:
-    model -- COBRA model
-    t -- the individual timepoint (int or float)
-    met -- the metabolite for which the exchange bounds are to be changed
-    popts -- optimal logistic coefficients
-    perrs -- logistic coefficient SEMs
-    update -- whether to set the bounds (default: True)
-
-    Returns optimal values and 95% confidence interval of exchange fluxes and
-    estimated concentrations at the timepoint. If update==True, also sets the
-    exchange reaction bounds to the 95% confidence interval limits.
-    """
-    # Calculate logistic solutions with flexible number of parameters
-    signal, serr, exch, exerr = params.get_sol(t)
-    exch_l, exch_u, signal_l, signal_u = params.get_bounds(t)
-    # Reverse direction and set bounds for secretion reactions
-    if met in ['glc', 'proL', 'leuL', 'valL', 'ileL', 'thrL']:
-        rid = 'Ex_' + met
-        exch, exch_l, exch_u = reverse_flux(exch, exch_l, exch_u)
-        if met in ['leuL']:
-            set_bounds(model, rid, update=update) # leave leucine unbounded
-        else:
-            set_bounds(model, rid, lower=exch_l, upper=exch_u, update=update)
-    # Ignore data from 1H spectra
-    elif met == 'acoa':
-        pass
-    # Update bounds for products
-    elif met in ['2abut', 'ppa']:
-        rid = 'Sec_' + met
-        set_bounds(model, rid, lower=exch_l, upper=exch_u, update=update)
-    else:
-        rid = 'Sec_' + met
-        lb = max(exch_l, 0) # do not allow reverse flux
-        ub = max(exch_u, 0)
-        set_bounds(model, rid, lower=lb, upper=ub, update=update)
-    # Update Wood-Ljungdahl Pathway bounds with butyrate
-    if met == 'but':
-        wlp_l, wlp_u, _, _ = params.get_bounds(t, substrate="Glucose")
-        set_bounds(model, 'ID_326', lower=0, upper=max(wlp_u, 0), update=update)
-    # Allow natural abundance acetate from cysteine
-    if met == 'ac':
-        cys_l, cys_u, _, _ = params.get_bounds(t, substrate="Acetate13C")
-        set_bounds(model, 'Ex_cysL', lower=max(cys_l, 0), upper=max(cys_u, 0), update=update)
-    return exch, exch_l, exch_u, signal, signal_l, signal_u
 
 def areaplot(df, dl, du, t_max=48, ylabel='flux (mol/gDW/h)'):
     """Plot lines with shaded confidence interval.
@@ -254,31 +206,9 @@ def areaplot(df, dl, du, t_max=48, ylabel='flux (mol/gDW/h)'):
     plt.legend()
     plt.show()
 
-def niceplot(df, t_max=48, ylabel='flux (mol/gDW/h)'):
-    """Plot lines.
 
-    Parameters:
-    df -- dataframe of data to plot
-    t_max -- maximum value of x-axis
-    ylabel -- y-axis label
-    """
-    ax = df.plot(
-        figsize=(14, 10),
-        xticks=(range(0, t_max+1, 12)),
-        xlim=(0, t_max),
-        ylim=(0, None),
-        fontsize=30,
-        lw=5,
-    )
-    ax.set_xlabel('time (h)', fontsize=30, fontweight='bold')
-    ax.set_ylabel(ylabel, fontsize=30, fontweight='bold')
-    plt.xticks(ax.get_xticks(), weight='bold')
-    plt.yticks(ax.get_yticks(), weight='bold')
-    # plt.title("dFBA (10/h), ATP, WLP > 8h")
-    plt.legend()
-    plt.show()
 
-def areaplot2(t, substrates, params: MetaboliteCollection):
+def areaplot2(t, substrates, met_collect: MetaboliteCollection):
     """Plot lines with shaded confidence interval.
 
     Parameters:
@@ -288,6 +218,8 @@ def areaplot2(t, substrates, params: MetaboliteCollection):
     t_max -- maximum value of x-axis
     ylabel -- y-axis label
     """
+
+    tmax = np.max(t)
     cmap = get_cmap()
     figmap = {}
     for substrate in substrates:
@@ -296,7 +228,7 @@ def areaplot2(t, substrates, params: MetaboliteCollection):
         afont = {'fontname': 'Arial', 'size': 7}
         ax.set_xlabel("Time (h)", **afont)
         ax.set_ylabel("Estimated Concentration (mM)", **afont)
-        ax.set_xlim((0, 36))
+        ax.set_xlim((0, tmax))
         if substrate.plot_ticks is not None:
             start = substrate.plot_ticks["start"]
             stop = substrate.plot_ticks["stop"]
@@ -304,32 +236,49 @@ def areaplot2(t, substrates, params: MetaboliteCollection):
             minor = substrate.plot_ticks["minor_step"]
             ax.set_yticks(np.arange(start, stop+major, major))
             ax.set_yticks(np.arange(start, stop+minor, minor), minor=True)
-        ax.set_xticks([0, 12, 24, 36])
-        ax.set_xticks(list(range(37)), minor=True)
+        ax.set_xticks([0, 12, 24, tmax])
+        ax.set_xticks(list(range(tmax)), minor=True)
         ax.set_xticklabels(ax.get_xticks(), **afont)
         ax.set_yticklabels(ax.get_yticks(), **afont)
-        ax.xaxis.set_tick_params(width=0.5)
-        ax.yaxis.set_tick_params(width=0.5)
+        #ax.xaxis.set_tick_met_collect(width=0.5)
+        #ax.yaxis.set_tick_met_collect(width=0.5)
         plt.setp(ax.spines.values(), linewidth=0.5)
-    for cpdset in params.get_values():
+    
+    print("PLOTTING HERE: ")
+    for cpdset in met_collect.get_values():
         for substrate_name, curveset in cpdset.logistic_sets.items():
+            print(cpdset.name)
+            print(curveset)
+            print(curveset.curves)
             f = figmap[substrate_name]
             ax = f.get_axes()[0]
-            ser = curveset.get_sol(t)[0]
+            try:
+                ser = curveset.get_sol(t)[0]
+            except Exception as e:
+                print("ERROR: Check your environment is loaded correctly. See installing_nmr_processing_environment.md")
+                quit()
+   
             _, _, lb, ub = curveset.get_bounds(t)
             color = cmap[cpdset.name]
             ax.plot(t, ser, '-', label=cpdset.name, lw=2, c=color)
             color = color + (0.2,)
             ax.fill_between(t, lb, ub, color=color)
+            ax.legend(bbox_to_anchor = (1.01, 1.01))
+    
     plt.show()
+    return(f)
     # for sub, fig in figmap.items():
     #     plt.figure(fig.number)
     #     plt.show()
 
-def load_model(modelfile, objective):
+def load_model(modelfile, objective_list):
     """Load model and set constraints."""
     model = cb.io.load_json_model(modelfile)
-    model.objective = objective
+    objective_dict = {}
+    for objective in objective_list:
+        objective_reaction = model.reactions.get_by_id(objective)
+        objective_dict[objective_reaction] = 1 / len(objective_list) # assumes all equally important
+    model.objective = objective_dict
     model.reactions.get_by_id(objective).upper_bound=1000
 
     # Set default exchange bounds from media composition
@@ -346,58 +295,36 @@ def load_model(modelfile, objective):
     model.solver = 'glpk'
     return model
 
-def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_method, substrates, 
-              fva_run=False, tracked_reactions=[], tracked_metabolites=[], tmin_hours=0,
-              tmax_hours=48, solutions_per_hour=1, dry_run=False):
-    """Main function to compute dFBA solutions.
-    Computes successive static FBA solutions and plots the estimated metabolite
-    concentrations, uptake rates, and tracked reaction fluxes.
 
-    Parameters:
-    params -- dictionary mapping metabolite names to LogisticSet objects
-            containing optimal logistic coefficients and errors
-    tracked_rxns -- reactions to tracked and written to fluxes.xlsx
-    fba_method -- FBA method to use for static solutions (function, default:
-            cobra.flux_analysis.loopless.loopless_solution)
-    fva_run -- whether to also compute an FVA solution
-    modelfile -- location of metabolic model
-    t_max -- end timepoint in hours (default 48)
-    resolution -- number of static solutions per hour (default 1)
-    obj -- reaction ID of objective function (default ATP_sink)
-    dry_run -- True to avoid writing output to file (default False)
-    """
-    print(f"""dFBA log: Begin dFBA analysis with sheet, endpoint
-          {tmax_hours} hours, and resolution {solutions_per_hour}.""")
-    print(f"Using method {fba_method}.")
-    if dry_run:
-        print("Dry run, will not write results.")
-    # Load metabolic model and logistic fit specs #
-    print('dFBA log: loading model and specsheet...')
-    model = load_model(parse_filepath(model_file), objective_function)
-    
-    # Set up logistic parameters and time scale
-    nsol = int(round((tmax_hours - tmin_hours)*solutions_per_hour + 1, 0))
-    ts_array = np.linspace(tmin_hours, tmax_hours, num=nsol)
-    timecourse = list(ts_array)
-    for mi, param_set in params.get_items():
-        param_set.eval(ts_array)
+def manually_adjust_leucine_metabolism(met_collect):
 
-    # Special-case adjustments for certain metabolites
-    params.remove_met("5apn")
-    if params.has_id("leuL") and params.has_id("valL") and params.has_id("isobuta"):
+    # shift the halfmax of isocaproate curve to match the halfmax of the Leucine curve (leucine is directly measured)
+    # shift the halfmax of the valine curve to the same.
+    # if there is no isocaproate (had KO), then just shift the valine curve
+    if met_collect.has_id("leuL") and met_collect.has_id("valL") and met_collect.has_id("isobuta"):
         for mi in "valL", "isobuta": # Remove these 4 lines if we get Val and Ile runs
-            params.get_by_id(mi).tshift("Leucine", params.get_by_id("isocap").avg_x0("Leucine"))
+            try:
+                met_collect.get_by_id(mi).tshift("Leucine", met_collect.get_by_id("isocap").avg_x0("Leucine"))
+                met_collect.get_by_id(mi).tshift("Leucine", met_collect.get_by_id("ival").avg_x0("Leucine"))
+            except:
+                met_collect.get_by_id(mi).tshift("Leucine", met_collect.get_by_id("ival").avg_x0("Leucine"))
     else:
-        params.remove_met("valL")
-        params.remove_met("isobuta")
-    if params.has_id("proL") and params.has_id("ileL") and params.has_id("2mbut"):
+        met_collect.remove_met("valL")
+        met_collect.remove_met("isobuta")
+    if met_collect.has_id("proL") and met_collect.has_id("ileL") and met_collect.has_id("2mbut"):
         for mi in "ileL", "2mbut":
-            params.get_by_id(mi).tshift("Leucine", params.get_by_id("proL").avg_x0("Proline"))
+            met_collect.get_by_id(mi).tshift("Leucine", met_collect.get_by_id("proL").avg_x0("Proline"))
     else:
-        params.remove_met("ileL")
-        params.remove_met("2mbut")
+        met_collect.remove_met("ileL")
+        met_collect.remove_met("2mbut")
+    return(met_collect)
 
+
+
+def initialize_result_storage(model, met_collect, timecourse, tracked_reactions, tracked_metabolites):
     # Initialize data structure for tracked metabolites
+    print("Initialize data structure for tracked metabolites")
+    print("Planning to track: ", tracked_metabolites)
     propdata = dict()
     propmets = []
     for mi in tracked_metabolites:
@@ -415,188 +342,355 @@ def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_
                 propdata[mi]['data_out_lb'] = []
                 propdata[mi]['data_out_ub'] = []
         else:
-            print(f"'{mi}_c' is not a valid metabolite.")
+            print(f"'Tracked metabolite {mi}_c' is not a valid metabolite.")
 
-    # Initialize results dataframes
-    mnames = [model.metabolites.get_by_id(mi + '_c').name for mi in params.get_ids()]
+    # Initialize results dataframes for trakced reactions
+    mnames = [model.metabolites.get_by_id(mi + '_c').name for mi in met_collect.get_ids()]
     results = [pd.DataFrame(0., index=timecourse, columns=mnames) for _ in range(6)]
-    rnames = [model.reactions.get_by_id(ri).name for ri in tracked_reactions]
-    rxnflux = pd.DataFrame(0., index=timecourse, columns=rnames)
-    if fva_run:
-        rxnf_ub = pd.DataFrame(0., index=timecourse, columns=rnames)
-        rxnf_lb = pd.DataFrame(0., index=timecourse, columns=rnames)
-        allrxns = [rxn.id for rxn in model.reactions]
-        fullflux_lb = pd.DataFrame(0., index=timecourse, columns=allrxns)
-        fullflux_ub = pd.DataFrame(0., index=timecourse, columns=allrxns)
+    tracked_reactions_names = [model.reactions.get_by_id(ri).name for ri in tracked_reactions]
+    rxnflux_tracked = pd.DataFrame(0., index=timecourse, columns=tracked_reactions_names)
+    
+    # Initialize results dataframes for all reactions
+    rnames_all = [model.reactions.get_by_id(ri.id).name for ri in model.reactions]
+    metnames_all = [met.name for met in model.metabolites]
+    rxnflux_all = pd.DataFrame(0., index=timecourse, columns=rnames_all)
+    allrxns = [rxn.id for rxn in model.reactions]
+
+    # Initialize results dataframes for upper/lower bound of reactions (used for fva)
+    rxnf_ub = pd.DataFrame(0., index=timecourse, columns=tracked_reactions_names)
+    rxnf_lb = pd.DataFrame(0., index=timecourse, columns=tracked_reactions_names)
+    fullflux_lb = pd.DataFrame(0., index=timecourse, columns=allrxns)
+    fullflux_ub = pd.DataFrame(0., index=timecourse, columns=allrxns)
+
+    return(propdata, propmets, results, rxnflux_tracked, rxnflux_all, rxnf_ub, rxnf_lb, fullflux_ub, fullflux_lb)
+
+
+
+def set_bounds(model, rid, lower=0., upper=1000., update=True):
+    """Set upper and lower flux bounds for a reaction.
+
+    Parameters:
+    model -- COBRA model
+    rid -- the ID of the reaction to bound
+    lower -- lower bound value to set (default: 0)
+    upper -- upper bound value to set (default: 1000)
+    update -- whether to set the bounds (default: True)
+    """
+    if update:
+        rxn = model.reactions.get_by_id(rid)
+        rxn.bounds = (lower, upper)
+
+def reverse_flux(flux, lb, ub):
+    """Reverse flux direction and swap upper/lower bounds."""
+    return -1*flux, -1*ub, -1*lb
+
+
+
+def update_uptake_bounds(model, t, met, curveset, update=True):
+    """Calculate and set exchange reaction bounds at timepoint t.
+
+    Parameters:
+    model -- COBRA model
+    t -- the individual timepoint (int or float)
+    met -- the metabolite for which the exchange bounds are to be changed
+    popts -- optimal logistic coefficients
+    perrs -- logistic coefficient SEMs
+    update -- whether to set the bounds (default: True)
+
+    Returns optimal values and 95% confidence interval of exchange fluxes and
+    estimated concentrations at the timepoint. If update==True, also sets the
+    exchange reaction bounds to the 95% confidence interval limits.
+    """
+    # Calculate logistic estimates of metabolite concentration at time t
+    signal, serr, exch, exerr = curveset.get_sol(t)
+    exch_l, exch_u, signal_l, signal_u = curveset.get_bounds(t)
+
+    # Reverse direction and set bounds for secretion reactions
+    if met in ['glc', 'proL', 'valL', 'ileL', 'thrL']:
+        rid = 'Ex_' + met
+        exch, exch_l, exch_u = reverse_flux(exch, exch_l, exch_u)
+        set_bounds(model, rid, lower=exch_l, upper=exch_u, update=update)
+
+    if met in ['leuL']:
+        set_bounds(model, rid, update=update) # leave leucine unbounded
+
+    # Ignore data from 1H spectra
+    elif met == 'acoa':
+        pass
+    # Update bounds for products
+    elif met in ['2abut', 'ppa']:
+        rid = 'Sec_' + met
+        set_bounds(model, rid, lower=exch_l, upper=exch_u, update=update)
+    else:
+        rid = 'Sec_' + met
+        lb = max(exch_l, 0) # do not allow reverse flux
+        ub = max(exch_u, 0)
+        set_bounds(model, rid, lower=lb, upper=ub, update=update)
+    # Update Wood-Ljungdahl Pathway bounds with butyrate
+    if met == 'but':
+        wlp_l, wlp_u, _, _ = curveset.get_bounds(t, substrate="Glucose")
+        set_bounds(model, 'ID_326', lower=0, upper=max(wlp_u, 0), update=update)
+    # Allow natural abundance acetate from cysteine
+    #if met == 'ac':
+    #    cys_l, cys_u, _, _ = curveset.get_bounds(t, substrate="Acetate13C")
+    #    set_bounds(model, 'Ex_cysL', lower=max(cys_l, 0), upper=max(cys_u, 0), update=update)
+
+
+    return exch, exch_l, exch_u, signal, signal_l, signal_u
+
+
+
+def manually_constrain_reaction_to_substrate(t, substrate, rid, curveset, model):
+    # in specific cases, we know that the activity of a particular reaction need be constrained by the transport/availability of one of the substrates
+    # for example, part of the butyrate biosynthesis pathway ID_325 enoyl-CoA hydratase is constrained by glucose uptake
+    # and butyrate biosynthesis pathway reaction 2HBD is instead constrained by Threonine
+    if substrate in curveset.logistic_sets:
+        lower_bound, upper_bound, _, _ = curveset.get_bounds(t, substrate=substrate)
+        set_bounds(model, rid, lower=lower_bound, upper=upper_bound, update=True)
+    return(model)
+
+
+def get_flux_contributions_to_metabolites(propdata, propmets, sol):
+    ## Record flux contributions for tracked metabolites ##
+    # propmets = list of cobra metabolite objects
+    print("Prop mets: ", propmets)
+    for met in propmets:
+        mi = met.id.replace("_c", "").replace("_e", "")
+        flux_dic = {}   # container for metabolite flux data
+        # Collect contributions for metabolite influx and outflux
+        for dr in ('in', 'out'):
+            # fluxes in direction <dr>
+            flux_dic[f"data_{dr}"] = dict()
+            if fva_run:
+                flux_dic[f"data_{dr}_lb"] = dict()
+                flux_dic[f"data_{dr}_ub"] = dict()
+        # Populate, considering all scenarios where met is produced/consumed
+        for rxn in met.reactions:
+            # Record outflux if meets threshold
+            if (met in rxn.reactants and sol.fluxes[rxn.id] > 1E-5) \
+               or (met in rxn.products and sol.fluxes[rxn.id] < -1E-5):
+                flux_dic[f"data_out"][rxn.id] = rxn.metabolites[met] \
+                                               * sol.fluxes[rxn.id]
+                if fva_run:
+                    flux_dic[f"data_out_lb"][rxn.id] = rxn.metabolites[met] \
+                                                      * sol_v.at[rxn.id, 'minimum']
+                    flux_dic[f"data_out_ub"][rxn.id] = rxn.metabolites[met] \
+                                                      * sol_v.at[rxn.id, 'maximum']
+            # Record influx if meets threshold
+            elif (met in rxn.products and sol.fluxes[rxn.id] > 1E-5) \
+                 or (met in rxn.reactants and sol.fluxes[rxn.id] < -1E-5):
+                flux_dic[f"data_in"][rxn.id] = rxn.metabolites[met] * \
+                                                sol.fluxes[rxn.id]
+                if fva_run:
+                    flux_dic[f"data_in_lb"][rxn.id] = rxn.metabolites[met] \
+                                                       * sol_v.at[rxn.id, 'minimum']
+                    flux_dic[f"data_in_ub"][rxn.id] = rxn.metabolites[met] \
+                                                       * sol_v.at[rxn.id, 'maximum']
+        for dr in ('in', 'out'):
+            propdata[mi][f'rxns_{dr}'].update(flux_dic[f"data_{dr}"].keys())
+            propdata[mi][f'data_{dr}'].append(flux_dic[f'data_{dr}'])
+            if fva_run:
+                propdata[mi][f'rxns_{dr}'].update(flux_dic[f"data_{dr}_lb"].keys())
+                propdata[mi][f'rxns_{dr}'].update(flux_dic[f"data_{dr}_ub"].keys())
+                propdata[mi][f'data_{dr}_lb'].append(flux_dic[f'data_{dr}_lb'])
+                propdata[mi][f'data_{dr}_ub'].append(flux_dic[f'data_{dr}_ub'])
+    return(propdata)
+
+
+
+
+
+def dfba_main(met_collect: MetaboliteCollection, model_file, objective_function, fba_method, substrates, seed,
+              fva_run=False, tracked_reactions=[], tracked_metabolites=[], tmin_hours=0,
+              tmax_hours=48, solutions_per_hour=1, dry_run=False, output_folder = "../data/", reactions_to_delete = []):
+    
+    print("Tracked reactions: ", tracked_reactions)
+    print(met_collect.get_items())
+
+    """Main function to compute dFBA solutions.
+    Computes successive static FBA solutions and plots the estimated metabolite
+    concentrations, uptake rates, and tracked reaction fluxes.
+
+    Parameters:
+    met_collect -- dictionary mapping metabolite names to LogisticSet objects
+            containing optimal logistic coefficients and errors
+    tracked_rxns -- reactions to tracked and written to fluxes.xlsx
+    fba_method -- FBA method to use for static solutions (function, default:
+            cobra.flux_analysis.loopless.loopless_solution)
+    fva_run -- whether to also compute an FVA solution
+    modelfile -- location of metabolic model
+    t_max -- end timepoint in hours (default 48)
+    resolution -- number of static solutions per hour (default 1)
+    obj -- reaction ID of objective function (default ATP_sink)
+    dry_run -- True to avoid writing output to file (default False)
+    """
+
+    np.random.seed(seed)
+    print(f"""dFBA log: Begin dFBA analysis with sheet, endpoint
+          {tmax_hours} hours, and resolution {solutions_per_hour}.""")
+    print(f"Using method {fba_method}.")
+    if dry_run:
+        print("Dry run, will not write results.")
+    # Load metabolic model and logistic fit specs #
+    print('dFBA log: loading model and specsheet...')
+    model = load_model(parse_filepath(model_file), objective_function)
+
+
+    # Remove reactions to delete
+    model.remove_reactions(reactions_to_delete)
+    
+    # 1. Evaluate the learned logistic function per metabolite for every timepoint
+    nsol = int(round((tmax_hours - tmin_hours)*solutions_per_hour + 1, 0))
+    ts_array = np.linspace(tmin_hours, tmax_hours, num=nsol)
+    timecourse = list(ts_array)
+    for mi, param_set in met_collect.get_items():
+        param_set.eval(ts_array)
+
+    # Special-case adjustments for certain metabolites
+    #met_collect.remove_met("5apn") #Aidan, why did yuo remove this proline metabolite?
+
+    # 2. Manually adjust leucine metabolism
+    met_collect = manually_adjust_leucine_metabolism(met_collect)
+    
+
+    # 3. initialize results storage
+    propdata, propmets, results, rxnflux_tracked, rxnflux_all, rxnf_ub, rxnf_lb, fullflux_ub, fullflux_lb = initialize_result_storage(model, met_collect, timecourse, tracked_reactions, tracked_metabolites)
+    allrxns = [rxn.id for rxn in model.reactions]
 
     print('dFBA log: simulation output begin.')
     # Simulate static solutions over timecourse
-    for i, t in enumerate(timecourse):
-        # Update exchange flux bounds for each constrained metabolite
-        for j, (mi, curveset) in enumerate(params.get_items()):
-            ## Calculate and set exchange constraints ##
-            fbounds = update_uptake_bounds(model, t, mi, curveset)
-            mn = model.metabolites.get_by_id(mi + '_c').name
 
-            ## Record exchange constraints ##
+    for i, t in enumerate(timecourse):
+
+        # 1. Update exchange flux bounds for each constrained metabolite
+        for j, (mi, curveset) in enumerate(met_collect.get_items()):
+            
+            # Use NMR data to constrain boundary reactions. This will inherently limit the flux that may be assigned to transport reactions involving this metabolite
+            fbounds = update_uptake_bounds(model, t, mi, curveset)
+
+            ## Record exchange constraints
+            mn = model.metabolites.get_by_id(mi + '_c').name
             if not (objective_function == "ATP_sink" and mi == 'glc'):
                 for k, df in enumerate(results):
                     df.at[t, mn] = fbounds[k]
 
-            ## Force butyrate pathways ##
-            #  Ideally, this should be generalized by adding a "reaction" attribute to
-            #  LogisticSet, so that a curve set associated with a particular metabolite
-            #  and substrate can be used to also set bounds on reactions. This would be
-            #  helpful for compounds produced by multiple substrates, where the
-            #  contributing pathways are known, such as with butyrate.
+            # manually constrain butyrate to be produced by only glucose, or only threonine if threonine is measured by NMR
             if mi == 'but':
-                glc_but_l, glc_but_u, _, _ = curveset.get_bounds(t, substrate="Glucose")
-                set_bounds(model, "ID_325", lower=glc_but_l, upper=glc_but_u, update=True)
-                if "Threonine" in curveset.logistic_sets:
-                    thr_but_l, thr_but_u, _, _ = curveset.get_bounds(t, substrate="Threonine")
-                    set_bounds(model, "2HBD", lower=thr_but_l, upper=thr_but_u, update=True)
+                model = manually_constrain_reaction_to_substrate(t, "Glucose", "ID_325", curveset, model)
+                model = manually_constrain_reaction_to_substrate(t, "Threonine", "2HBD", curveset, model)
 
-            ## Calculate glucose uptake constraint ##
-            if objective_function == "ATP_sink" and mi in ['ac', 'eto', 'but', 'alaL']:
-                signal, _, exch, _ = curveset.get_sol(t, substrate="Glucose")
-                exch_l, exch_u, signal_l, signal_u = curveset.get_bounds(t, substrate="Glucose")
-                gbounds = [exch, exch_l, exch_u, signal, signal_l, signal_u]
-                for df, bound in zip(results, gbounds):
-                    if mi == 'but':
-                        df.at[t, 'beta-D-glucose'] += bound
-                    else:
-                        df.at[t, 'beta-D-glucose'] += 0.5*bound
 
-        ## Set glucose uptake constraint ##
-        if objective_function == "ATP_sink":
-            set_bounds(model, "Ex_glc", lower=results[1].at[t, 'beta-D-glucose'],
-                       upper=results[2].at[t, 'beta-D-glucose'], update=True)
-
-        ## Get flux solution(s) and populate arrays ##
+        #2/ Get flux solution(s) and populate arrays ##
+        print("Starting solving")
         sol = fba_method(model)
+
+        print("Objective function: ", sol.fluxes[objective_function])
         if fva_run:
+            print("FVA")
             sol_v = cb.flux_analysis.flux_variability_analysis(
                 model,
                 fraction_of_optimum=0.995,
-                # loopless=False,
-                loopless=True
+                loopless=False
+                # loopless=True
             )
             fullflux_lb.loc[t, :] = sol_v['minimum']
             fullflux_ub.loc[t, :] = sol_v['maximum']
+
+        # 2.5 print out results for verbose logging
         if i % 10 == 0:
             print(f'dFBA log: Time = {t}  (cycle {i+1}) \tFBA solution: ' \
                   f'{sol.fluxes[objective_function]}')
-        if sol.fluxes[objective_function] < 0.0001:
+
+        if np.sum(sol.fluxes[objective_function]) < 0.0001:
             print(f'dFBA log: infeasible solution on cycle {i}.')
+
+        # 3/ Record reaciton fluxes at time t
         for ri in tracked_reactions:
             rn = model.reactions.get_by_id(ri).name
-            rxnflux.at[t, rn] = sol.fluxes[ri]
+            rxnflux_tracked.at[t, rn] = sol.fluxes[ri]
             if fva_run:
                 rxnf_ub.at[t, rn] = sol_v.at[ri, 'maximum']
                 rxnf_lb.at[t, rn] = sol_v.at[ri, 'minimum']
 
-        ## Display incremental solutions ##
-        if t in [0, 6, 8, 12, 24, 36, 48]:
+        for ri in allrxns:
+            rn = model.reactions.get_by_id(ri).name
+            rxnflux_all.at[t, rn] = sol.fluxes[ri]
+
+
+        ## 4/ Print out log for tracking purposes ##
+        if t in [0, 6, 8, 12, 21, 24, 36, 48]:
+            print("Display incremental solutions")
             print("time = " + str(i))
             print(model.summary(solution=sol))
             for met in propmets:
                 print(met.summary(solution=sol))
 
-        ## Record flux contributions for tracked metabolites ##
-        for met in propmets:
-            mi = met.id[:-2] # metabolite ID, without compartment label
-            flux_dic = {}   # container for metabolite flux data
-            # Collect contributions for metabolite influx and outflux
-            for dr in ('in', 'out'):
-                # fluxes in direction <dr>
-                flux_dic[f"data_{dr}"] = dict()
-                if fva_run:
-                    flux_dic[f"data_{dr}_lb"] = dict()
-                    flux_dic[f"data_{dr}_ub"] = dict()
-            # Populate, considering all scenarios where met is produced/consumed
-            for rxn in met.reactions:
-                # Record outflux if meets threshold
-                if (met in rxn.reactants and sol.fluxes[rxn.id] > 1E-5) \
-                   or (met in rxn.products and sol.fluxes[rxn.id] < -1E-5):
-                    flux_dic[f"data_out"][rxn.id] = rxn.metabolites[met] \
-                                                   * sol.fluxes[rxn.id]
-                    if fva_run:
-                        flux_dic[f"data_out_lb"][rxn.id] = rxn.metabolites[met] \
-                                                          * sol_v.at[rxn.id, 'minimum']
-                        flux_dic[f"data_out_ub"][rxn.id] = rxn.metabolites[met] \
-                                                          * sol_v.at[rxn.id, 'maximum']
-                # Record influx if meets threshold
-                elif (met in rxn.products and sol.fluxes[rxn.id] > 1E-5) \
-                     or (met in rxn.reactants and sol.fluxes[rxn.id] < -1E-5):
-                    flux_dic[f"data_in"][rxn.id] = rxn.metabolites[met] * \
-                                                    sol.fluxes[rxn.id]
-                    if fva_run:
-                        flux_dic[f"data_in_lb"][rxn.id] = rxn.metabolites[met] \
-                                                           * sol_v.at[rxn.id, 'minimum']
-                        flux_dic[f"data_in_ub"][rxn.id] = rxn.metabolites[met] \
-                                                           * sol_v.at[rxn.id, 'maximum']
-            for dr in ('in', 'out'):
-                propdata[mi][f'rxns_{dr}'].update(flux_dic[f"data_{dr}"].keys())
-                propdata[mi][f'data_{dr}'].append(flux_dic[f'data_{dr}'])
-                if fva_run:
-                    propdata[mi][f'rxns_{dr}'].update(flux_dic[f"data_{dr}_lb"].keys())
-                    propdata[mi][f'rxns_{dr}'].update(flux_dic[f"data_{dr}_ub"].keys())
-                    propdata[mi][f'data_{dr}_lb'].append(flux_dic[f'data_{dr}_lb'])
-                    propdata[mi][f'data_{dr}_ub'].append(flux_dic[f'data_{dr}_ub'])
 
         # FVA takes longer, print at end of each simulation
         if fva_run:
             now = datetime.datetime.now()
             print(f"t = {t:.2f} simulation complete ({now:%c})")
 
-    ## Adjust flux solution directionality in output for visualization ##
-    reverse_ids = ["ID_383", "ID_336", "ID_391", "HydEB"]
-    reverse_nms = [model.reactions.get_by_id(rid).name for rid in reverse_ids]
-    for rname in reverse_nms:
-        if rname in rxnflux:
-            rxnflux[rname] *= -1
-            if fva_run:
-                rxnf_ub[rname] *= -1
-                rxnf_lb[rname] *= -1
+        ## 5/ Track relative contributions to metabolites in "tracked_metabolites" list from configuration file
+        propdata = get_flux_contributions_to_metabolites(propdata, propmets, sol)    
 
-    ## Plot run results ##
-    print(f'Complete after {i} cycles ({t} hours). Final flux: '\
-          f' {sol.fluxes["Ex_biomass"]}')
-    areaplot(results[0], results[1], results[2], ylabel='flux (mM/h)')
-    areaplot(results[3], results[4], results[5], ylabel='normalized signal')
-    niceplot(rxnflux)
+    return(propdata, propmets, results, rxnflux_tracked, rxnflux_all, rxnf_ub, rxnf_lb, fullflux_ub, fullflux_lb, model)
 
-    ## Write run results ##
-    if not dry_run:
-        writer = pd.ExcelWriter(f'{SCDIR}/../../data/fluxes.xlsx', engine='openpyxl')
-        snames = ('data', 'lbdev', 'ubdev', 'signal', 'slbdev', 'subdev')
-        # Write estimated concentrations and fluxes
-        for i, df in enumerate(results):
-            df.to_excel(writer, sheet_name=snames[i], engine='openpyxl')
-        # Write tracked reaction fluxes
-        rxnflux.to_excel(writer, sheet_name='fluxes', engine='openpyxl')
-        if fva_run:
-            rxnf_ub.to_excel(writer, sheet_name='fluxub', engine='openpyxl')
-            rxnf_lb.to_excel(writer, sheet_name='fluxlb', engine='openpyxl')
-            # Write FVA bounds for ALL reactions to tab-delimited text
-            fullflux_lb.to_csv(
-                f'{SCDIR}/../../data/fullfluxlb.txt',
-                sep='\t',
-                index_label='Time (h)'
-            )
-            fullflux_ub.to_csv(
-                f'{SCDIR}/../../data/fullfluxub.txt',
-                sep='\t',
-                index_label='Time (h)'
-            )
-        writer.close()
-        # Open workbook to record flux fractions for tracked metabolites
-        writer = pd.ExcelWriter(f'{SCDIR}/../../data/met_fluxes.xlsx', engine='openpyxl')
-        wb=writer.book
-        ws=wb.create_sheet("MetFluxes")
-        writer.sheets["MetFluxes"] = ws
-        startcol = 0
 
+
+
+
+def read_and_validate_cfg(cfg_filepath):
+    parsed_path = parse_filepath(cfg_filepath)
+    with open(parsed_path, "r") as rf:
+        cfg = json.loads(rf.read())
+    required_fields = ["method", "model_file", "objective_function", "nmr_substrates"]
+    for field in required_fields:
+        try:
+            val = cfg[field]
+        except KeyError:
+            print(f"JSON config missing required field {field}.")
+    return cfg
+
+def parse_filepath(fpath):
+    if not fpath.startswith('/'):
+        return f"{SCDIR}/{fpath}"
+    return fpath
+
+
+def write_out_fluxes(output_folder, results, rxnflux_all, rxnflux_tracked, rxnf_ub, rxnf_lb, fullflux_ub, fullflux_lb):
+    writer = pd.ExcelWriter(f"{output_folder}/fluxes.xlsx", engine='openpyxl')
+    snames = ('data', 'lbdev', 'ubdev', 'signal', 'slbdev', 'subdev')
+    # Write estimated concentrations and fluxes
+    for i, df in enumerate(results):
+        df.to_excel(writer, sheet_name=snames[i], engine='openpyxl')
+    # Write tracked reaction fluxes
+    rxnflux_tracked.to_excel(writer, sheet_name='fluxes', engine='openpyxl')
+    if fva_run:
+        rxnf_ub.to_excel(writer, sheet_name='fluxub', engine='openpyxl')
+        rxnf_lb.to_excel(writer, sheet_name='fluxlb', engine='openpyxl')
+        # Write FVA bounds for ALL reactions to tab-delimited text
+        fullflux_lb.to_csv(
+            f'{output_folder}/fullfluxlb.txt',
+            sep='\t',
+            index_label='Time (h)'
+        )
+        fullflux_ub.to_csv(
+            f'{output_folder}/fullfluxub.txt',
+            sep='\t',
+            index_label='Time (h)'
+        )
+    rxnflux_all.to_excel(writer, sheet_name = "allfluxes", engine = 'openpyxl')
+    writer.close()
+
+
+def write_flux_contributions_to_metabolites(output_folder, propdata, propmets, model, timecourse):
+    # Open workbook to record flux fractions for tracked metabolites
+    writer = pd.ExcelWriter(f'{output_folder}/met_fluxes.xlsx', engine='openpyxl')
+    wb=writer.book
+    ws=wb.create_sheet("MetFluxes")
+    writer.sheets["MetFluxes"] = ws
+    startcol = 0
     # Record reaction flux fractions for tracked metabolites
     for met in propmets:
         mi = met.id[:-2]
@@ -629,60 +723,89 @@ def dfba_main(params: MetaboliteCollection, model_file, objective_function, fba_
                 for i, rxn in enumerate(rids[dr]):
                     print("\t", rxn, rnames[dr][i], f"{cuts.at[rxn]}")
             # Write flux fraction results to Excel (met_fluxes.xlsx)
-            if not dry_run:
-                df = flux_dfs[f'data_{dr}']
-                endcol = startcol + df.shape[1]
-                if startcol == 0:
-                    write_index = True
-                    endcol += 1
-                    ws.cell(row=1, column=2, value="Time")
-                else:
-                    write_index = False
-                df.to_excel(writer, sheet_name="MetFluxes", startrow=2,
-                            startcol=startcol, index=write_index)
-                c = ws.cell(row=1, column=startcol+1, value=f"{met.name} {dr}flux")
+
+            df = flux_dfs[f'data_{dr}']
+            endcol = startcol + df.shape[1]
+            if startcol == 0:
+                write_index = True
+                endcol += 1
+                ws.cell(row=1, column=2, value="Time")
+            else:
+                write_index = False
+            df.to_excel(writer, sheet_name="MetFluxes", startrow=2,
+                        startcol=startcol, index=write_index)
+            c = ws.cell(row=1, column=startcol+1, value=f"{met.name} {dr}flux")
+            c.font = BOLD
+            try:
+                ws.merge_cells(start_row=1, start_column=startcol+1, end_row=1,
+                               end_column=endcol)
+            except ValueError:
+                pass
+            colnames = list(df.columns)
+            for i, j in enumerate(range(endcol-df.shape[1], endcol)):
+                rxname = model.reactions.get_by_id(colnames[i]).name
+                c = ws.cell(row=2, column=j+1, value=rxname)
                 c.font = BOLD
-                try:
-                    ws.merge_cells(start_row=1, start_column=startcol+1, end_row=1,
-                                   end_column=endcol)
-                except ValueError:
-                    pass
-                colnames = list(df.columns)
-                for i, j in enumerate(range(endcol-df.shape[1], endcol)):
-                    rxname = model.reactions.get_by_id(colnames[i]).name
-                    c = ws.cell(row=2, column=j+1, value=rxname)
-                    c.font = BOLD
-                startcol = endcol
-    if not dry_run:
-        writer.close()
+            startcol = endcol
 
-def read_and_validate_cfg(cfg_filepath):
-    parsed_path = parse_filepath(cfg_filepath)
-    with open(parsed_path, "r") as rf:
-        cfg = json.loads(rf.read())
-    required_fields = ["method", "model", "objective_function", "nmr_substrates"]
-    for field in required_fields:
-        try:
-            val = cfg[field]
-        except KeyError:
-            print(f"JSON config missing required field {field}.")
-    return cfg
+    writer.close()
 
-def parse_filepath(fpath):
-    if not fpath.startswith('/'):
-        return f"{SCDIR}/{fpath}"
-    return fpath
 
-def run_from_cfg(cfg_filepath):
-    """Parse dFBA arguments from JSON config"""
-    cfg = read_and_validate_cfg(cfg_filepath)
-    params = MetaboliteCollection()
-    substrates = [Substrate.from_json(s, params) for s in cfg.pop("nmr_substrates")]
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--params_file', metavar='CONFIG', help='path to dFBA config file')
+    #parser.add_argument('--output_folder', default = None, help = "folder in which to output all results, to maintain different tests")
+    parser.add_argument('--trajectory_only', action = 'store_true', help = "True if you only want to plot the measured metabolite trajectories and not run FBA")
+
+    args = parser.parse_args()
+
+    # 1. Retrieve info from config file
+    ### retrieve parameters
+    cfg_path = args.params_file
+    trajectory_only = args.trajectory_only
+
+    ### declare a metabolite collection object
+    met_collect = MetaboliteCollection()
+
+    ### get info from config file
+    cfg = read_and_validate_cfg(cfg_path)
+    reactions_to_delete = [i for i in cfg.pop('reactions_to_delete')]
+    print("Removing reactions: ", reactions_to_delete)
+    tracked_reactions = [i for i in cfg.pop('tracked_reactions')]
+    tracked_metabolites = [i for i in cfg.pop('tracked_metabolites')]
+
+
+
+    substrates = [Substrate(s) for s in cfg['nmr_substrates']]
+
+    isotope = cfg['isotope']
+    
+    
+    tmax = cfg['tmax_hours']
+    output_folder = cfg['output_folder']
+    if not os.path.isdir(output_folder):
+        os.mkdir(output_folder)
+
+    # initialize the metabolite logistic function holding object
+    for substrate in substrates:
+        met_collect.new(substrate.model_id, substrate.name, substrate.name, 1.)
+        for metname, metdata in substrate.products.items():
+            met_collect.new(metdata["model_id"], metname, substrate.name, substrate.product_scale[metname])
+
+
+    method = cfg["method"]
+    plot = cfg['plot']
+    seed = cfg['seed']
+
+
+    # 2. Set up objects
+    ### set up experiment objects
     all_experiments = {}
     for substrate in substrates:
         all_experiments.update({parse_filepath(exp): substrate for exp in substrate.experiments})
 
-    method = cfg.pop("method")
+    ### set optimization method
     if method == 'fva':
         fba_method = METHODS['fba']
         fva_run = True
@@ -692,40 +815,117 @@ def run_from_cfg(cfg_filepath):
     else:
         print(f"Unsupported FBA method {method}. Please select one of "
                 + ", ".join(METHODS))
-        return
+
+
+    # 3. Synchronize all runs in time using start of isocaproate formation
     sync_functions = synchronizers(
         [path for path in all_experiments], 
         stretch=cfg.pop("stretch", False), 
         plot=False
     )
-    for tscale, (exp, substrate) in zip(sync_functions, all_experiments.items()):
-        curves, errors = fit_trajectories(exp, substrate, tscale=tscale, plot=True)
+
+    for tscale, (fname_exp, substrate) in zip(sync_functions, all_experiments.items()):
+        print("FNAME_EXP: ", fname_exp)
+        sheetname = "area"
+        if substrate.normalize_percent:
+            sheetname = "area_percent"
+        time, signals, curves, errors = fit_trajectories(fname_exp, isotope, tmax, substrate, sheetname = sheetname, tscale=tscale, plot=True)
+
+
+        # check that if a product is listed in the expected products portion of the json file, it has associated NMR data
+        missing_keys = [key for key in substrate.products if key not in list(curves.keys())]
+        if missing_keys:
+            error_message = f"{missing_keys} is in the expected product list in your dfba_cfg.json file, but there is no associated NMR data in {fname_exp}_13C.xlsx"
+            raise ValueError(error_message)
+
+        df = pd.DataFrame(signals, index = time)
+        df.to_csv(output_folder + "/time_norm_areas.csv", index_label = "Time")
+
+        print("Curves: ", curves)
         for met, pset in curves.items(): # update LogisticSet of metabolite
-            params.get_by_name(met).add_curve(substrate.name, pset, errors[met])
-    print("=========")
-    print("dFBA run average curveshapes.")
-    print("---------")
+            print("Adding a logistic curve object for: ", met)
+            met_collect.get_by_name(met).add_curve(substrate.name, pset, errors[met])
+
+    if plot:
+        plt.tight_layout()
+        plt.savefig(output_folder + "/trajectories.png")
+        print("Outputting trajectory plot to: ", output_folder + "/trajectories.png")
+        plt.show()
+
+    # set the number of experiments (nmr runs) representing every metabolite
     for substrate in substrates:
         for met in substrate.metmap():
-            params.get_by_name(met).set_runcount(substrate.name, len(substrate.experiments))
-    for mid, curveset in params.get_items():
-        print(mid)
-        curveset.display_avg_coeffs()
+            met_collect.get_by_name(met).set_runcount(substrate.name, len(substrate.experiments))
+
+
+    # 4. fit logistic parameters to each metabolite curve, save parameters to output_folder/
+    logistic_df = []
+    for met_id, curveset in met_collect.get_items():
+        print(met_id)
+        print("\n")
+        avg_ps, avg_err = curveset.display_avg_coeffs()
+        param_names = ["L", "k", "x0", "C"]
+        print(len(avg_ps))
+        print(len(param_names))
+        logistic_df.append(pd.DataFrame({'parameter': param_names[0:len(avg_ps)], 'values': avg_ps, 'met_id': met_id, 'met_name': curveset.name}))       
+    pd.concat(logistic_df).to_csv(output_folder + "/logistic_met_collect.csv")
+
     t_min = cfg["tmin_hours"]
     t_max = cfg["tmax_hours"]
     t_num = int(round((t_max-t_min)*cfg["solutions_per_hour"] + 1, 0))
-    areaplot2(np.linspace(t_min, t_max, num=t_num), substrates, params)
-    dfba_main(params, fva_run=fva_run, fba_method=fba_method, substrates=substrates, **cfg)
 
-def handle_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('cfgpath', metavar='CONFIG', help='path to dFBA config file')
-    args = parser.parse_args()
-    if not os.path.exists(args.cfgpath):
-        print("Not a valid path " + args.cfgpath)
-        return
-    run_from_cfg(args.cfgpath)
+    if plot:
+        if len(substrates) > 1:
+            f = areaplot2(np.linspace(t_min, t_max, num=t_num), substrates, met_collect)
+            plt.tight_layout()
+            plt.savefig(f, output_folder + "/trajectories.png")
+            print("Outputting trajectory plot to: ", output_folder + "/trajectories.png")
 
-if __name__ == "__main__":
-    """Handle command line call"""
-    handle_args()    
+
+
+
+    # 5. Run dfba
+    objective = cfg['objective_function'][0]
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+    
+    if not trajectory_only:
+        propdata, propmets, results, rxnflux_tracked, rxnflux_all, rxnf_ub, rxnf_lb, fullflux_ub, fullflux_lb, model = dfba_main(met_collect, 
+            objective_function = cfg.pop('objective_function'),
+            model_file = cfg.pop('model_file'),
+            fva_run=fva_run, fba_method=fba_method,
+         substrates=substrates, seed = seed, output_folder = output_folder,
+          reactions_to_delete = reactions_to_delete,
+           tracked_reactions = tracked_reactions, tracked_metabolites = tracked_metabolites)   
+
+
+        # 6. Write out results
+        ## Adjust flux solution directionality in output for visualization ##
+        ## TO BE REMOVED AFTER CHECKING WITH UNIDIRECTIONAL MODEL ##
+        reverse_ids = ["ID_383", "ID_336", "ID_391", "HydEB"]
+        reverse_nms = [model.reactions.get_by_id(rid).name for rid in reverse_ids]
+        for rname in reverse_nms:
+            if rname in rxnflux_tracked:
+                rxnflux_tracked[rname] *= -1
+                if fva_run:
+                    rxnf_ub[rname] *= -1
+                    rxnf_lb[rname] *= -1
+
+        ## Plot run results ##
+        #print(f'Complete after {i} cycles ({t} hours). Final flux: '\
+        #      f' {sol.fluxes["Ex_biomass"]}')
+        #areaplot(results[0], results[1], results[2], ylabel='flux (mM/h)')
+        #areaplot(results[3], results[4], results[5], ylabel='normalized signal')
+        #niceplot(rxnflux_tracked)
+
+        ## Write run results ##
+        # 1. write out fluxes (Tracked and all)
+        write_out_fluxes(output_folder, results, rxnflux_all, rxnflux_tracked, rxnf_ub, rxnf_lb, fullflux_ub, fullflux_lb)
+
+
+        # 2. Write out flux contributions to tracked metabolites
+        print(rxnflux_all.index.values)
+        write_flux_contributions_to_metabolites(output_folder, propdata, propmets, model, timecourse = list(rxnflux_all.index.values))
+
+#all_experiments: dict['nmr_data_filepath'] = Substrate()
+#Substrate() class: all elements of json config file
