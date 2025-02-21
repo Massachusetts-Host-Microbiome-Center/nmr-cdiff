@@ -1,4 +1,4 @@
-# Tutorial for NMR processing pipeline
+# Original tutorial for NMR processing pipeline
 This tutorial assumes a working knowledge of the command line. The instructions were written for Mac users but could be adapted for Windows systems with small modifications. Each section includes an estimate of how long it will take.  
 
 1. [Preparing to run the pipeline (20 minutes)](TUTORIAL.md#preparing-to-run-the-pipeline-20-minutes)

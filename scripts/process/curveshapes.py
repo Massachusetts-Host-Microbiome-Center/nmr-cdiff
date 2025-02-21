@@ -30,9 +30,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 class Metabolite:
     """Class to hold LogisticSet objects for compounds. Allows multiple substrates."""
-    def __init__(self, model_id, name):
+    def __init__(self, met_id, model_id, name):
         self.name = name
-        self.id = model_id
+        self.met_id = met_id
+        self.model_id = model_id
         self.scale_map = {}
         self.logistic_sets = collections.defaultdict(LogisticSet)
 
