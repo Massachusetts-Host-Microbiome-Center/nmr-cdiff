@@ -1,0 +1,16 @@
+4.63	Glucose
+3.89	Glucose
+3.73	Glucose
+3.47	Glucose
+3.46	Glucose
+3.40	Glucose
+3.23	Glucose
+3.65	Ethanol
+1.17	Ethanol
+3.77	Alanine
+1.47	Alanine
+1.91	Acetate
+2.14	Butyrate
+1.54	Butyrate
+0.88	Butyrate
+0.87	Unknown

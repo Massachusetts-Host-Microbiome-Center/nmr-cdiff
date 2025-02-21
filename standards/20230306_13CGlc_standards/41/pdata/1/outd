@@ -1,0 +1,16 @@
+##TITLE= Parameter file, TopSpin 4.2.0
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 5	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= chenggp
+$$ 2023-03-13 10:55:11.037 -0400  aj286@PHS013833
+$$ /Volumes/cctm/apavao/NMR/20230306_13CGlc_standards/41/pdata/1/outd
+$$ process /opt/topspin4.2.0/prog/mod/dataserver
+##$CURPLOT= <>
+##$CURPRIN= <dconpeaks.txt>
+##$DFORMAT= <normdp>
+##$LAYOUT= <+/1D_X+nopp.xwp>
+##$LFORMAT= <normlp>
+##$PFORMAT= <normpl>
+##END=

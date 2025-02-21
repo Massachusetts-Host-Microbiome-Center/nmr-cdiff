@@ -1,0 +1,12 @@
+   Current data set:
+   NAME =	20230306_13CGlc_standards	EXPNO =	33	PROCNO = 2
+   DU   =	/Volumes/cctm/apavao/NMR
+
+   Number   Integrated Region     Integral
+     1     14.179     10.214         0.00552
+     2      5.307      3.559         0.30841
+     3      2.205      2.025         0.09591
+     4      1.938      1.821         0.12795
+     5      1.578      1.366         0.23170
+     6      1.212      1.074         0.08448
+     7      0.948      0.765         0.14603

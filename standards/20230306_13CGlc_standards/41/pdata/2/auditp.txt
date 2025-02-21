@@ -1,0 +1,16 @@
+##TITLE= Audit trail, TopSpin 4.2.0
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= aj286
+$$ /Volumes/cctm/apavao/NMR/20230306_13CGlc_standards/41/pdata/2/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2023-03-13 10:55:12.800 -0400>,<aj286>,<PHS013833>,<decon>,<TopSpin 4.2.0>,
+      <mdecon of
+	1 41 "20230306_13CGlc_standards" "/Volumes/cctm/apavao/NMR"
+	F1P = 2.36519934676848, F2P = 0.624263608169668, MI = 0, MAXI = 10000, ACFW = 0.1
+       data hash MD5: 16K
+       ED C6 A4 B8 5A D1 C4 F9 4E 64 B3 B9 E7 B5 82 AA>)
+##END=
+
+$$ hash MD5
+$$ 9C 21 26 8E FC 8D A6 EB A9 B6 88 D3 0A 03 C2 1F

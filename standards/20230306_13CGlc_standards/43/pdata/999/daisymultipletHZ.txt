@@ -1,0 +1,19 @@
+# 2023-03-10 15:55:26 -0500 aj286@PHS013833
+# TOPSPIN Daisy Multiplet Table
+# /Volumes/cctm/apavao/NMR/20230306_13CGlc_standards/43/pdata/999
+
+1D TopSPIN Multiplet Table
+
+----------------------------------------------------------------------
+Number     Shift [Hz]    J [Hz]    M         Connection     Identifier
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+
+
+
+1D TopSPIN Multiplet Lines Table
+
+--------------------------
+Number       Position [Hz]
+--------------------------
+--------------------------

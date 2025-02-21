@@ -1,0 +1,11 @@
+##TITLE= Parameter file, TopSpin 4.2.0
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= aj286
+$$ 2023-03-13 11:44:52.595 -0400  aj286@PHS013833
+$$ /Volumes/cctm/apavao/NMR/20230306_13CGlc_standards/43/pdata/2/assocs
+$$ process /opt/topspin4.2.0/prog/mod/dataserver
+##$MULTDISP= </Volumes/cctm/apavao/NMR/20230306_13CGlc_standards/43/pdata/999>
+##END=

@@ -1,0 +1,18 @@
+##TITLE= Audit trail, TopSpin 4.2.0
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= aj286
+$$ /Volumes/cctm/apavao/NMR/20230306_13CGlc_standards/43/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2023-03-10 15:29:58.450 -0500>,<aj286>,<PHS013833>,<cprserver>,<TopSpin 4.2.0>,
+      <changed parameter F2 AUNMP to proc_1d>)
+(   2,<2023-03-10 15:30:28.949 -0500>,<aj286>,<PHS013833>,<cprserver>,<TopSpin 4.2.0>,
+      <changed parameter F2 AUNMP to proc_2dinv>)
+(   3,<2023-03-10 16:09:58.516 -0500>,<aj286>,<PHS013833>,<cprserver>,<TopSpin 4.2.0>,
+      <changed parameter F2 SI to 32768>)
+(   4,<2023-03-10 16:10:06.818 -0500>,<aj286>,<PHS013833>,<cprserver>,<TopSpin 4.2.0>,
+      <changed parameter F2 LB to 0.50>)
+##END=
+
+$$ hash MD5
+$$ C4 0C FD 64 07 E4 A1 02 5F 17 2A B4 79 EC 4A 86

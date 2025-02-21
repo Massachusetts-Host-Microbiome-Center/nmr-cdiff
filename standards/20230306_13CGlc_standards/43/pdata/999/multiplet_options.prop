@@ -1,0 +1,19 @@
+#
+#Fri Mar 10 15:55:26 EST 2023
+intensityTolerance=0.3
+ticks=true
+treeform=1
+createSinglets=false
+maxMultiplicity=4
+couplingTolerance=0.05
+distanceLines=2
+mol2dWidth=300
+captureRange=10
+driftRange=5
+mol2dX=50
+minDeltaJ=10.0
+mol2dY=50
+maxJ=20.0
+minIntensity=20.0
+labelsVertical=false
+mol2dHeight=200

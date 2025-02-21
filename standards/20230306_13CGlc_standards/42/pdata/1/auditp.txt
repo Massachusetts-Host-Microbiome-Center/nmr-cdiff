@@ -1,0 +1,52 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= chenggp
+$$ /opt/topspin3.6.2/data/chenggp/Mar062023_C13_HRMAS_BryCells/42/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2023-03-06 19:06:02.251 -0500>,<chenggp>,<14t.nmr.mgh.harvard.edu>,<go4>,<TopSpin 3.6.2>,
+      <created by zg
+	started at 2023-03-06 18:26:42.426 -0500,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       19 D5 75 9D FD 21 CE B2 DD 1C 8C A9 FC 78 45 57
+       data hash MD5: 16K
+       D3 14 4C 77 D8 73 8D A1 5B FC C5 33 FB 4B 7C 2C>)
+(   2,<2023-03-07 08:51:47.231 -0500>,<chenggp>,<14t.nmr.mgh.harvard.edu>,<proc1d>,<TopSpin 3.6.2>,
+      <Start of raw data processing
+       efp LB = 1 FT_mod = 6 PKNL = 1 PHC0 = -61.3319 PHC1 = -112.4149 SI = 32K 
+       data hash MD5: 32K
+       C6 44 AE 2E EF AC 00 2E 32 0C F2 57 64 7A 68 73>)
+(   3,<2023-03-07 08:51:47.255 -0500>,<chenggp>,<14t.nmr.mgh.harvard.edu>,<proc1d>,<TopSpin 3.6.2>,
+      <abs n ABSG = 5 
+       data hash MD5: 32K
+       3B DC DE DD 91 1B 78 6A BF 39 E0 51 56 ED C2 15>)
+$$ /Volumes/cctm/apavao/NMR/20230306_13CGlc_standards/42/pdata/1/auditp.txt
+(   4,<2023-04-21 16:57:13.502 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <pk fgphup PHC0 = -6.619299 PHC1 = 13 
+       data hash MD5: 32K
+       8A 8E 9F 03 1C 60 6E 6C A2 96 0B F0 23 CA 66 A1>)
+(   5,<2023-04-21 16:58:04.743 -0400>,<aj286>,<PHS013833>,<dataserver>,<TopSpin 4.2.0>,
+      <INTEGRAL DEFINE [43.452;40.574]
+       data hash MD5: 32K
+       8A 8E 9F 03 1C 60 6E 6C A2 96 0B F0 23 CA 66 A1>)
+(   6,<2023-04-21 16:58:04.805 -0400>,<aj286>,<PHS013833>,<dataserver>,<TopSpin 4.2.0>,
+      <INTEGRAL DEFINE [23.026;20.472]
+       data hash MD5: 32K
+       8A 8E 9F 03 1C 60 6E 6C A2 96 0B F0 23 CA 66 A1>)
+(   7,<2023-04-21 16:58:04.873 -0400>,<aj286>,<PHS013833>,<dataserver>,<TopSpin 4.2.0>,
+      <INTEGRAL DEFINE [16.759;14.298]
+       data hash MD5: 32K
+       8A 8E 9F 03 1C 60 6E 6C A2 96 0B F0 23 CA 66 A1>)
+(   8,<2023-04-21 16:58:05.192 -0400>,<aj286>,<PHS013833>,<dataserver>,<TopSpin 4.2.0>,
+      <INTEGRAL DELETE [16.759;14.298]
+       data hash MD5: 32K
+       8A 8E 9F 03 1C 60 6E 6C A2 96 0B F0 23 CA 66 A1>)
+(   9,<2023-04-21 16:58:05.237 -0400>,<aj286>,<PHS013833>,<dataserver>,<TopSpin 4.2.0>,
+      <INTEGRAL DEFINE [16.898;14.438]
+       data hash MD5: 32K
+       8A 8E 9F 03 1C 60 6E 6C A2 96 0B F0 23 CA 66 A1>)
+##END=
+
+$$ hash MD5
+$$ D4 7A E4 3F 01 73 4B 12 26 10 0C 2F 7E 5F 10 C2

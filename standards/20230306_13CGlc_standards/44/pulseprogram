@@ -1,0 +1,116 @@
+# 1 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf"
+;cosyprqf
+;avance-version (12/01/11)
+;2D homonuclear shift correlation
+;with presaturation during relaxation delay
+;
+;W.P. Aue, E. Bartholdi, R.R. Ernst, J. Chem. Phys. 64, 2229 (1976)
+;K. Nagayama et al., J. Magn. Reson. 40, 321 (1980)
+;
+;$CLASS=HighRes
+;$DIM=2D
+;$TYPE=
+;$SUBTYPE=
+;$COMMENT=
+
+
+# 1 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/Avance.incl" 1
+;Avance3.incl
+;   for AV III
+;
+;avance-version (13/06/17)
+;
+;$CLASS=HighRes Incl
+;$COMMENT=
+# 169 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/Avance.incl"
+;$Id: Avance3.incl,v 1.10.2.2 2013/08/30 09:43:33 ber Exp $
+# 16 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf" 2
+
+
+# 19 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf"
+"d11=30m"
+"d12=20u"
+"d13=4u"
+
+
+"in0=inf1"
+# 26 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf"
+"d0=3u"
+
+
+# 1 "mc_line 29 file /opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf exp. def. part of mc cmd. before ze"
+; dimension 2D; AQ_mode  (F1) QF
+define delay MCWRK
+define delay MCREST
+define delay d0orig
+"d0orig=d0"
+define list<loopcounter> SPARSELIST = <$NUSLIST>
+define loopcounter t1loop
+"t1loop=0"
+define loopcounter ph1loop
+"ph1loop=0"
+define loopcounter STNCNT
+"STNCNT=SPARSELIST.len/1"
+"MCREST = d11 - d11"
+"MCWRK = 0.250000*d11"
+
+    dccorr
+# 29 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf"
+1 ze
+# 1 "mc_line 29 file /opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf exp. def. of mc cmd. after ze"
+LBLAV, MCWRK
+  MCWRK
+  "t1loop = SPARSELIST"
+  MCWRK  SPARSELIST.inc
+      "d0=d0orig + t1loop * in0 "
+# 30 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf"
+# 1 "mc_line 30 file /opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf exp. start label for mc cmd."
+2 MCWRK  * 3
+LBLSTN, MCWRK
+  MCREST
+# 31 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf"
+3 d12 pl9:f1
+  d1 cw:f1 ph29
+  d13 do:f1
+  d12 pl1:f1
+  p1 ph1
+  d0
+  p0 ph2
+  go=2 ph31
+# 1 "mc_line 39 file /opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf exp. mc cmd. in line"
+  MCWRK  wr #0 if #0 zd 
+
+  MCWRK
+  "t1loop = SPARSELIST"
+  MCWRK  SPARSELIST.inc
+      "d0=d0orig + t1loop * in0 "
+  lo to LBLSTN times STNCNT
+  MCWRK rf #0 SPARSELIST.res
+  lo to LBLAV times tdav
+# 40 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf"
+exit
+# 43 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf"
+ph1=0 0 0 0 1 1 1 1 2 2 2 2 3 3 3 3
+ph2=0 1 2 3
+ph29=0
+ph31=0 2 0 2 3 1 3 1 2 0 2 0 1 3 1 3
+
+
+;pl1 : f1 channel - power level for pulse (default)
+;pl9 : f1 channel - power level for presaturation
+;p0 : f1 channel -  20 to 90 degree high power pulse
+;p1 : f1 channel -  90 degree high power pulse
+;d0 : incremented delay (2D)                         [3 usec]
+;d1 : relaxation delay; 1-5 * T1
+;d11: delay for disk I/O                             [30 msec]
+;d12: delay for power switching                      [20 usec]
+;d13: short delay                                    [4 usec]
+;inf1: 1/SW = 2 * DW
+;in0: 1/(1 * SW) = 2 * DW
+;nd0: 1
+;ns: 4 * n
+;ds: 16
+;td1: number of experiments
+;FnMODE: QF
+# 68 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/cosyprqf"
+;$Id: cosyprqf,v 1.7 2012/01/31 17:49:22 ber Exp $

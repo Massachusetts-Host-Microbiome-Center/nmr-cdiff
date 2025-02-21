@@ -20,9 +20,23 @@
         "peak_pick_msep": 0.01,
         "ppm_min": 0.0,
         "ppm_max": 200.0,
-        "assignment_display_window": 8,
+        "assignment_display_window": 1,
         "assignment_cluster_msep": 0.5,
-        "fit_cluster_msep": 10,
-        "fit_reach": 8
+        "fit_cluster_msep": 1,
+        "fit_reach": 6
+    },
+
+    "13C_15N": {
+        "name": "Carbon-13",
+        "fit_ppm_delta": 0.009,
+        "fit_fwhm_max": 0.3,
+        "fit_fwhm_min": 0.005,
+        "peak_pick_msep": 0.015,
+        "ppm_min": 0.0,
+        "ppm_max": 200,
+        "assignment_display_window": 1,
+        "assignment_cluster_msep": 0.5,
+        "fit_cluster_msep": 1,
+        "fit_reach": 6
     }
 }

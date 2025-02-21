@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PeakList modified="2023-03-15T12:00:31">
+  <PeakList1D>
+    <PeakList1DHeader creator="aj286" date="2023-03-15T12:00:04" expNo="33" name="20230306_13CGlc_standards" owner="" procNo="2" source="/Volumes/cctm/apavao/NMR">
+      <PeakPickDetails>F1=2.277920ppm, F2=0.589632ppm, MI=-2.70cm, MAXI=23.50cm, PC=1.400
+      </PeakPickDetails>
+    </PeakList1DHeader>
+    <Peak1D F1="2.232048" intensity="0.4269067" type="0"/>
+    <Peak1D F1="2.144646" intensity="3.679184" type="0"/>
+    <Peak1D F1="2.132377" intensity="7.338184" type="0"/>
+    <Peak1D F1="2.120246" intensity="7.807201" type="0"/>
+    <Peak1D F1="2.107834" intensity="7.635225" type="0"/>
+    <Peak1D F1="1.923544" intensity="0.5896632" type="0"/>
+    <Peak1D F1="1.908945" intensity="8.733796" type="0"/>
+    <Peak1D F1="1.897977" intensity="8.347" type="0"/>
+    <Peak1D F1="1.89222" intensity="7.743699" type="0"/>
+    <Peak1D F1="1.881681" intensity="19.09402" type="0"/>
+    <Peak1D F1="1.86658" intensity="11.73276" type="0"/>
+    <Peak1D F1="1.853912" intensity="7.465492" type="0"/>
+    <Peak1D F1="1.782286" intensity="0.5602461" type="0"/>
+    <Peak1D F1="1.770819" intensity="0.3707789" type="0"/>
+    <Peak1D F1="1.692681" intensity="0.496678" type="0"/>
+    <Peak1D F1="1.606101" intensity="1.020029" type="0"/>
+    <Peak1D F1="1.547219" intensity="3.529067" type="0"/>
+    <Peak1D F1="1.534928" intensity="6.325442" type="0"/>
+    <Peak1D F1="1.522693" intensity="7.839774" type="0"/>
+    <Peak1D F1="1.510644" intensity="6.386097" type="0"/>
+    <Peak1D F1="1.50166" intensity="4.135446" type="0"/>
+    <Peak1D F1="1.485536" intensity="3.032429" type="0"/>
+    <Peak1D F1="1.467577" intensity="7.356907" type="0"/>
+    <Peak1D F1="1.453314" intensity="17.75389" type="0"/>
+    <Peak1D F1="1.440654" intensity="20.0" type="0"/>
+    <Peak1D F1="1.285365" intensity="1.263354" type="0"/>
+    <Peak1D F1="1.207179" intensity="0.6387609" type="0"/>
+    <Peak1D F1="1.188677" intensity="1.048855" type="0"/>
+    <Peak1D F1="1.174738" intensity="3.742493" type="0"/>
+    <Peak1D F1="1.162449" intensity="8.205788" type="0"/>
+    <Peak1D F1="1.151388" intensity="9.737209" type="0"/>
+    <Peak1D F1="1.139761" intensity="8.420626" type="0"/>
+    <Peak1D F1="1.127298" intensity="3.987625" type="0"/>
+    <Peak1D F1="1.007954" intensity="1.657515" type="0"/>
+    <Peak1D F1="0.994487" intensity="1.547281" type="0"/>
+    <Peak1D F1="0.910209" intensity="2.807049" type="0"/>
+    <Peak1D F1="0.895917" intensity="5.342833" type="0"/>
+    <Peak1D F1="0.882462" intensity="7.473215" type="0"/>
+    <Peak1D F1="0.870388" intensity="9.307089" type="0"/>
+    <Peak1D F1="0.860878" intensity="9.737554" type="0"/>
+    <Peak1D F1="0.850376" intensity="8.508308" type="0"/>
+    <Peak1D F1="0.839803" intensity="7.344394" type="0"/>
+    <Peak1D F1="0.828415" intensity="5.574085" type="0"/>
+    <Peak1D F1="0.73518" intensity="1.191089" type="0"/>
+    <Peak1D F1="0.716891" intensity="1.417022" type="0"/>
+  </PeakList1D>
+  <PeakList1D>
+    <PeakList1DHeader creator="aj286@PHS013833" date="2023-03-15T12:00:35" expNo="33" name="20230306_13CGlc_standards" owner="aj286" procNo="2" source="/Volumes/cctm/apavao/NMR">
+      <PeakPickDetails>Manually picked peaks
+</PeakPickDetails>
+    </PeakList1DHeader>
+    <Peak1D F1="2.097298553086877" intensity="4.75324027881788" type="1"/>
+    <Peak1D F1="1.8091998906343738" intensity="0.20244311541811627" type="1"/>
+    <Peak1D F1="1.7957652379811482" intensity="0.47002176701456155" type="1"/>
+    <Peak1D F1="1.709186365327028" intensity="0.426098650920249" type="1"/>
+    <Peak1D F1="1.6196220143055242" intensity="0.40745148802879694" type="1"/>
+    <Peak1D F1="1.5957381873664567" intensity="0.8041973596310715" type="1"/>
+    <Peak1D F1="1.4285513987929832" intensity="8.92266317427635" type="1"/>
+    <Peak1D F1="0.8180210726630667" intensity="2.915050891447857" type="1"/>
+    <Peak1D F1="0.7030801555188037" intensity="1.0423820430269402" type="1"/>
+  </PeakList1D>
+</PeakList>
