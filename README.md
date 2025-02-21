@@ -17,10 +17,10 @@ Clone this repository with `git clone https://github.com/Massachusetts-Host-Micr
 
 ## Tutorial
 Follow the READMEs laid out in order
-1. [Link text](1.installing_nmr_processing_environment.md)
-2. [Link text](2.preprocessing_data.md)
-3. [Link text](3.dfba.md)
-4. [Link text](4.compare_kinetics.md)
+1. [1.installing_nmr_processing_environment.md](1.installing_nmr_processing_environment.md)
+2. [2.preprocessing_data.md](2.preprocessing_data.md)
+3. [3.dfba.md](3.dfba.md)
+4. [4.compare_kinetics.md](4.compare_kinetics.md)
 
 ## Building Bifermentans metabolic model
 5.building_pbi_model.md
