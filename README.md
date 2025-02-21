@@ -23,7 +23,7 @@ Follow the READMEs laid out in order
 4. [4.compare_kinetics.md](4.compare_kinetics.md)
 
 ## Building Bifermentans metabolic model
-5.building_pbi_model.md
+[5.building_pbi_model.md](5.building_pbi_model.md)
 
 ## License
 This distribution is available under the [Apache License, Version 2.0](LICENSE).
