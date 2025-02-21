@@ -1361,8 +1361,7 @@ def call_main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--params_file')
     parser.add_argument('--calibrate', action = 'store_true')
-    parser.add_argument('--process_n15', action = 'store_true')
-    parser.add_argument('--process_1H', action =  'store_true'  )
+    parser.add_argument('--peakfit', action = 'store_true')
     #parser.add_argument('datapath', metavar='DATAPATH', help='path to dataset')
     #parser.add_argument('expt', metavar='EXPT', help='experiment string (1H, 13C, or 1H_13C)')
     #parser.add_argument('acq1', metavar='INITIAL', help='index of the initial run FID, for calibration')
@@ -1385,6 +1384,9 @@ def call_main():
     overwrite = False
     if args.calibrate:
         overwrite = True
+    overwrite_peaks = False
+    if args.peakfit:
+        overwrite_peaks = True
 
     config = configparser.ConfigParser()
     config.read(args.params_file)
@@ -1394,9 +1396,9 @@ def call_main():
         print("Processing n15")
         s = Stack(args.params_file, line_broadening = 0.01, spec_size = None)
         s.calibrate(overwrite = overwrite)
-        s.process_fids(overwrite = False)
+        s.process_fids(overwrite = True)
         s = calculate_total_area(s)
-        s.peakfit_fids(overwrite = False)
+        s.peakfit_fids(overwrite = overwrite_peaks)
         s.write_stack()
     if process_1h:
         print("Processing 1H")
@@ -1404,15 +1406,15 @@ def call_main():
         s.calibrate(overwrite = overwrite)
         s.process_fids(overwrite = True)
         s = calculate_total_area(s)
-        s.ridgetrace_fids(overwrite = True)
+        s.ridgetrace_fids(overwrite = overwrite_peaks)
         s.write_stack(from_ridges=True)
     if process_13c and not process_n15:
         print("Processing 13C")
         s = Stack(args.params_file)
         s.calibrate(overwrite = overwrite)
-        s.process_fids(overwrite = False)
+        s.process_fids(overwrite = True)
         s = calculate_total_area(s)
-        s.peakfit_fids(overwrite=False)
+        s.peakfit_fids(overwrite=overwrite_peaks)
         s.write_stack()
     
 if __name__ == "__main__":

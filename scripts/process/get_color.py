@@ -53,7 +53,9 @@ cmap = {
     "Valine": [0, 0, 0],
     "Isoleucine": [0, 0, 0],
     "Isobutyrate": [0, 0, 0],
-    "2-methylbutyrate": [0, 0, 0]
+    "2-methylbutyrate": [0, 0, 0],
+    "Mannitol": [28, 18, 195],
+    "AlanineN15": [100, 3, 255]
 }
 
 def get_cmap():

@@ -1,0 +1,11 @@
+,parameter,values,met_id,met_name
+0,L,28.196746677474394,mnl1p,Mannitol
+1,k,-0.20785181622660906,mnl1p,Mannitol
+2,x0,13.872248893612687,mnl1p,Mannitol
+3,C,-0.41674667747439464,mnl1p,Mannitol
+0,L,2.381463561038598,alaL,Alanine
+1,k,0.42591492590488683,alaL,Alanine
+2,x0,14.71737448710066,alaL,Alanine
+0,L,1.21907596560052,alaN,AlanineN15
+1,k,0.48235463391504557,alaN,AlanineN15
+2,x0,21.56072747962521,alaN,AlanineN15

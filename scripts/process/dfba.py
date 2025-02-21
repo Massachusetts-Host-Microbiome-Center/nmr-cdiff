@@ -58,12 +58,14 @@ class MetaboliteCollection:
     def __init__(self):
         self.name_map = {}
         self.id_map = {}
+        self.id_model_map = {}
 
-    def new(self, met_id, met_name, substrate_name, scale):
+    def new(self, met_id, model_id, met_name, substrate_name, scale):
         if (met_name not in self.name_map) and (met_id not in self.id_map):
-            met = Metabolite(met_id, met_name)
+            met = Metabolite(met_id, model_id, met_name)
             self.name_map[met.name] = met
-            self.id_map[met.id] = met
+            self.id_map[met.met_id] = met
+            self.id_model_map[met.model_id] = met
         else:
             met = self.get_by_id(met_id)
         met.set_substrate_scale(substrate_name, scale)
@@ -75,10 +77,19 @@ class MetaboliteCollection:
         if met_id in self.id_map:
             return self.id_map[met_id]
         else:
-            raise ValueError(f"Collection does not contain metabolite {met_id}.")
+            raise ValueError(f"Collection does not contain metabolite with met {met_id}.")
+
+    def get_by_model_id(self, model_id):
+        if model_id in self.id_model_map:
+            return self.id_model_map[model_id]
+        else:
+            raise ValueError(f"Collection does not contain metabolite with model id {model_id}.")
         
     def has_id(self, met_id):
         return met_id in self.id_map
+
+    def has_model_id(self, model_id):
+        return model_id in self.id_model_map
     
     def remove_met(self, met_id):
         if self.has_id(met_id):
@@ -95,9 +106,13 @@ class MetaboliteCollection:
     
     def get_ids(self):
         return self.id_map.keys()
+    def get_model_ids(self):
+        return(self.id_model_map.keys())
 
     def get_items(self):
         return self.id_map.items()
+    def get_model_items(self):
+        return(self.id_model_map.items())
     
     def pop(self, mid):
         item = self.id_map.pop(mid)
@@ -117,6 +132,7 @@ class Substrate():
 
         self.name = jobj['name']
         self.label = jobj['label']
+        self.met_id = jobj['met_id']
         self.model_id = jobj['model_id']
         self.concentration = jobj['concentration']
         self.curve = jobj['curve']
@@ -345,7 +361,7 @@ def initialize_result_storage(model, met_collect, timecourse, tracked_reactions,
             print(f"'Tracked metabolite {mi}_c' is not a valid metabolite.")
 
     # Initialize results dataframes for trakced reactions
-    mnames = [model.metabolites.get_by_id(mi + '_c').name for mi in met_collect.get_ids()]
+    mnames = [model.metabolites.get_by_id(mi + '_c').name for mi in met_collect.get_model_ids()]
     results = [pd.DataFrame(0., index=timecourse, columns=mnames) for _ in range(6)]
     tracked_reactions_names = [model.reactions.get_by_id(ri).name for ri in tracked_reactions]
     rxnflux_tracked = pd.DataFrame(0., index=timecourse, columns=tracked_reactions_names)
@@ -505,7 +521,7 @@ def dfba_main(met_collect: MetaboliteCollection, model_file, objective_function,
               tmax_hours=48, solutions_per_hour=1, dry_run=False, output_folder = "../data/", reactions_to_delete = []):
     
     print("Tracked reactions: ", tracked_reactions)
-    print(met_collect.get_items())
+    print(met_collect.get_model_items())
 
     """Main function to compute dFBA solutions.
     Computes successive static FBA solutions and plots the estimated metabolite
@@ -563,7 +579,7 @@ def dfba_main(met_collect: MetaboliteCollection, model_file, objective_function,
     for i, t in enumerate(timecourse):
 
         # 1. Update exchange flux bounds for each constrained metabolite
-        for j, (mi, curveset) in enumerate(met_collect.get_items()):
+        for j, (mi, curveset) in enumerate(met_collect.get_model_items()):
             
             # Use NMR data to constrain boundary reactions. This will inherently limit the flux that may be assigned to transport reactions involving this metabolite
             fbounds = update_uptake_bounds(model, t, mi, curveset)
@@ -789,9 +805,11 @@ if __name__ == "__main__":
 
     # initialize the metabolite logistic function holding object
     for substrate in substrates:
-        met_collect.new(substrate.model_id, substrate.name, substrate.name, 1.)
+
+        met_collect.new(substrate.met_id, substrate.model_id, substrate.name, substrate.name, 1.)
         for metname, metdata in substrate.products.items():
-            met_collect.new(metdata["model_id"], metname, substrate.name, substrate.product_scale[metname])
+            print("MET NAME ADDED: ", metname)
+            met_collect.new(metdata["met_id"], metdata['model_id'], metname, substrate.name, substrate.product_scale[metname])
 
 
     method = cfg["method"]
@@ -842,6 +860,8 @@ if __name__ == "__main__":
         df.to_csv(output_folder + "/time_norm_areas.csv", index_label = "Time")
 
         print("Curves: ", curves)
+        for met in met_collect.get_ids():
+            print(met)
         for met, pset in curves.items(): # update LogisticSet of metabolite
             print("Adding a logistic curve object for: ", met)
             met_collect.get_by_name(met).add_curve(substrate.name, pset, errors[met])
