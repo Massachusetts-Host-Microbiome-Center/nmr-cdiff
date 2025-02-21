@@ -287,7 +287,7 @@ def areaplot2(t, substrates, met_collect: MetaboliteCollection):
     #     plt.figure(fig.number)
     #     plt.show()
 
-def load_model(modelfile, objective_list):
+def load_model(modelfile, objective_list, media_composition):
     """Load model and set constraints."""
     model = cb.io.load_json_model(modelfile)
     objective_dict = {}
@@ -297,15 +297,30 @@ def load_model(modelfile, objective_list):
     model.objective = objective_dict
     model.reactions.get_by_id(objective).upper_bound=1000
 
+    # set all medium components to 0
+    medium = model.medium
+    for reaction in model.reactions:
+        if "EX_" in reaction.id or "Ex_" in reaction.id:
+            if not reaction.id == "Ex_biomass":
+                medium[reaction.id] = 0
+
+    # set medium components from config file
+    for component in media_composition:
+        if model.reactions.has_id("EX" + component['model_id']):
+            medium["EX_" + component['model_id']] = component['concentration']
+        else:
+            medium["Ex_" + component['model_id']] = component['concentration']
+    model.medium = medium
+
     # Set default exchange bounds from media composition
-    init_cnc = dict()
-    for rxn in model.reactions:
-        if ( rxn.id.startswith('Ex_') and rxn.id.endswith('L') \
-                or rxn.id in ['Ex_gly', 'Ex_his'] ):
-            init_cnc[rxn.id] = rxn.upper_bound
-            rxn.upper_bound *= 0.03
-        if rxn.id in ['Ex_valL', 'Ex_ileL']:
-            rxn.upper_bound=0
+    #init_cnc = dict()
+    #for rxn in model.reactions:
+    #    if ( rxn.id.startswith('Ex_') and rxn.id.endswith('L') \
+    #            or rxn.id in ['Ex_gly', 'Ex_his'] ):
+    #        init_cnc[rxn.id] = rxn.upper_bound
+    #        rxn.upper_bound *= 0.03
+    #    if rxn.id in ['Ex_valL', 'Ex_ileL']:
+    #        rxn.upper_bound=0
     model.reactions.Ex_glc.upper_bound=0
     model.reactions.Ex_cysL.upper_bound = 1000
     model.solver = 'glpk'
@@ -549,8 +564,7 @@ def dfba_main(met_collect: MetaboliteCollection, model_file, objective_function,
         print("Dry run, will not write results.")
     # Load metabolic model and logistic fit specs #
     print('dFBA log: loading model and specsheet...')
-    model = load_model(parse_filepath(model_file), objective_function)
-
+    model = load_model(parse_filepath(model_file), objective_function, media_composition)
 
     # Remove reactions to delete
     model.remove_reactions(reactions_to_delete)
@@ -796,6 +810,7 @@ if __name__ == "__main__":
     substrates = [Substrate(s) for s in cfg['nmr_substrates']]
 
     isotope = cfg['isotope']
+    media_composition = cfg['media_composition']
     
     
     tmax = cfg['tmax_hours']
