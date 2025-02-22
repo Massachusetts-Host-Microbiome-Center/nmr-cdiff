@@ -1,0 +1,23 @@
+##TITLE= Parameter file, TopSpin 3.6.2
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= chenggp
+$$ 2023-03-04 17:41:27.025 -0500  chenggp@14t.nmr.mgh.harvard.edu
+$$ /opt/topspin3.6.2/data/chenggp/Mar032023_C13_HRMAS_Cells/92/acqu2
+$$ process /opt/topspin3.6.2/prog/mod/edparproc
+##$ACQT0= 0
+##$BF1= 150.890990367
+##$FnMODE= 5
+##$NUC1= <13C>
+##$NusJSP= 0
+##$NusT2= 0.1
+##$NusTD= 0
+##$O1= 15000
+##$ProjAngle= 0
+##$SFO1= 150.905990367
+##$SW= 240.089739965223
+##$SW_h= 36230.9799864075
+##$TD= 1
+##END=

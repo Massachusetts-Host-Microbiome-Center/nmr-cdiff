@@ -1,0 +1,27 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= chenggp
+$$ /opt/topspin3.6.2/data/chenggp/Mar032023_C13_HRMAS_Cells/129/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2023-03-05 07:05:32.946 -0500>,<chenggp>,<14t.nmr.mgh.harvard.edu>,<go4>,<TopSpin 3.6.2>,
+      <created by zg
+	started at 2023-03-05 06:52:53.074 -0500,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       19 D5 75 9D FD 21 CE B2 DD 1C 8C A9 FC 78 45 57
+       data hash MD5: 16K
+       68 A0 29 54 A4 F2 86 75 96 50 E4 26 D3 1F EB 85>)
+(   2,<2023-03-05 07:48:48.691 -0500>,<chenggp>,<14t.nmr.mgh.harvard.edu>,<proc1d>,<TopSpin 3.6.2>,
+      <Start of raw data processing
+       ft FT_mod = 6 PKNL = 1 SI = 16K 
+       data hash MD5: 16K
+       BD 21 ED 43 37 2F 9E 7E E8 E1 9D 44 DB C1 37 DC>)
+(   3,<2023-03-05 07:48:52.436 -0500>,<chenggp>,<14t.nmr.mgh.harvard.edu>,<proc1d>,<TopSpin 3.6.2>,
+      <apk 
+       data hash MD5: 16K
+       29 12 57 0B E5 73 BF 66 E7 5C 37 6D 2F 15 01 23>)
+##END=
+
+$$ hash MD5
+$$ 09 9F 49 21 5B DF C1 CC FF 40 E0 D7 DA 4F 58 4A

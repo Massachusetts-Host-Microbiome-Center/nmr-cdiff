@@ -1,0 +1,15 @@
+##TITLE= Parameter file, TOPSPIN		Version 3.2
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= external
+$$ 2024-12-13 15:13:17.793 -0500  external@CZC4323K7N
+$$ /opt/topspin3.2/data/external/nmr/hrmas_13C_UMass_cells_121324/44/pdata/1/used_from
+$$ process /opt/topspin3.2/prog/mod/proc1d
+##$CUREXP= <ser>
+##$DATPATH= </opt/topspin3.2/data/external/nmr>
+##$EXPNO= 44
+##$NAME= <hrmas_13C_UMass_cells_121324>
+##$PROCNO2= 1
+##END=

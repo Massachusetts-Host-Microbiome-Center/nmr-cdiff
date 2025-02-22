@@ -1,0 +1,210 @@
+    {
+        "method": "fba",
+        "model_file": "../../data/icdf843_2_unidirectional.json",
+        "output_folder": "../../data/cdiff_mannitol_n15_umass_012425/results/",
+        "objective_function": ["ATP_sink"],
+        "tmin_hours": 0,
+        "tmax_hours": 36,
+        "solutions_per_hour": 5,
+        "dry_run": false,
+        "stretch": false,
+        "plot": true,
+        "seed": 0,
+        "trajectory_only": false,
+        "isotope":"13C",
+        "nmr_substrates": [
+            {
+                "name": "Mannitol",
+                "label": "13CMann",
+                "met_id": "mn1p",
+                "model_id": "mnl1p",
+                "concentration": 27.78,
+                "curve": "logistic_C_r",
+                "standard_peaks": "../../data/standards/13CGlc_standards/13CGlc_standards_13C.xlsx",
+                "standard_concentrations":"../../data/standards/13CGlc_standards/Concentrations.xlsx",
+                "normalize_percent":false,
+                "experiments": [
+                    "/home/christine//Dropbox/nmr-cdiff/data/cdiff_mannitol_n15_umass_012425/"
+                ],
+                "products": {
+                    "Acetate": {
+                        "met_id": "ac",
+                        "model_id": "ac",
+                        "curve": "logistic",
+                        "num_carbons": 1
+                    },
+                    "Alanine": {
+                        "met_id": "alaL",
+                        "model_id": "alaL",
+                        "curve": "logistic",
+                        "num_carbons": 2
+                    },
+                    "Ethanol": {
+                        "met_id": "eto",
+                        "model_id": "eto",
+                        "curve": "logistic",
+                        "num_carbons": 2
+                    }
+                },
+                "reactions_to_constrain":[
+                ],
+                "plot_ticks": {
+                    "start": 0,
+                    "stop": 30,
+                    "major_step": 10,
+                    "minor_step": 1
+                }
+            }
+        ],
+        "media_composition":[
+        {
+            "name": "Calcium",
+            "model_id": "ca2",
+            "concentration": 0.180820834
+        },
+        {
+            "name": "L-cysteine",
+            "model_id": "cysL",
+            "concentration": 4.13
+        },
+        {
+            "name": "Potassium",
+            "model_id": "k",
+            "concentration": 6.617647059
+        },
+        {
+            "name": "Glucose",
+            "model_id": "glc",
+            "concentration": 2.5
+        },
+        {
+            "name": "L-arginine",
+            "model_id": "argL",
+            "concentration": 1.12
+        },
+        {
+            "name": "L-methionine",
+            "model_id": "metL",
+            "concentration": 1.3
+        },
+        {
+            "name": "L-proline",
+            "model_id": "proL",
+            "concentration": 5.22 
+        },
+        {
+            "name": "Bicarbonate",
+            "model_id": "hco3",
+            "concentration": 59.5
+        },
+        {
+            "name": "L-valine",
+            "model_id": "valL",
+            "concentration": 2.56
+        },
+        {
+            "name": "R-pantothenate",
+            "model_id": "pntoR",
+            "concentration": 0.003861004
+        },
+        {
+            "name": "Sodium",
+            "model_id": "na",
+            "concentration":145.3433303
+        },
+        {
+            "name": "Glycine",
+            "model_id": "gly",
+            "concentration": 1.33
+        },
+        {
+            "name": "Pyridoxine",
+            "model_id": "pyin",
+            "concentration":0.00591716
+        },
+        {
+            "name": "L-leucine",
+            "model_id": "leuL",
+            "concentration": 3.05
+        },
+        {
+            "name": "L-isoleucine",
+            "model_id": "ileL",
+            "concentration": 2.29
+        },
+        {
+            "name": "Phosphate",
+            "model_id": "pi",
+            "concentration": 41.82891466
+        },
+        {
+            "name": "L-threonine",
+            "model_id": "thrL",
+            "concentration": 1.68
+        },
+        {
+            "name": "L-tryptophan",
+            "model_id": "trpL",
+            "concentration": 0.4
+        },
+        {
+            "name": "Ammonia",
+            "model_id": "nh3",
+            "concentration": 0.605785249
+        },
+        {
+            "name": "L-histidine",
+            "model_id": "hisL",
+            "concentration": 0.65
+        },
+        {
+            "name": "Biotin",
+            "model_id": "bio",
+            "concentration": 0.004098361
+        },
+        {
+            "name": "Magnesium",
+            "model_id": "mg2",
+            "concentration": 0.098538672
+        }
+    ],
+        "tracked_reactions": [
+            "ID_233",
+            "ID_53",
+            "ID_280",
+            "ID_326",
+            "RNF-Complex",
+            "ID_336",
+            "ID_366",
+            "ICCoA-DHG-EB",
+            "ID_314",
+            "ID_383",
+            "BUK",
+            "HydEB",
+            "ATP_sink",
+            "ATPsynth4_1",
+            "ID_575",
+            "ID_469",
+            "ID_146",
+            "ID_321",
+            "ID_252",
+            "ID_407",
+            "ID_582",
+            "ID_1",
+            "Ex_biomass",
+            "Sec_exopoly",
+            "PPAKr",
+            "Sec_ppa"
+        ],
+        "tracked_metabolites": [
+            "alaL",
+            "gluL",
+            "atp",
+            "pyr",
+            "nh3",
+            "datp",
+            "fru16bp",
+            "cysL"
+        ],
+        "reactions_to_delete":[]
+    }

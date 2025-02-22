@@ -1378,9 +1378,9 @@ def call_main():
     #if not os.path.exists(f"{args.datapath}/{args.acq1}"):
     #    print(f"FID {args.acq1} was not found in the datapath. Please choose a valid FID.")
     #    return
-    process_n15 = "_15N" in args.params_file
-    process_1h = "_1H" in args.params_file
-    process_13c = "_13C" in args.params_file
+    process_n15 = "_15N.ini" in args.params_file
+    process_1h = "_1H.ini" in args.params_file
+    process_13c = "_13C.ini" in args.params_file
     overwrite = False
     if args.calibrate:
         overwrite = True

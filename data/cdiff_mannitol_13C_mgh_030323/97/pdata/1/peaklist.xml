@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PeakList modified="2023-03-29T10:51:28">
+  <PeakList1D>
+    <PeakList1DHeader creator="aj286" date="2023-03-29T10:51:28" expNo="97" name="20230303_13CMan" owner="" procNo="1" source="/Volumes/cctm/apavao/NMR">
+      <PeakPickDetails>F1=192.537978ppm, F2=3.398739ppm, MI=-3.96cm, MAXI=18.20cm, PC=1.400
+      </PeakPickDetails>
+    </PeakList1DHeader>
+    <Peak1D F1="162.845303" intensity="1.15887" type="0"/>
+    <Peak1D F1="127.18349" intensity="5.262308" type="0"/>
+    <Peak1D F1="73.879708" intensity="2.53254" type="0"/>
+    <Peak1D F1="73.796453" intensity="2.658709" type="0"/>
+    <Peak1D F1="73.669475" intensity="2.88983" type="0"/>
+    <Peak1D F1="73.593119" intensity="5.815021" type="0"/>
+    <Peak1D F1="73.524849" intensity="3.039175" type="0"/>
+    <Peak1D F1="73.399073" intensity="3.593062" type="0"/>
+    <Peak1D F1="73.315174" intensity="4.462331" type="0"/>
+    <Peak1D F1="72.309679" intensity="1.410538" type="0"/>
+    <Peak1D F1="72.127312" intensity="7.073931" type="0"/>
+    <Peak1D F1="72.045861" intensity="5.444619" type="0"/>
+    <Peak1D F1="71.91811" intensity="4.860471" type="0"/>
+    <Peak1D F1="71.838161" intensity="4.721973" type="0"/>
+    <Peak1D F1="66.014825" intensity="15.0" type="0"/>
+    <Peak1D F1="65.742333" intensity="13.77448" type="0"/>
+    <Peak1D F1="60.215862" intensity="6.277451" type="0"/>
+    <Peak1D F1="60.172882" intensity="1.782106" type="0"/>
+    <Peak1D F1="59.96969" intensity="6.38282" type="0"/>
+    <Peak1D F1="59.927798" intensity="2.055585" type="0"/>
+    <Peak1D F1="53.397535" intensity="1.590635" type="0"/>
+    <Peak1D F1="53.336808" intensity="1.427507" type="0"/>
+    <Peak1D F1="53.162098" intensity="1.879838" type="0"/>
+    <Peak1D F1="26.010462" intensity="3.119346" type="0"/>
+    <Peak1D F1="25.663733" intensity="2.855349" type="0"/>
+    <Peak1D F1="22.579036" intensity="0.8703568" type="0"/>
+    <Peak1D F1="19.562251" intensity="7.418773" type="0"/>
+    <Peak1D F1="19.444447" intensity="2.338415" type="0"/>
+    <Peak1D F1="19.316395" intensity="7.534867" type="0"/>
+    <Peak1D F1="19.198705" intensity="2.298787" type="0"/>
+    <Peak1D F1="19.163139" intensity="1.8088" type="0"/>
+    <Peak1D F1="19.039552" intensity="0.9919591" type="0"/>
+    <Peak1D F1="18.921447" intensity="5.419185" type="0"/>
+    <Peak1D F1="18.80194" intensity="1.53421" type="0"/>
+    <Peak1D F1="18.690032" intensity="5.221809" type="0"/>
+    <Peak1D F1="18.574962" intensity="1.583393" type="0"/>
+    <Peak1D F1="18.433656" intensity="1.023045" type="0"/>
+  </PeakList1D>
+  <PeakList1D>
+    <PeakList1DHeader creator="aj286" date="2023-03-29T10:51:28" expNo="97" name="20230303_13CMan" owner="" procNo="1" source="/Volumes/cctm/apavao/NMR">
+      <PeakPickDetails>F1=3.398729ppm, F2=2.888919ppm, MI=-1.73cm, MAXI=0.00cm, PC=1.400
+      </PeakPickDetails>
+    </PeakList1DHeader>
+  </PeakList1D>
+  <PeakList1D>
+    <PeakList1DHeader creator="aj286" date="2023-03-29T10:51:28" expNo="97" name="20230303_13CMan" owner="" procNo="1" source="/Volumes/cctm/apavao/NMR">
+      <PeakPickDetails>F1=2.888919ppm, F2=0.849682ppm, MI=-1.73cm, MAXI=4.04cm, PC=1.400
+      </PeakPickDetails>
+    </PeakList1DHeader>
+  </PeakList1D>
+</PeakList>

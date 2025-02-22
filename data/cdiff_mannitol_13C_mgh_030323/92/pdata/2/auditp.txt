@@ -1,0 +1,27 @@
+##TITLE= Audit trail, TopSpin 4.2.0
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= aj286
+$$ /Volumes/cctm/apavao/NMR/20230303_13CMan/92/pdata/2/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2023-03-04 17:54:19.525 -0500>,<chenggp>,<14t.nmr.mgh.harvard.edu>,<go4>,<TopSpin 3.6.2>,
+      <created by zg
+	started at 2023-03-04 17:41:27.075 -0500,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       19 D5 75 9D FD 21 CE B2 DD 1C 8C A9 FC 78 45 57
+       data hash MD5: 8K * 1
+       43 E7 0E B9 0E AD E3 3D 75 A9 C7 85 09 ED 04 69>)
+(   2,<2023-03-29 10:53:44.602 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <Start of raw data processing
+       ft 1 FT_mod = 6 PKNL = 1 SI = 16K 
+       data hash MD5: 16K
+       1C CC FB 78 3C B0 9F 2D 6C D1 CF B5 69 25 C4 F9>)
+(   3,<2023-03-29 10:53:52.173 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <apk 
+       data hash MD5: 16K
+       51 B4 B5 AE E4 5A 45 81 5B C8 67 0D DF 7C F3 2D>)
+##END=
+
+$$ hash MD5
+$$ 4F B4 DF 5B 9C 0A FF 2C 5A 56 E9 FA CF 58 D4 C0

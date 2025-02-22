@@ -1,0 +1,84 @@
+##TITLE= Audit trail, TopSpin 4.2.0
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= aj286
+$$ /Volumes/cctm/apavao/NMR/20230303_13CMan/97/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2023-03-04 19:51:11.331 -0500>,<chenggp>,<14t.nmr.mgh.harvard.edu>,<go4>,<TopSpin 3.6.2>,
+      <created by zg
+	started at 2023-03-04 19:11:51.006 -0500,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       19 D5 75 9D FD 21 CE B2 DD 1C 8C A9 FC 78 45 57
+       data hash MD5: 16K
+       82 A0 67 97 1C F5 E7 B8 D6 2F 81 6A 9F 57 27 29>)
+(   2,<2023-03-29 10:49:31.127 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <Start of raw data processing
+       em LB = 1 SI = 32K 
+       data hash MD5: 32K
+       CB E1 05 22 B7 46 AC D5 26 28 3E E8 2D AD 11 60>)
+(   3,<2023-03-29 10:49:31.489 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <ft FT_mod = 6 PKNL = 1 SI = 32K 
+       data hash MD5: 32K
+       EF B4 01 30 C5 2E 3E 61 5A 45 09 A2 14 E0 7F 12>)
+(   4,<2023-03-29 10:49:31.896 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <apk 
+       data hash MD5: 32K
+       FB 78 9A 10 D5 D8 3F 79 A2 74 09 60 21 5F 2D 42>)
+(   5,<2023-03-29 10:49:32.169 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <abs n ABSG = 5 
+       data hash MD5: 32K
+       E6 83 6A A1 A7 3D 9D C8 48 84 C1 24 AE AA 81 11>)
+(   6,<2023-03-29 10:49:45.064 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <Start of raw data processing
+       em LB = 1 SI = 32K 
+       data hash MD5: 32K
+       CB E1 05 22 B7 46 AC D5 26 28 3E E8 2D AD 11 60>)
+(   7,<2023-03-29 10:50:02.176 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <ft FT_mod = 6 PKNL = 1 SI = 32K 
+       data hash MD5: 32K
+       EF B4 01 30 C5 2E 3E 61 5A 45 09 A2 14 E0 7F 12>)
+(   8,<2023-03-29 10:50:19.553 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <apk 
+       data hash MD5: 32K
+       FB 78 9A 10 D5 D8 3F 79 A2 74 09 60 21 5F 2D 42>)
+(   9,<2023-03-29 10:50:30.952 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <abs ABSG = 5 
+       data hash MD5: 32K
+       E6 83 6A A1 A7 3D 9D C8 48 84 C1 24 AE AA 81 11>)
+(  10,<2023-03-29 10:50:48.195 -0400>,<aj286>,<PHS013833>,<proc1d>,<TopSpin 4.2.0>,
+      <abs ABSG = 5 
+       data hash MD5: 32K
+       6F 41 87 E4 98 02 7E C5 16 A2 6F 78 B4 7A 12 92>)
+(  11,<2023-03-29 10:51:08.256 -0400>,<aj286>,<PHS013833>,<dataserver>,<TopSpin 4.2.0>,
+      <Start of interactive peak picking
+       data hash MD5: 32K
+       6F 41 87 E4 98 02 7E C5 16 A2 6F 78 B4 7A 12 92>)
+(  12,<2023-03-29 10:51:18.648 -0400>,<aj286>,<PHS013833>,<peak>,<TopSpin 4.2.0>,
+      <1D Peak picking
+       data hash MD5: 32K
+       6F 41 87 E4 98 02 7E C5 16 A2 6F 78 B4 7A 12 92>)
+(  13,<2023-03-29 10:51:25.640 -0400>,<aj286>,<PHS013833>,<peak>,<TopSpin 4.2.0>,
+      <1D Peak picking
+       data hash MD5: 32K
+       6F 41 87 E4 98 02 7E C5 16 A2 6F 78 B4 7A 12 92>)
+(  14,<2023-03-29 10:51:28.600 -0400>,<aj286>,<PHS013833>,<peak>,<TopSpin 4.2.0>,
+      <1D Peak picking
+       data hash MD5: 32K
+       6F 41 87 E4 98 02 7E C5 16 A2 6F 78 B4 7A 12 92>)
+(  15,<2023-03-29 10:51:35.042 -0400>,<aj286>,<PHS013833>,<dataserver>,<TopSpin 4.2.0>,
+      <End of interactive peak picking
+       data hash MD5: 32K
+       6F 41 87 E4 98 02 7E C5 16 A2 6F 78 B4 7A 12 92>)
+(  16,<2023-03-29 10:51:42.264 -0400>,<aj286>,<PHS013833>,<dataserver>,<TopSpin 4.2.0>,
+      <Start of interactive peak picking
+       data hash MD5: 32K
+       6F 41 87 E4 98 02 7E C5 16 A2 6F 78 B4 7A 12 92>)
+(  17,<2023-03-29 10:51:43.539 -0400>,<aj286>,<PHS013833>,<dataserver>,<TopSpin 4.2.0>,
+      <End of interactive peak picking
+       data hash MD5: 32K
+       6F 41 87 E4 98 02 7E C5 16 A2 6F 78 B4 7A 12 92>)
+##END=
+
+$$ hash MD5
+$$ D1 99 44 27 DA 29 73 28 D1 9F 14 81 BB BC 29 18
