@@ -1,0 +1,11 @@
+,parameter,values,met_id,met_name
+0,L,0.5887536499917816,glc,Glucose
+1,k,-0.4937783765899521,glc,Glucose
+2,x0,30.481552239195246,glc,Glucose
+3,C,27.19124635000822,glc,Glucose
+0,L,21.05230864027653,ac,Acetate
+1,k,0.106580838777051,ac,Acetate
+2,x0,-22.26313838206821,ac,Acetate
+0,L,8.208761649185904,alaL,Alanine
+1,k,0.1165000025357471,alaL,Alanine
+2,x0,-24.179042524228603,alaL,Alanine

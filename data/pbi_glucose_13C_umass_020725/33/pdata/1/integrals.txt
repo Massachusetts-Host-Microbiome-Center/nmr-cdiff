@@ -1,0 +1,8 @@
+   Current data set:
+   NAME =	hrmas_13C_UMass_cells_020725	EXPNO =	33	PROCNO = 1
+   DU   =	/opt/topspin3.2/data/external/nmr
+
+   Number   Integrated Region     Integral
+     1     99.388     94.036         1.00000
+     2     80.553     71.100         3.99937
+     3     64.220     62.830         0.98467

@@ -1,0 +1,57 @@
+	{
+    	"method": "fba",
+    	"model_file": "../../data/cdiff/icdf843_2_unidirectional.json",
+    	"output_folder": "../../nmr_runs/pbi_glucose_13C_UMass_020725/results/",
+    	"objective_function": ["ATP_sink"],
+    	"tmin_hours": 0,
+    	"tmax_hours": 36,
+    	"solutions_per_hour": 5,
+    	"dry_run": false,
+    	"stretch": false,
+    	"plot": true,
+    	"seed": 0,
+    	"trajectory_only": false,
+        "isotope": "13C",
+    	"nmr_substrates": [
+        	{
+            	"name": "Glucose",
+            	"label": "13CGlc",
+            	"model_id": "glc",
+            	"concentration": 27.78,
+            	"curve": "logistic_C_r",
+            	"standard_peaks": "../../nmr_runs/standards/13CGlc_standards/13CGlc_standards_13C.xlsx",
+            	"standard_concentrations":"../../nmr_runs/standards/13CGlc_standards/Concentrations.xlsx",
+                "normalize_percent": false,
+            	"experiments": [
+                	"/home/christine//Dropbox/metabolic_modeling/nmr_runs/pbi_glucose_13C_UMass_020725/"
+            	],
+            	"products": {
+                	"Acetate": {
+                    	"model_id": "ac",
+                    	"curve": "logistic",
+                    	"num_carbons": 1
+                	},
+                	"Alanine": {
+                    	"model_id": "alaL",
+                    	"curve": "logistic",
+                    	"num_carbons": 2
+                	}
+            	},
+            	"reactions_to_constrain":[
+            	],
+            	"plot_ticks": {
+                	"start": 0,
+                	"stop": 30,
+                	"major_step": 10,
+                	"minor_step": 1
+            	}
+        	}
+    	],
+    	"tracked_reactions": [
+
+    	],
+    	"tracked_metabolites": [
+
+    	],
+    	"reactions_to_delete":[]
+	}
