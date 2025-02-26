@@ -1,0 +1,18 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= chenggp
+$$ /opt/topspin3.6.2/data/chenggp/May012022_BBI_Bry_Supt/52/audita.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2022-05-03 12:33:21.250 -0400>,<chenggp>,<14t.nmr.mgh.harvard.edu>,<go4>,<TopSpin 3.6.2>,
+      <created by zg
+	started at 2022-05-03 10:51:45.444 -0400,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       18 F3 78 1B DE 2F 5C 44 26 84 1A 05 DC F3 C6 E9
+       data hash MD5: 64K
+       DE 52 E5 EA EA 6C E1 B6 8F E4 56 FF B9 AC 95 C8>)
+##END=
+
+$$ hash MD5
+$$ D5 E2 51 2F 9C 74 2C 1E F6 7A A1 98 59 57 ED 29

@@ -33,6 +33,18 @@
                     "model_id": "ac",
                     "curve": "logistic",
                     "num_carbons": 1
+                },
+                "Alanine": {
+                    "met_id": "alaL",
+                    "model_id": "alaL",
+                    "curve": "logistic",
+                    "num_carbons": 2
+                },
+                "Ethanol": {
+                    "met_id": "eto",
+                    "model_id": "eto",
+                    "curve": "logistic",
+                    "num_carbons": 2
                 }
             },
             "reactions_to_constrain":[

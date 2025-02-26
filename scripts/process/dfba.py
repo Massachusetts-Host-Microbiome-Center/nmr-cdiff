@@ -868,11 +868,11 @@ if __name__ == "__main__":
         # check that if a product is listed in the expected products portion of the json file, it has associated NMR data
         missing_keys = [key for key in substrate.products if key not in list(curves.keys())]
         if missing_keys:
-            error_message = f"{missing_keys} is in the expected product list in your dfba_cfg.json file, but there is no associated NMR data in {fname_exp}_13C.xlsx"
+            error_message = f"{missing_keys} is in the expected product list in your dfba_cfg.json file, but there is no associated NMR data in {fname_exp}_{isotope}.xlsx OR optimal parameters not found for fit"
             raise ValueError(error_message)
 
         df = pd.DataFrame(signals, index = time)
-        df.to_csv(output_folder + "/time_norm_areas.csv", index_label = "Time")
+        df.to_csv(output_folder + "/time_norm_areas_" + cfg['isotope'] + ".csv", index_label = "Time")
 
         print("Curves: ", curves)
         for met in met_collect.get_ids():
@@ -883,7 +883,7 @@ if __name__ == "__main__":
 
     if plot:
         plt.tight_layout()
-        plt.savefig(output_folder + "/trajectories.png")
+        plt.savefig(output_folder + "/trajectories_" + cfg['isotope'] + ".png")
         print("Outputting trajectory plot to: ", output_folder + "/trajectories.png")
         plt.show()
 
@@ -903,7 +903,7 @@ if __name__ == "__main__":
         print(len(avg_ps))
         print(len(param_names))
         logistic_df.append(pd.DataFrame({'parameter': param_names[0:len(avg_ps)], 'values': avg_ps, 'met_id': met_id, 'met_name': curveset.name}))       
-    pd.concat(logistic_df).to_csv(output_folder + "/logistic_met_collect.csv")
+    pd.concat(logistic_df).to_csv(output_folder + "/logistic_met_collect_" + cfg['isotope'] + ".csv")
 
     t_min = cfg["tmin_hours"]
     t_max = cfg["tmax_hours"]
@@ -913,8 +913,8 @@ if __name__ == "__main__":
         if len(substrates) > 1:
             f = areaplot2(np.linspace(t_min, t_max, num=t_num), substrates, met_collect)
             plt.tight_layout()
-            plt.savefig(f, output_folder + "/trajectories.png")
-            print("Outputting trajectory plot to: ", output_folder + "/trajectories.png")
+            plt.savefig(f, output_folder + "/trajectories_" + cfg['isotope'] + ".png")
+            print("Outputting trajectory plot to: ", output_folder + "/trajectories_" + cfg['isotope'] + ".png")
 
 
 

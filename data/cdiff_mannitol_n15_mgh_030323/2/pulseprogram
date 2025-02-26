@@ -1,0 +1,50 @@
+# 1 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/user/zgpr_llc"
+;zgpr_llc
+;avance-version (02/05/31)
+;1D sequence with f1 presaturation
+
+
+# 1 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/Avance.incl" 1
+;Avance3.incl
+;   for AV III
+;
+;avance-version (13/06/17)
+;
+;$CLASS=HighRes Incl
+;$COMMENT=
+# 169 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/Avance.incl"
+;$Id: Avance3.incl,v 1.10.2.2 2013/08/30 09:43:33 ber Exp $
+# 6 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/user/zgpr_llc" 2
+
+
+# 10 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/user/zgpr_llc"
+"d11=30m"
+
+
+# 1 "mc_line 13 file /opt/topspin3.6.2/exp/stan/nmr/lists/pp/user/zgpr_llc dc-measurement inserted automatically"
+
+    dccorr
+# 13 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/user/zgpr_llc"
+  ze
+1 100u pl9:f1
+  (3u ph0):f1
+  d1 cw:f1
+  100u do:f1 pl1:f1
+# 19 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/user/zgpr_llc"
+  (p1 ph1):f1
+  go=1 ph31
+  wr #0
+  exit
+
+ph0= 0
+ph1=0 2 2 0 1 3 3 1
+
+ph31=0 2 2 0 1 3 3 1
+# 30 "/opt/topspin3.6.2/exp/stan/nmr/lists/pp/user/zgpr_llc"
+;pl1 : f1 channel - power level for pulse (default)
+
+;p1 : f1 channel -  90 degree high power pulse
+;d1 : relaxation delay; 1-5 * T1
+                      
+;NS: 1 * n, total number of scans: NS * TD0
+

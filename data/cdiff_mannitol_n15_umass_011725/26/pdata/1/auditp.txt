@@ -1,0 +1,27 @@
+##TITLE= Audit trail, TOPSPIN		Version 3.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= external
+$$ /opt/topspin3.2/data/external/nmr/hrmas_13C_UMass_cells_011725/26/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2025-01-17 14:09:38.511 -0500>,<external>,<CZC4323K7N>,<go>,<TOPSPIN 3.2>,
+      <created by zg
+	started at 2025-01-17 14:02:20.268 -0500,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       4F 4D A0 F3 E0 7A 91 B2 6D 71 67 91 FE 62 97 1D
+       data hash MD5: 32K
+       90 52 0E 7E 21 ED 51 2C C2 E6 4E 4F D6 9E 9F 60>)
+(   2,<2025-01-17 15:04:18.237 -0500>,<external>,<CZC4323K7N>,<proc1d>,<TOPSPIN 3.2>,
+      <Start of raw data processing
+       ft FT_mod = 6 PKNL = 1 SI = 32K 
+       data hash MD5: 32K
+       23 65 45 9B 7A 75 4C 06 50 E6 FC DE 7E 4E CC 86>)
+(   3,<2025-01-17 15:04:20.315 -0500>,<external>,<CZC4323K7N>,<proc1d>,<TOPSPIN 3.2>,
+      <apk 
+       data hash MD5: 32K
+       38 58 93 1E F9 81 39 31 2C CA D2 4B D6 7A 3B 4D>)
+##END=
+
+$$ hash MD5
+$$ D6 7A 7C CE E3 DD 5C DC 87 B7 0B C9 0E 20 57 9A

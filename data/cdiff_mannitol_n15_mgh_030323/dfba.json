@@ -1,0 +1,92 @@
+    {
+        "method": "fba",
+        "model_file": "../../data/cdiff/icdf843_2_unidirectional.json",
+        "output_folder": "../../nmr_runs/20230303_13CMannitol_mgh/results/",
+        "objective_function": ["ATP_sink"],
+        "tmin_hours": 0,
+        "tmax_hours": 36,
+        "solutions_per_hour": 5,
+        "dry_run": false,
+        "stretch": false,
+        "plot": true,
+        "seed": 0,
+        "trajectory_only": false,
+        "nmr_substrates": [
+            {
+                "name": "Mannitol",
+                "label": "13CMann",
+                "model_id": "mnl1p",
+                "concentration": 27.78,
+                "curve": "logistic_C_r",
+                "standard_peaks": "../../nmr_runs/standards/13CGlc_standards/13CGlc_standards_13C.xlsx",
+                "standard_concentrations":"../../nmr_runs/standards/13CGlc_standards/Concentrations.xlsx",
+                "experiments": [
+                    "/home/christine//Dropbox/metabolic_modeling/nmr_runs/20230303_13CMannitol_mgh/"
+                ],
+                "products": {
+                    "Acetate": {
+                        "model_id": "ac",
+                        "curve": "logistic",
+                        "num_carbons": 1
+                    },
+                    "Alanine": {
+                        "model_id": "alaL",
+                        "curve": "logistic",
+                        "num_carbons": 2
+                    },
+                    "Ethanol": {
+                        "model_id": "eto",
+                        "curve": "logistic",
+                        "num_carbons": 2
+                    }
+                },
+                "reactions_to_constrain":[
+                ],
+                "plot_ticks": {
+                    "start": 0,
+                    "stop": 30,
+                    "major_step": 10,
+                    "minor_step": 1
+                }
+            }
+        ],
+        "tracked_reactions": [
+            "ID_233",
+            "ID_53",
+            "ID_280",
+            "ID_326",
+            "RNF-Complex",
+            "ID_336",
+            "ID_366",
+            "ICCoA-DHG-EB",
+            "ID_314",
+            "ID_383",
+            "BUK",
+            "HydEB",
+            "ATP_sink",
+            "ATPsynth4_1",
+            "ID_575",
+            "ID_469",
+            "ID_146",
+            "ID_321",
+            "ID_252",
+            "ID_407",
+            "ID_582",
+            "ID_1",
+            "Ex_biomass",
+            "Sec_exopoly",
+            "PPAKr",
+            "Sec_ppa"
+        ],
+        "tracked_metabolites": [
+            "alaL",
+            "gluL",
+            "atp",
+            "pyr",
+            "nh3",
+            "datp",
+            "fru16bp",
+            "cysL"
+        ],
+        "reactions_to_delete":[]
+    }
